@@ -1,7 +1,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod editor;
 mod main_menu;
-use eframe::{egui::CentralPanel, App, CreationContext};
+use editor::EditorScreen;
+use eframe::{
+    egui::{CentralPanel, ScrollArea, Ui},
+    App, CreationContext,
+};
 use tokio::runtime::Runtime;
 
 use crate::main_menu::MainMenu;
@@ -11,7 +16,6 @@ fn main() {
     use eframe::{egui::ViewportBuilder, NativeOptions};
 
     tracing_subscriber::fmt::init();
-
 
     eframe::run_native(
         "Celeste Save Editor",
@@ -31,7 +35,6 @@ fn main() {
 
     // Redirect tracing to console.log and friends:
     tracing_wasm::set_as_global_default();
-
 
     eframe::run_web(
         "main_canvas",
@@ -64,13 +67,12 @@ impl SaveEditor {
     }
 }
 
-
 impl App for SaveEditor {
-    fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
-        CentralPanel::default().show(ctx, |ui| match &mut self.screen {
-            ScreenState::Startup => self.screen = ScreenState::Menu(MainMenu::default()),
-            ScreenState::Menu(m) => m.display(ui, &self.runtime),
-            ScreenState::Editor => todo!(),
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
+        CentralPanel::default().show(ctx, |ui| {
+            ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| self.screen.update(ui, &self.runtime));
         });
 
         #[cfg(target_family = "wasm")]
@@ -84,7 +86,24 @@ impl App for SaveEditor {
 enum ScreenState {
     Startup,
     Menu(MainMenu),
-    Editor,
+    Editor(EditorScreen),
 }
 
-impl ScreenState {}
+impl ScreenState {
+    fn update(&mut self, ui: &mut Ui, rt: &Runtime) {
+        match self {
+            ScreenState::Startup => *self = ScreenState::Menu(MainMenu::default()),
+            ScreenState::Menu(m) => {
+                if let Some(file) = m.display(ui, rt) {
+                    match EditorScreen::new(file) {
+                        Ok(e) => *self = ScreenState::Editor(e),
+                        Err(e) => eprintln!("{e}"),
+                    }
+                }
+            }
+            ScreenState::Editor(e) => {
+                e.display(ui, rt);
+            }
+        }
+    }
+}

@@ -11,12 +11,13 @@ pub struct MainMenu {
 }
 
 impl MainMenu {
-    pub fn display(&mut self, ui: &mut Ui, rt: &Runtime) {
+    pub fn display(&mut self, ui: &mut Ui, rt: &Runtime) -> Option<Vec<u8>> {
         if let Some(recv) = &mut self.file_listener {
             match recv.try_recv() {
                 Ok(file) => {
                     if let Some(file) = file {
                         println!("{}", file.file_name());
+                        return Some(rt.block_on(async { file.read().await }));
                     } else {
                         println!("File picker closed :(");
                     }
@@ -30,7 +31,6 @@ impl MainMenu {
                 }
             }
         }
-
 
         ui.set_enabled(self.file_listener.is_none());
         if ui.button("Open File").clicked() {
@@ -48,5 +48,7 @@ impl MainMenu {
 
             self.file_listener = Some(recv);
         }
+
+        None
     }
 }

@@ -15,7 +15,10 @@ tokio = { version = "1", features = ["rt", "sync"] }
 # native:
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 tracing-subscriber = "0.3"
-tokio.features = ["rt", "sync", "rt-multi-thread"]
+
+[target.'cfg(not(target_family = "wasm"))'.dependencies.tokio]
+version = "1"
+features = ["rt", "sync", "rt-multi-thread"]
 
 # web:
 [target.'cfg(target_family = "wasm")'.dependencies]
