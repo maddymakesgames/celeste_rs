@@ -5,7 +5,8 @@ mod main_menu;
 use editor::EditorScreen;
 use eframe::{
     egui::{CentralPanel, ScrollArea, Ui},
-    App, CreationContext,
+    App,
+    CreationContext,
 };
 use tokio::runtime::Runtime;
 
@@ -83,6 +84,7 @@ impl App for SaveEditor {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 enum ScreenState {
     Startup,
     Menu(MainMenu),
@@ -93,14 +95,13 @@ impl ScreenState {
     fn update(&mut self, ui: &mut Ui, rt: &Runtime) {
         match self {
             ScreenState::Startup => *self = ScreenState::Menu(MainMenu::default()),
-            ScreenState::Menu(m) => {
+            ScreenState::Menu(m) =>
                 if let Some(file) = m.display(ui, rt) {
                     match EditorScreen::new(file) {
                         Ok(e) => *self = ScreenState::Editor(e),
                         Err(e) => eprintln!("{e}"),
                     }
-                }
-            }
+                },
             ScreenState::Editor(e) => {
                 e.display(ui, rt);
             }
