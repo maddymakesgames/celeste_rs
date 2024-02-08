@@ -2,7 +2,7 @@ use std::io::Cursor;
 
 use celeste_rs::saves::{ops::DeError, util::FileTime, DashMode, SaveData, VanillaFlags};
 use eframe::{
-    egui::{ComboBox, DragValue, Frame, Id, InnerResponse, RichText, Ui},
+    egui::{ComboBox, DragValue, Frame, Id, InnerResponse, RichText, ScrollArea, Ui},
     epaint::{vec2, Color32},
 };
 use tokio::runtime::Runtime;
@@ -10,6 +10,8 @@ use tokio::runtime::Runtime;
 pub struct EditorScreen {
     save: SaveData,
     saftey_off: bool,
+    areas_search: String,
+    level_sets_search: String,
 }
 
 impl EditorScreen {
@@ -19,16 +21,17 @@ impl EditorScreen {
         Ok(EditorScreen {
             save,
             saftey_off: false,
+            areas_search: String::new(),
+            level_sets_search: String::new(),
         })
     }
 
     pub fn display(&mut self, ui: &mut Ui, _rt: &Runtime) {
         ui.vertical(|ui| {
             ui.label(
-                "Check this to enable editing every field.\nThis is off by default as some \
-                     values should not be independently edited.\nMake sure you know what you're \
-                     doing when you check this.\nYou can hover on a disable item to see why it \
-                     might be unsafe.",
+                "Check this to enable editing every field.\nThis is off by default as some values \
+                 should not be independently edited.\nMake sure you know what you're doing when \
+                 you check this.\nYou can hover on a disable item to see why it might be unsafe.",
             );
             ui.horizontal(|ui| {
                 ui.label("Safety Check:");
@@ -45,24 +48,27 @@ impl EditorScreen {
         })
         .response
         .on_hover_text(
-            "Modifying this could make the save not load if the game version you try to load \
-                 the save with doesn't match this.",
+            "Modifying this could make the save not load if the game version you try to load the \
+             save with doesn't match this.",
         );
         ui.horizontal(|ui| {
             ui.label("Save Name: ");
             ui.text_edit_singleline(&mut save.name);
         });
+
         ui.horizontal(|ui| {
-            ui.label("Total Playtime: ");
-            ui.set_enabled(self.saftey_off);
-            file_time_widget(&mut save.time, ui);
+            ui.label("Theo's Sister's Name:");
+            ui.text_edit_singleline(&mut save.theo_sister_name)
         })
         .response
         .on_hover_text(
-            "We update this based on modifications in the playtime of individual \
-                 levels.\nModifying this means the total playtime of your levels will not be the \
-                 same as the displayed file playtime.",
+            "The name of Theo's sister.\nDefaults to 'Alex,' is changed to 'Maddy' if the \
+             player's name is 'Alex.'\nMight not actually update what's in game as this is stored \
+             in the dialogue files too.",
         );
+
+        ui.separator();
+
         ui.horizontal(|ui| {
             ui.label("Cheats Enabled:");
             ui.checkbox(&mut save.cheat_mode, "");
@@ -79,7 +85,7 @@ impl EditorScreen {
                     ui.label("Game Speed:");
                     ui.add(
                         DragValue::new(&mut assists.game_speed)
-                            .clamp_range(5..=10)
+                            .clamp_range(5 ..= 10)
                             .custom_formatter(|n, _| format!("{}%", (n * 10.0))),
                     );
                 });
@@ -112,21 +118,19 @@ impl EditorScreen {
             });
         }
 
+        ui.separator();
+
         ui.horizontal(|ui| {
-            ui.label("Theo's Sister's Name:");
-            ui.text_edit_singleline(&mut save.theo_sister_name)
+            ui.label("Total Playtime: ");
+            ui.set_enabled(self.saftey_off);
+            file_time_widget(&mut save.time, ui);
         })
         .response
         .on_hover_text(
-            "The name of Theo's sister.\nDefaults to 'Alex,' is changed to 'Maddy' if the \
-                 player's name is 'Alex.'\nMight not actually update what's in game as this is \
-                 stored in the dialogue files too.",
+            "We update this based on modifications in the playtime of individual \
+             levels.\nModifying this means the total playtime of your levels will not be the same \
+             as the displayed file playtime.",
         );
-
-        ui.horizontal(|ui| {
-            ui.label("Number of unlocked areas:");
-            ui.add(DragValue::new(&mut save.unlocked_areas).clamp_range(1..=10));
-        });
 
         ui.horizontal(|ui| {
             ui.label("Total Deaths:");
@@ -136,8 +140,8 @@ impl EditorScreen {
         .response
         .on_hover_text(
             "We update this based on any modifications to the death counts of individual \
-                 levels.\nModifying this means the death counts of all your levels won't add up \
-                 to the total deaths on the save.",
+             levels.\nModifying this means the death counts of all your levels won't add up to \
+             the total deaths on the save.",
         );
 
         ui.horizontal(|ui| {
@@ -147,9 +151,9 @@ impl EditorScreen {
         })
         .response
         .on_hover_text(
-            "We update the strawberry count based on modifications to the strawberries in \
-                 vanilla levels.\nModifying this means the total strawberry count won't equal the \
-                 number of vanilla strawberries actually collected.",
+            "We update the strawberry count based on modifications to the strawberries in vanilla \
+             levels.\nModifying this means the total strawberry count won't equal the number of \
+             vanilla strawberries actually collected.",
         );
 
         // TODO: add tooltip
@@ -174,10 +178,13 @@ impl EditorScreen {
             ui.add(DragValue::new(&mut save.total_dashes));
         });
 
+        ui.separator();
+
         let met_theo = save.flags.contains(&VanillaFlags::MetTheo.into());
         let mut met_theo2 = met_theo;
         let theo_knows_name = save.flags.contains(&VanillaFlags::TheoKnowsName.into());
         let mut theo_knows_name2 = theo_knows_name;
+
 
         ui.heading("Vanilla Flags");
         ui.checkbox(&mut met_theo2, "Met Theo");
@@ -274,11 +281,29 @@ impl EditorScreen {
 
         // TODO: add summit gems
 
+        ui.separator();
+
+        ui.horizontal(|ui| {
+            ui.label("Number of unlocked areas:");
+            ui.add(DragValue::new(&mut save.unlocked_areas).clamp_range(1 ..= 10));
+        });
+
         ui.checkbox(&mut save.revealed_farewell, "Revealed Farewell");
 
-        // TODO: areas & level sets
+        ui.collapsing("Vanilla Areas", |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Search For Area:");
+                ui.text_edit_singleline(&mut self.areas_search);
+            });
+            ScrollArea::vertical().show(ui, |ui| {});
+        });
+
+
+        ui.separator();
 
         ui.checkbox(&mut save.has_modded_save_data, "Has modded data");
+
+        // TODO: level sets
     }
 }
 
