@@ -222,7 +222,7 @@ impl SaveData {
                     // and thus if they have the same len they have the same checkpoints
                     // TODO: verify this
                     if other_mode.checkpoints.len() > self_mode.checkpoints.len() {
-                        for i in 0..other_mode.checkpoints.len() {
+                        for i in 0 .. other_mode.checkpoints.len() {
                             if other_mode.checkpoints.get(i) != self_mode.checkpoints.get(i) {
                                 self_mode
                                     .checkpoints
@@ -332,9 +332,9 @@ impl DerefMut for VanillaFlagsWrapper {
     }
 }
 
-impl Into<VanillaFlagsWrapper> for VanillaFlags {
-    fn into(self) -> VanillaFlagsWrapper {
-        VanillaFlagsWrapper { flag: self }
+impl From<VanillaFlags> for VanillaFlagsWrapper {
+    fn from(val: VanillaFlags) -> Self {
+        VanillaFlagsWrapper { flag: val }
     }
 }
 
