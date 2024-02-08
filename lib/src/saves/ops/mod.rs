@@ -1,5 +1,10 @@
 //! Implements operations for all of the types found in the [celeste](crate::celeste) module
-use std::{collections::HashSet, fmt::Write, io::BufRead};
+use std::{
+    collections::HashSet,
+    fmt::Write,
+    io::BufRead,
+    ops::{Deref, DerefMut},
+};
 
 pub use quick_xml::DeError;
 
@@ -217,7 +222,7 @@ impl SaveData {
                     // and thus if they have the same len they have the same checkpoints
                     // TODO: verify this
                     if other_mode.checkpoints.len() > self_mode.checkpoints.len() {
-                        for i in 0 .. other_mode.checkpoints.len() {
+                        for i in 0..other_mode.checkpoints.len() {
                             if other_mode.checkpoints.get(i) != self_mode.checkpoints.get(i) {
                                 self_mode
                                     .checkpoints
@@ -281,4 +286,68 @@ pub enum AreaSource {
     Vanilla,
     LevelSets,
     LevelSetRecycleBin,
+}
+
+impl ToString for DashMode {
+    fn to_string(&self) -> String {
+        match self {
+            DashMode::Normal => "Normal".to_owned(),
+            DashMode::Two => "Two".to_owned(),
+            DashMode::Infinite => "Infinite".to_owned(),
+        }
+    }
+}
+
+impl From<DashMode> for String {
+    fn from(value: DashMode) -> Self {
+        value.to_string()
+    }
+}
+
+impl Deref for Flags {
+    type Target = Vec<VanillaFlagsWrapper>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.flags
+    }
+}
+
+impl DerefMut for Flags {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.flags
+    }
+}
+
+impl Deref for VanillaFlagsWrapper {
+    type Target = VanillaFlags;
+
+    fn deref(&self) -> &Self::Target {
+        &self.flag
+    }
+}
+
+impl DerefMut for VanillaFlagsWrapper {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.flag
+    }
+}
+
+impl Into<VanillaFlagsWrapper> for VanillaFlags {
+    fn into(self) -> VanillaFlagsWrapper {
+        VanillaFlagsWrapper { flag: self }
+    }
+}
+
+impl Deref for Poem {
+    type Target = Vec<String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.string
+    }
+}
+
+impl DerefMut for Poem {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.string
+    }
 }

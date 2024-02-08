@@ -8,13 +8,12 @@ pub mod util;
 pub mod vanilla;
 
 use everest::*;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use session::*;
 use util::*;
 use vanilla::*;
 
 use chrono::NaiveDateTime;
-
 
 /// The root of a celeste save file
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -109,10 +108,11 @@ pub struct SaveData {
     pub level_set_recycle_bin: LevelSets,
     /// Whether this save file has been loaded into everest before
     #[serde(rename = "HasModdedSaveData")]
+    #[serde(default)]
     pub has_modded_save_data: bool,
     /// A reference to the last area played, including modded levels
     #[serde(rename = "LastArea_Safe")]
-    pub last_area_safe: LastAreaRef,
+    pub last_area_safe: Option<LastAreaRef>,
     /// The current session saved on the file
     ///
     /// This is what is saved when you use "save & exit" while in a level
@@ -120,15 +120,14 @@ pub struct SaveData {
     pub current_session_safe: Option<CurrentSession>,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Assists {
     #[serde(rename = "GameSpeed")]
     pub game_speed: u8,
     #[serde(rename = "Invincible")]
-    pub invinicble: bool,
+    pub invincible: bool,
     #[serde(rename = "DashMode")]
-    pub dash_mode: String,
+    pub dash_mode: DashMode,
     #[serde(rename = "DashAssist")]
     pub dash_assist: bool,
     #[serde(rename = "InfiniteStamina")]
@@ -151,16 +150,34 @@ pub struct Assists {
     pub badeline: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DashMode {
+    Normal,
+    Two,
+    Infinite,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Flags {
     #[serde(default)]
     #[serde(rename = "string")]
-    pub(crate) flags: Vec<String>,
+    pub(crate) flags: Vec<VanillaFlagsWrapper>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VanillaFlagsWrapper {
+    #[serde(rename = "$text")]
+    pub(crate) flag: VanillaFlags,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Poem {
     #[serde(default)]
-    #[serde(rename = "string")]
-    pub(crate) poem: Vec<String>,
+    pub(crate) string: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VanillaFlags {
+    MetTheo,
+    TheoKnowsName,
 }
