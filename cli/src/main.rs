@@ -177,7 +177,7 @@ ID: {}"#,
 
             println!(
                 "Number of modded level sets: {num_mods}\nLast modded area played: {}",
-                save_file.last_area_safe.s_id
+                save_file.last_area_safe.as_ref().unwrap().s_id
             );
         }
     }
