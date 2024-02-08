@@ -6,7 +6,6 @@ use std::{
 
 use crate::saves::def::util::*;
 
-
 impl FileTime {
     pub fn as_duration(&self) -> Duration {
         // We won't get any more precise than milliseconds because
@@ -17,6 +16,17 @@ impl FileTime {
 
     pub fn as_millis(&self) -> u64 {
         self.0 / 10000
+    }
+
+    /// Returns the [FileTime] separated into hours, minutes, seconds, and milliseconds
+    pub fn as_parts(&self) -> (u64, u64, u64, u64) {
+        let duration = self.as_millis();
+        let hours = duration / 3600000;
+        let mins = (duration / 60000) % 60;
+        let secs = (duration / 1000) % 60;
+        let millis = duration % 1000;
+
+        (hours, mins, secs, millis)
     }
 
     pub fn from_duration(dur: Duration) -> Self {
@@ -95,11 +105,7 @@ impl Sub for &FileTime {
 
 impl Display for FileTime {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let duration = self.as_millis();
-        let hours = duration / 3600000;
-        let mins = (duration / 60000) % 60;
-        let secs = (duration / 1000) % 60;
-        let millis = duration % 1000;
+        let (hours, mins, secs, millis) = self.as_parts();
         write!(f, "{hours:02}:{mins:02}:{secs:02}:{millis:03}")
     }
 }
