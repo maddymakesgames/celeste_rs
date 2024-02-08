@@ -8,7 +8,7 @@ pub mod util;
 pub mod vanilla;
 
 use everest::*;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use session::*;
 use util::*;
 use vanilla::*;
