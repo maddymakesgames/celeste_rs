@@ -1,28 +1,52 @@
 use std::io::Cursor;
 
-use celeste_rs::saves::{ops::DeError, util::FileTime, DashMode, SaveData, VanillaFlags};
+use celeste_rs::saves::{
+    everest::LevelSetStats,
+    ops::DeError,
+    util::FileTime,
+    DashMode,
+    SaveData,
+    VanillaFlags,
+};
 use eframe::{
-    egui::{ComboBox, DragValue, Frame, Id, InnerResponse, RichText, ScrollArea, Ui},
+    egui::{
+        CollapsingHeader,
+        CollapsingResponse,
+        ComboBox,
+        DragValue,
+        Frame,
+        Id,
+        InnerResponse,
+        RichText,
+        Ui,
+    },
     epaint::{vec2, Color32},
 };
 use tokio::runtime::Runtime;
 
 pub struct EditorScreen {
     save: SaveData,
-    saftey_off: bool,
-    areas_search: String,
+    safety_off: bool,
     level_sets_search: String,
+    vanilla_level_set: LevelSetStats,
 }
 
 impl EditorScreen {
     pub fn new(bytes: Vec<u8>) -> Result<EditorScreen, DeError> {
         let save = SaveData::from_reader(Cursor::new(bytes))?;
+        let vanilla_level_set = LevelSetStats {
+            name: "Celeste".to_owned(),
+            areas: save.areas.clone(),
+            poem: save.poem.clone(),
+            unlocked_areas: save.unlocked_areas,
+            total_strawberries: save.total_strawberries,
+        };
 
         Ok(EditorScreen {
             save,
-            saftey_off: false,
-            areas_search: String::new(),
+            safety_off: false,
             level_sets_search: String::new(),
+            vanilla_level_set,
         })
     }
 
@@ -35,7 +59,7 @@ impl EditorScreen {
             );
             ui.horizontal(|ui| {
                 ui.label("Safety Check:");
-                ui.checkbox(&mut self.saftey_off, "");
+                ui.checkbox(&mut self.safety_off, "");
             })
         });
 
@@ -43,7 +67,7 @@ impl EditorScreen {
         let save = &mut self.save;
         ui.horizontal(|ui| {
             ui.label("Save Version: ");
-            ui.set_enabled(self.saftey_off);
+            ui.set_enabled(self.safety_off);
             ui.text_edit_singleline(&mut save.version);
         })
         .response
@@ -122,7 +146,7 @@ impl EditorScreen {
 
         ui.horizontal(|ui| {
             ui.label("Total Playtime: ");
-            ui.set_enabled(self.saftey_off);
+            ui.set_enabled(self.safety_off);
             file_time_widget(&mut save.time, ui);
         })
         .response
@@ -134,7 +158,7 @@ impl EditorScreen {
 
         ui.horizontal(|ui| {
             ui.label("Total Deaths:");
-            ui.set_enabled(self.saftey_off);
+            ui.set_enabled(self.safety_off);
             ui.add(DragValue::new(&mut save.total_deaths));
         })
         .response
@@ -146,7 +170,7 @@ impl EditorScreen {
 
         ui.horizontal(|ui| {
             ui.label("Vanilla Strawberries:");
-            ui.set_enabled(self.saftey_off);
+            ui.set_enabled(self.safety_off);
             ui.add(DragValue::new(&mut save.total_strawberries));
         })
         .response
@@ -159,7 +183,7 @@ impl EditorScreen {
         // TODO: add tooltip
         ui.horizontal(|ui| {
             ui.label("Total Golden Strawberries:");
-            ui.set_enabled(self.saftey_off);
+            ui.set_enabled(self.safety_off);
             ui.add(DragValue::new(&mut save.total_golden_strawberries));
         });
 
@@ -290,35 +314,147 @@ impl EditorScreen {
 
         ui.checkbox(&mut save.revealed_farewell, "Revealed Farewell");
 
-        ui.collapsing("Vanilla Areas", |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Search For Area:");
-                ui.text_edit_singleline(&mut self.areas_search);
-            });
-            ScrollArea::vertical().show(ui, |ui| {});
-        });
-
-
         ui.separator();
 
         ui.checkbox(&mut save.has_modded_save_data, "Has modded data");
 
-        // TODO: level sets
+        ui.heading("Level Set Data");
+        ui.label(
+            RichText::new(
+                "Each level in a level set has an a, b, and c-side in the save file.\nThis does \
+                 not mean that the level actually includes 3 different sides. So make sure you \
+                 know what you're editing before you change anything.",
+            )
+            .weak(),
+        );
+
+        ui.horizontal(|ui| {
+            ui.label("Search for a levelset: ");
+            ui.text_edit_singleline(&mut self.level_sets_search);
+        });
+
+        let search_text = self.level_sets_search.to_ascii_lowercase();
+
+        if ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
+            && level_set_widget(ui, self.safety_off, &mut self.vanilla_level_set)
+                .body_returned
+                .unwrap_or_default()
+        {
+            save.areas = self.vanilla_level_set.areas.clone();
+            save.poem = self.vanilla_level_set.poem.clone();
+            save.total_strawberries = self.vanilla_level_set.total_strawberries;
+        }
+
+        for (level_set, _) in save
+            .all_level_sets_mut()
+            .into_iter()
+            .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
+        {
+            if level_set.name == "Celeste" {
+                continue;
+            }
+            level_set_widget(ui, self.safety_off, level_set);
+        }
     }
 }
 
-fn file_time_widget(filetime: &mut FileTime, ui: &mut Ui) -> InnerResponse<()> {
+fn file_time_widget(filetime: &mut FileTime, ui: &mut Ui) -> InnerResponse<bool> {
     ui.horizontal(|ui| {
+        let mut changed = false;
         let (mut hours, mut mins, mut secs, mut millis) = filetime.as_parts();
         ui.label("hours");
-        ui.add(DragValue::new(&mut hours));
+        changed |= ui.add(DragValue::new(&mut hours)).changed();
         ui.label("minutes");
-        ui.add(DragValue::new(&mut mins));
+        changed |= ui.add(DragValue::new(&mut mins)).changed();
         ui.label("seconds");
-        ui.add(DragValue::new(&mut secs));
+        changed |= ui.add(DragValue::new(&mut secs)).changed();
         ui.label("milliseconds");
-        ui.add(DragValue::new(&mut millis));
+        changed |= ui.add(DragValue::new(&mut millis)).changed();
 
         *filetime = FileTime::from_parts(hours, mins, secs, millis);
+        changed
+    })
+}
+
+fn level_set_widget(
+    ui: &mut Ui,
+    safety_off: bool,
+    level_set: &mut LevelSetStats,
+) -> CollapsingResponse<bool> {
+    ui.collapsing(&level_set.name, |ui| {
+        let mut changed = false;
+        let name = level_set.name.clone();
+        for area in level_set.areas.iter_mut() {
+            // *Pretty sure* that there can only ever be a, b, and c sides
+            // But this should work for extensions.
+            // If modes can be of any length we could use .enumerated() and use the index
+            // to get the side name "{(idx + 101) as char}-Side"
+            let sid = area.def.sid.clone();
+            ui.collapsing(&area.def.sid, |ui| {
+                for (mode, side_name) in area
+                    .modes
+                    .iter_mut()
+                    .zip(["A-Side", "B-Side", "C-Side", "D-Side", "E-Side"])
+                {
+                    let stats = &mut mode.stats;
+                    let id_name = format!("{name}/{sid}/{side_name}");
+                    CollapsingHeader::new(RichText::new(side_name))
+                        .id_source(id_name)
+                        .show(ui, |ui| {
+                            ui.horizontal(|ui| {
+                                ui.label("Play Time:");
+                                changed |= file_time_widget(&mut stats.time_played, ui)
+                                    .response
+                                    .changed()
+                            });
+
+                            ui.checkbox(&mut stats.completed, "Completed");
+                            ui.checkbox(&mut stats.single_run_completed, "Completed in one run");
+                            ui.horizontal(|ui| {
+                                ui.label("Best Time:");
+                                changed |= file_time_widget(&mut stats.best_time, ui)
+                                    .response
+                                    .changed()
+                            });
+
+                            ui.checkbox(&mut stats.full_clear, "Full Cleared");
+                            ui.horizontal(|ui| {
+                                ui.label("Best Full Clear Time:");
+                                changed |= file_time_widget(&mut stats.best_full_clear_time, ui)
+                                    .response
+                                    .changed()
+                            });
+
+                            ui.horizontal(|ui| {
+                                ui.label("Total Strawberries:");
+                                ui.set_enabled(safety_off);
+                                changed |= ui
+                                    .add(DragValue::new(&mut stats.total_strawberries))
+                                    .changed()
+                            });
+
+
+                            ui.horizontal(|ui| {
+                                ui.label("Deaths:");
+                                changed |= ui.add(DragValue::new(&mut stats.deaths)).changed()
+                            });
+
+                            ui.horizontal(|ui| {
+                                ui.label("Best Dashes:");
+                                changed |= ui.add(DragValue::new(&mut stats.best_dashes)).changed()
+                            });
+
+                            ui.horizontal(|ui| {
+                                ui.label("Best Deaths:");
+                                changed |= ui.add(DragValue::new(&mut stats.best_deaths)).changed()
+                            });
+
+                            ui.checkbox(&mut stats.heart_gem, "Heart Collected");
+                        });
+                }
+            });
+        }
+
+        changed
     })
 }
