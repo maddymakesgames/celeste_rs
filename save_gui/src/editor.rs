@@ -362,14 +362,14 @@ fn file_time_widget(filetime: &mut FileTime, ui: &mut Ui) -> InnerResponse<bool>
     ui.horizontal(|ui| {
         let mut changed = false;
         let (mut hours, mut mins, mut secs, mut millis) = filetime.as_parts();
-        ui.label("hours");
         changed |= ui.add(DragValue::new(&mut hours)).changed();
-        ui.label("minutes");
+        ui.label("hours");
         changed |= ui.add(DragValue::new(&mut mins)).changed();
-        ui.label("seconds");
+        ui.label("minutes");
         changed |= ui.add(DragValue::new(&mut secs)).changed();
-        ui.label("milliseconds");
+        ui.label("seconds");
         changed |= ui.add(DragValue::new(&mut millis)).changed();
+        ui.label("milliseconds");
 
         *filetime = FileTime::from_parts(hours, mins, secs, millis);
         changed
