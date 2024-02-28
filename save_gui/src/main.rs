@@ -4,7 +4,7 @@ mod editor;
 mod main_menu;
 use editor::EditorScreen;
 use eframe::{
-    egui::{CentralPanel, FontFamily, FontId, ScrollArea, TextStyle, Ui},
+    egui::{CentralPanel, FontFamily, FontId, ScrollArea, Ui},
     App,
     CreationContext,
 };
