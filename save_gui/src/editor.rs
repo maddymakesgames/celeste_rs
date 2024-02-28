@@ -17,8 +17,11 @@ use eframe::{
         Frame,
         Id,
         InnerResponse,
+        Response,
         RichText,
+        TextStyle,
         Ui,
+        WidgetText,
     },
     epaint::{vec2, Color32},
 };
@@ -457,4 +460,15 @@ fn level_set_widget(
 
         changed
     })
+}
+
+
+trait CelesteEditorUiExt {
+    fn info(&mut self, text: impl Into<String>) -> Response;
+}
+
+impl CelesteEditorUiExt for Ui {
+    fn info(&mut self, text: impl Into<String>) -> Response {
+        self.label(RichText::new(text).text_style(TextStyle::Name("info".into())))
+    }
 }

@@ -4,7 +4,7 @@ mod editor;
 mod main_menu;
 use editor::EditorScreen;
 use eframe::{
-    egui::{CentralPanel, ScrollArea, Ui},
+    egui::{CentralPanel, FontFamily, FontId, ScrollArea, TextStyle, Ui},
     App,
     CreationContext,
 };
@@ -52,7 +52,7 @@ struct SaveEditor {
 }
 
 impl SaveEditor {
-    fn new(_cc: &CreationContext) -> SaveEditor {
+    fn new(cc: &CreationContext) -> SaveEditor {
         #[cfg(not(target_family = "wasm"))]
         let runtime = tokio::runtime::Runtime::new().expect("Error creating tokio runtime");
         #[cfg(target_family = "wasm")]
@@ -60,6 +60,22 @@ impl SaveEditor {
             .enable_all()
             .build()
             .expect("Error creating tokio runtime");
+
+        let mut style = (*cc.egui_ctx.style()).clone();
+
+        use eframe::egui::{FontFamily::Proportional, TextStyle::*};
+
+        style.text_styles = [
+            (Heading, FontId::new(32.0, Proportional)),
+            (Body, FontId::new(18.0, Proportional)),
+            (Name("info".into()), FontId::new(16.0, Proportional)),
+            (Monospace, FontId::new(18.0, FontFamily::Monospace)),
+            (Button, FontId::new(16.0, Proportional)),
+            (Small, FontId::new(15.0, Proportional)),
+        ]
+        .into();
+
+        cc.egui_ctx.set_style(style);
 
         SaveEditor {
             screen: ScreenState::Startup,
