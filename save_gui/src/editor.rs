@@ -19,9 +19,9 @@ use eframe::{
         InnerResponse,
         Response,
         RichText,
+        ScrollArea,
         TextStyle,
         Ui,
-        WidgetText,
     },
     epaint::{vec2, Color32},
 };
@@ -55,10 +55,12 @@ impl EditorScreen {
 
     pub fn display(&mut self, ui: &mut Ui, _rt: &Runtime) {
         ui.vertical(|ui| {
-            ui.label(
+            ui.info(
                 "Check this to enable editing every field.\nThis is off by default as some values \
                  should not be independently edited.\nMake sure you know what you're doing when \
-                 you check this.\nYou can hover on a disable item to see why it might be unsafe.",
+                 you check this.\nYou can hover on a disable item to see why it might be \
+                 unsafe.\n(as of alpha version not all tooltips implemented and not all \
+                 independent editing implemented)",
             );
             ui.horizontal(|ui| {
                 ui.label("Safety Check:");
@@ -66,7 +68,14 @@ impl EditorScreen {
             })
         });
 
-        ui.separator();
+        ui.collapsing("Save Metadata", |ui| self.show_metadata(ui));
+        ui.collapsing("Flags", |ui| self.show_flags(ui));
+        ui.collapsing("Assists", |ui| self.show_assists(ui));
+        ui.collapsing("Stats", |ui| self.show_stats(ui));
+        ui.collapsing("Level Sets", |ui| self.show_level_sets(ui));
+    }
+
+    pub fn show_metadata(&mut self, ui: &mut Ui) {
         let save = &mut self.save;
         ui.horizontal(|ui| {
             ui.label("Save Version: ");
@@ -94,7 +103,11 @@ impl EditorScreen {
              in the dialogue files too.",
         );
 
-        ui.separator();
+        ui.checkbox(&mut save.has_modded_save_data, "Has modded data");
+    }
+
+    pub fn show_assists(&mut self, ui: &mut Ui) {
+        let save = &mut self.save;
 
         ui.horizontal(|ui| {
             ui.label("Cheats Enabled:");
@@ -105,47 +118,49 @@ impl EditorScreen {
             ui.checkbox(&mut save.variant_mode, "");
         });
 
-        if save.assist_mode || save.variant_mode {
-            ui.collapsing("Enabled Assists & Variants", |ui| {
-                let assists = &mut save.assists;
-                ui.horizontal(|ui| {
-                    ui.label("Game Speed:");
-                    ui.add(
-                        DragValue::new(&mut assists.game_speed)
-                            .clamp_range(5 ..= 10)
-                            .custom_formatter(|n, _| format!("{}%", (n * 10.0))),
-                    );
-                });
-                ui.checkbox(&mut assists.invincible, "Invincible:");
-                ui.horizontal(|ui| {
-                    ui.label("Dash Mode:");
-                    ComboBox::new("Dash Mode", "")
-                        .selected_text(assists.dash_mode.to_string())
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut assists.dash_mode, DashMode::Normal, "Normal");
-                            ui.selectable_value(&mut assists.dash_mode, DashMode::Two, "Two");
-                            ui.selectable_value(
-                                &mut assists.dash_mode,
-                                DashMode::Infinite,
-                                "Infinite",
-                            );
-                        });
-                });
+        let assist_editing_enabled = save.assist_mode | save.variant_mode | self.safety_off;
 
-                ui.checkbox(&mut assists.dash_assist, "Dash Assist");
-                ui.checkbox(&mut assists.infinite_stamina, "Infinite Stamina");
-                ui.checkbox(&mut assists.mirror_mode, "Mirror Mode");
-                ui.checkbox(&mut assists.full_dashing, "360° Dashing");
-                ui.checkbox(&mut assists.invisible_motion, "Invisible Motion");
-                ui.checkbox(&mut assists.no_grabbing, "No Grabbing");
-                ui.checkbox(&mut assists.low_friction, "Low Friction");
-                ui.checkbox(&mut assists.super_dash, "Super Dashing");
-                ui.checkbox(&mut assists.hiccups, "Hiccups");
-                ui.checkbox(&mut assists.badeline, "Play as Badeline");
+        let assists = &mut save.assists;
+        ui.info(
+            "You can only edit assists if you have enabled assist mode, variant mode, or have \
+             disabled the safety checks.",
+        );
+        ui.add_enabled_ui(assist_editing_enabled, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Game Speed:");
+                ui.add(
+                    DragValue::new(&mut assists.game_speed)
+                        .clamp_range(5 ..= 10)
+                        .custom_formatter(|n, _| format!("{}%", (n * 10.0))),
+                );
             });
-        }
+            ui.checkbox(&mut assists.invincible, "Invincible:");
+            ui.horizontal(|ui| {
+                ui.label("Dash Mode:");
+                ComboBox::new("Dash Mode", "")
+                    .selected_text(assists.dash_mode.to_string())
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut assists.dash_mode, DashMode::Normal, "Normal");
+                        ui.selectable_value(&mut assists.dash_mode, DashMode::Two, "Two");
+                        ui.selectable_value(&mut assists.dash_mode, DashMode::Infinite, "Infinite");
+                    });
+            });
 
-        ui.separator();
+            ui.checkbox(&mut assists.dash_assist, "Dash Assist");
+            ui.checkbox(&mut assists.infinite_stamina, "Infinite Stamina");
+            ui.checkbox(&mut assists.mirror_mode, "Mirror Mode");
+            ui.checkbox(&mut assists.full_dashing, "360° Dashing");
+            ui.checkbox(&mut assists.invisible_motion, "Invisible Motion");
+            ui.checkbox(&mut assists.no_grabbing, "No Grabbing");
+            ui.checkbox(&mut assists.low_friction, "Low Friction");
+            ui.checkbox(&mut assists.super_dash, "Super Dashing");
+            ui.checkbox(&mut assists.hiccups, "Hiccups");
+            ui.checkbox(&mut assists.badeline, "Play as Badeline");
+        });
+    }
+
+    pub fn show_stats(&mut self, ui: &mut Ui) {
+        let save = &mut self.save;
 
         ui.horizontal(|ui| {
             ui.label("Total Playtime: ");
@@ -205,7 +220,17 @@ impl EditorScreen {
             ui.add(DragValue::new(&mut save.total_dashes));
         });
 
-        ui.separator();
+
+        ui.horizontal(|ui| {
+            ui.label("Number of unlocked areas:");
+            ui.add(DragValue::new(&mut save.unlocked_areas).clamp_range(1 ..= 10));
+        });
+
+        ui.checkbox(&mut save.revealed_farewell, "Revealed Farewell");
+    }
+
+    pub fn show_flags(&mut self, ui: &mut Ui) {
+        let save = &mut self.save;
 
         let met_theo = save.flags.contains(&VanillaFlags::MetTheo.into());
         let mut met_theo2 = met_theo;
@@ -307,19 +332,10 @@ impl EditorScreen {
         });
 
         // TODO: add summit gems
+    }
 
-        ui.separator();
-
-        ui.horizontal(|ui| {
-            ui.label("Number of unlocked areas:");
-            ui.add(DragValue::new(&mut save.unlocked_areas).clamp_range(1 ..= 10));
-        });
-
-        ui.checkbox(&mut save.revealed_farewell, "Revealed Farewell");
-
-        ui.separator();
-
-        ui.checkbox(&mut save.has_modded_save_data, "Has modded data");
+    pub fn show_level_sets(&mut self, ui: &mut Ui) {
+        let save = &mut self.save;
 
         ui.heading("Level Set Data");
         ui.label(
@@ -338,26 +354,32 @@ impl EditorScreen {
 
         let search_text = self.level_sets_search.to_ascii_lowercase();
 
-        if ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
-            && level_set_widget(ui, self.safety_off, &mut self.vanilla_level_set)
-                .body_returned
-                .unwrap_or_default()
-        {
-            save.areas = self.vanilla_level_set.areas.clone();
-            save.poem = self.vanilla_level_set.poem.clone();
-            save.total_strawberries = self.vanilla_level_set.total_strawberries;
-        }
+        ScrollArea::vertical()
+            .hscroll(false)
+            .max_height(600.0)
+            .auto_shrink(false)
+            .show(ui, |ui| {
+                if ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
+                    && level_set_widget(ui, self.safety_off, &mut self.vanilla_level_set)
+                        .body_returned
+                        .unwrap_or_default()
+                {
+                    save.areas = self.vanilla_level_set.areas.clone();
+                    save.poem = self.vanilla_level_set.poem.clone();
+                    save.total_strawberries = self.vanilla_level_set.total_strawberries;
+                }
 
-        for (level_set, _) in save
-            .all_level_sets_mut()
-            .into_iter()
-            .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
-        {
-            if level_set.name == "Celeste" {
-                continue;
-            }
-            level_set_widget(ui, self.safety_off, level_set);
-        }
+                for (level_set, _) in save
+                    .all_level_sets_mut()
+                    .into_iter()
+                    .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
+                {
+                    if level_set.name == "Celeste" {
+                        continue;
+                    }
+                    level_set_widget(ui, self.safety_off, level_set);
+                }
+            });
     }
 }
 
