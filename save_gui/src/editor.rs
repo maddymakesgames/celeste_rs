@@ -20,8 +20,10 @@ use eframe::{
         Response,
         RichText,
         ScrollArea,
+        TextEdit,
         TextStyle,
         Ui,
+        WidgetText,
     },
     epaint::{vec2, Color32},
 };
@@ -55,16 +57,16 @@ impl EditorScreen {
 
     pub fn display(&mut self, ui: &mut Ui, _rt: &Runtime) {
         ui.vertical(|ui| {
-            ui.info(
-                "Check this to enable editing every field.\nThis is off by default as some values \
-                 should not be independently edited.\nMake sure you know what you're doing when \
-                 you check this.\nYou can hover on a disable item to see why it might be \
-                 unsafe.\n(as of alpha version not all tooltips implemented and not all \
-                 independent editing implemented)",
-            );
             ui.horizontal(|ui| {
-                ui.label("Safety Check:");
+                ui.label("Disable Safety Checks:");
                 ui.checkbox(&mut self.safety_off, "");
+                ui.info_hover(
+                    "Check this to enable editing every field.\nThis is off by default as some \
+                     values should not be independently edited.\nMake sure you know what you're \
+                     doing when you check this.\nYou can hover on a disable item to see why it \
+                     might be unsafe.\n(as of alpha version not all tooltips implemented and not \
+                     all independent editing implemented)",
+                )
             })
         });
 
@@ -89,14 +91,15 @@ impl EditorScreen {
         let save = &mut self.save;
         ui.horizontal(|ui| {
             ui.label("Save Version: ");
-            ui.set_enabled(self.safety_off);
-            ui.text_edit_singleline(&mut save.version);
-        })
-        .response
-        .on_hover_text(
-            "Modifying this could make the save not load if the game version you try to load the \
-             save with doesn't match this.",
-        );
+            ui.add_enabled(self.safety_off, TextEdit::singleline(&mut save.version));
+            ui.info_hover(
+                "Check this to enable editing every field.\nThis is off by default as some values \
+                 should not be independently edited.\nMake sure you know what you're doing when \
+                 you check this.\nYou can hover on a disable item to see why it might be \
+                 unsafe.\n(as of alpha version not all tooltips implemented and not all \
+                 independent editing implemented)",
+            )
+        });
         ui.horizontal(|ui| {
             ui.label("Save Name: ");
             ui.text_edit_singleline(&mut save.name);
@@ -104,14 +107,13 @@ impl EditorScreen {
 
         ui.horizontal(|ui| {
             ui.label("Theo's Sister's Name:");
-            ui.text_edit_singleline(&mut save.theo_sister_name)
-        })
-        .response
-        .on_hover_text(
-            "The name of Theo's sister.\nDefaults to 'Alex,' is changed to 'Maddy' if the \
-             player's name is 'Alex.'\nMight not actually update what's in game as this is stored \
-             in the dialogue files too.",
-        );
+            ui.text_edit_singleline(&mut save.theo_sister_name);
+            ui.info_hover(
+                "The name of Theo's sister.\nDefaults to 'Alex,' is changed to 'Maddy' if the \
+                 player's name is 'Alex.'\nMight not actually update what's in game as this is \
+                 stored in the dialogue files too.",
+            );
+        });
 
         ui.checkbox(&mut save.has_modded_save_data, "Has modded data");
     }
@@ -174,45 +176,46 @@ impl EditorScreen {
 
         ui.horizontal(|ui| {
             ui.label("Total Playtime: ");
-            ui.set_enabled(self.safety_off);
-            file_time_widget(&mut save.time, ui);
-        })
-        .response
-        .on_hover_text(
-            "We update this based on modifications in the playtime of individual \
-             levels.\nModifying this means the total playtime of your levels will not be the same \
-             as the displayed file playtime.",
-        );
+            ui.add_enabled_ui(self.safety_off, |ui| file_time_widget(&mut save.time, ui));
+            ui.info_hover(
+                "We update this based on modifications in the playtime of individual \
+                 levels.\nModifying this means the total playtime of your levels will not be the \
+                 same as the displayed file playtime.",
+            );
+        });
 
         ui.horizontal(|ui| {
             ui.label("Total Deaths:");
-            ui.set_enabled(self.safety_off);
-            ui.add(DragValue::new(&mut save.total_deaths));
-        })
-        .response
-        .on_hover_text(
-            "We update this based on any modifications to the death counts of individual \
-             levels.\nModifying this means the death counts of all your levels won't add up to \
-             the total deaths on the save.",
-        );
+            ui.add_enabled(self.safety_off, DragValue::new(&mut save.total_deaths));
+            ui.info_hover(
+                "We update this based on any modifications to the death counts of individual \
+                 levels.\nModifying this means the death counts of all your levels won't add up \
+                 to the total deaths on the save.",
+            );
+        });
 
         ui.horizontal(|ui| {
             ui.label("Vanilla Strawberries:");
-            ui.set_enabled(self.safety_off);
-            ui.add(DragValue::new(&mut save.total_strawberries));
-        })
-        .response
-        .on_hover_text(
-            "We update the strawberry count based on modifications to the strawberries in vanilla \
-             levels.\nModifying this means the total strawberry count won't equal the number of \
-             vanilla strawberries actually collected.",
-        );
+            ui.add_enabled(
+                self.safety_off,
+                DragValue::new(&mut save.total_strawberries),
+            );
+            ui.info_hover(
+                "We update the strawberry count based on modifications to the strawberries in \
+                 vanilla levels.\nModifying this means the total strawberry count won't equal the \
+                 number of vanilla strawberries actually collected.",
+            );
+        });
 
         // TODO: add tooltip
         ui.horizontal(|ui| {
             ui.label("Total Golden Strawberries:");
-            ui.set_enabled(self.safety_off);
-            ui.add(DragValue::new(&mut save.total_golden_strawberries));
+
+            ui.add_enabled(
+                self.safety_off,
+                DragValue::new(&mut save.total_golden_strawberries),
+            );
+            ui.info_hover("TODO")
         });
 
         ui.horizontal(|ui| {
@@ -462,10 +465,13 @@ fn level_set_widget(
 
                             ui.horizontal(|ui| {
                                 ui.label("Total Strawberries:");
-                                ui.set_enabled(safety_off);
                                 changed |= ui
-                                    .add(DragValue::new(&mut stats.total_strawberries))
-                                    .changed()
+                                    .add_enabled(
+                                        safety_off,
+                                        DragValue::new(&mut stats.total_strawberries),
+                                    )
+                                    .changed();
+                                ui.info_hover("TODO");
                             });
 
 
@@ -497,10 +503,15 @@ fn level_set_widget(
 
 trait CelesteEditorUiExt {
     fn info(&mut self, text: impl Into<String>) -> Response;
+    fn info_hover(&mut self, text: impl Into<WidgetText>) -> Response;
 }
 
 impl CelesteEditorUiExt for Ui {
     fn info(&mut self, text: impl Into<String>) -> Response {
         self.label(RichText::new(text).text_style(TextStyle::Name("info".into())))
+    }
+
+    fn info_hover(&mut self, text: impl Into<WidgetText>) -> Response {
+        self.small("ℹ").on_hover_text(text)
     }
 }
