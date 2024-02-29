@@ -68,11 +68,21 @@ impl EditorScreen {
             })
         });
 
-        ui.collapsing("Save Metadata", |ui| self.show_metadata(ui));
-        ui.collapsing("Flags", |ui| self.show_flags(ui));
-        ui.collapsing("Assists", |ui| self.show_assists(ui));
-        ui.collapsing("Stats", |ui| self.show_stats(ui));
-        ui.collapsing("Level Sets", |ui| self.show_level_sets(ui));
+        CollapsingHeader::new(RichText::new("Save Metadata").heading())
+            .default_open(true)
+            .show_unindented(ui, |ui| self.show_metadata(ui));
+        CollapsingHeader::new(RichText::new("Flags").heading())
+            .default_open(false)
+            .show_unindented(ui, |ui| self.show_flags(ui));
+        CollapsingHeader::new(RichText::new("Assists").heading())
+            .default_open(false)
+            .show_unindented(ui, |ui| self.show_assists(ui));
+        CollapsingHeader::new(RichText::new("Stats").heading())
+            .default_open(true)
+            .show_unindented(ui, |ui: &mut Ui| self.show_stats(ui));
+        CollapsingHeader::new(RichText::new("Level Sets").heading())
+            .default_open(true)
+            .show_unindented(ui, |ui| self.show_level_sets(ui));
     }
 
     pub fn show_metadata(&mut self, ui: &mut Ui) {
