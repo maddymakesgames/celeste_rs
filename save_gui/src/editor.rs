@@ -65,7 +65,7 @@ impl EditorScreen {
                      values should not be independently edited.\nMake sure you know what you're \
                      doing when you check this.\nYou can hover on a disable item to see why it \
                      might be unsafe.\n(as of alpha version not all tooltips implemented and not \
-                     all independent editing implemented)",
+                     all auto-editing implemented)",
                 )
             })
         });
