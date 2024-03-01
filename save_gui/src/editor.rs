@@ -10,6 +10,7 @@ use celeste_rs::saves::{
 };
 use eframe::{
     egui::{
+        CentralPanel,
         CollapsingHeader,
         CollapsingResponse,
         ComboBox,
@@ -20,10 +21,11 @@ use eframe::{
         Response,
         RichText,
         ScrollArea,
+        SidePanel,
         TextEdit,
         TextStyle,
+        TopBottomPanel,
         Ui,
-        Vec2b,
         WidgetText,
     },
     epaint::{vec2, Color32},
@@ -57,35 +59,43 @@ impl EditorScreen {
     }
 
     pub fn display(&mut self, ui: &mut Ui, _rt: &Runtime) {
-        ui.vertical(|ui| {
-            ui.horizontal(|ui| {
-                ui.label("Disable Safety Checks:");
-                ui.checkbox(&mut self.safety_off, "");
-                ui.info_hover(
-                    "Check this to enable editing every field.\nThis is off by default as some \
-                     values should not be independently edited.\nMake sure you know what you're \
-                     doing when you check this.\nYou can hover on a disable item to see why it \
-                     might be unsafe.\n(as of alpha version not all tooltips implemented and not \
-                     all auto-editing implemented)",
-                )
-            })
+        TopBottomPanel::top("operations_panel").show_inside(ui, |ui| {
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Disable Safety Checks:");
+                    ui.checkbox(&mut self.safety_off, "");
+                    ui.info_hover(
+                        "Check this to enable editing every field.\nThis is off by default as \
+                         some values should not be independently edited.\nMake sure you know what \
+                         you're doing when you check this.\nYou can hover on a disable item to \
+                         see why it might be unsafe.\n(as of alpha version not all tooltips \
+                         implemented and not all auto-editing implemented)",
+                    )
+                })
+            });
         });
 
-        CollapsingHeader::new(RichText::new("Save Metadata").heading2())
-            .default_open(true)
-            .show(ui, |ui| self.show_metadata(ui));
-        CollapsingHeader::new(RichText::new("Flags").heading2())
-            .default_open(false)
-            .show(ui, |ui| self.show_flags(ui));
-        CollapsingHeader::new(RichText::new("Assists").heading2())
-            .default_open(false)
-            .show(ui, |ui| self.show_assists(ui));
-        CollapsingHeader::new(RichText::new("Stats").heading2())
-            .default_open(true)
-            .show(ui, |ui: &mut Ui| self.show_stats(ui));
-        CollapsingHeader::new(RichText::new("Level Sets").heading2())
-            .default_open(true)
-            .show(ui, |ui| self.show_level_sets(ui));
+        SidePanel::left("stats_panel").show_inside(ui, |ui| {
+            ScrollArea::both()
+                .auto_shrink([true, false])
+                .show(ui, |ui| {
+                    CollapsingHeader::new(RichText::new("Save Metadata").heading2())
+                        .default_open(true)
+                        .show(ui, |ui| self.show_metadata(ui));
+                    CollapsingHeader::new(RichText::new("Flags").heading2())
+                        .default_open(false)
+                        .show(ui, |ui| self.show_flags(ui));
+                    CollapsingHeader::new(RichText::new("Assists").heading2())
+                        .default_open(false)
+                        .show(ui, |ui| self.show_assists(ui));
+                    CollapsingHeader::new(RichText::new("Stats").heading2())
+                        .default_open(true)
+                        .show(ui, |ui: &mut Ui| self.show_stats(ui));
+                });
+        });
+        CentralPanel::default().show_inside(ui, |ui| {
+            ScrollArea::horizontal().show(ui, |ui| self.show_level_sets(ui));
+        });
     }
 
     pub fn show_metadata(&mut self, ui: &mut Ui) {
@@ -361,7 +371,8 @@ impl EditorScreen {
     pub fn show_level_sets(&mut self, ui: &mut Ui) {
         let save = &mut self.save;
 
-        ui.heading("Level Set Data");
+        ui.heading2("Level Sets");
+        ui.separator();
         ui.label(
             RichText::new(
                 "Each level in a level set has an a, b, and c-side in the save file.\nThis does \
@@ -378,31 +389,28 @@ impl EditorScreen {
 
         let search_text = self.level_sets_search.to_ascii_lowercase();
 
-        ScrollArea::vertical()
-            .max_height(600.0)
-            .auto_shrink(Vec2b::new(true, false))
-            .show(ui, |ui| {
-                if ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
-                    && level_set_widget(ui, self.safety_off, &mut self.vanilla_level_set)
-                        .body_returned
-                        .unwrap_or_default()
-                {
-                    save.areas = self.vanilla_level_set.areas.clone();
-                    save.poem = self.vanilla_level_set.poem.clone();
-                    save.total_strawberries = self.vanilla_level_set.total_strawberries;
-                }
+        ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
+            if ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
+                && level_set_widget(ui, self.safety_off, &mut self.vanilla_level_set)
+                    .body_returned
+                    .unwrap_or_default()
+            {
+                save.areas = self.vanilla_level_set.areas.clone();
+                save.poem = self.vanilla_level_set.poem.clone();
+                save.total_strawberries = self.vanilla_level_set.total_strawberries;
+            }
 
-                for (level_set, _) in save
-                    .all_level_sets_mut()
-                    .into_iter()
-                    .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
-                {
-                    if level_set.name == "Celeste" {
-                        continue;
-                    }
-                    level_set_widget(ui, self.safety_off, level_set);
+            for (level_set, _) in save
+                .all_level_sets_mut()
+                .into_iter()
+                .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
+            {
+                if level_set.name == "Celeste" {
+                    continue;
                 }
-            });
+                level_set_widget(ui, self.safety_off, level_set);
+            }
+        });
     }
 }
 
@@ -528,7 +536,7 @@ impl CelesteEditorRichTextExt for RichText {
 trait CelesteEditorUiExt {
     fn info(&mut self, text: impl Into<String>) -> Response;
     fn info_hover(&mut self, text: impl Into<WidgetText>) -> Response;
-    fn header2(&mut self, text: impl Into<String>) -> Response;
+    fn heading2(&mut self, text: impl Into<String>) -> Response;
 }
 
 impl CelesteEditorUiExt for Ui {
@@ -540,7 +548,7 @@ impl CelesteEditorUiExt for Ui {
         self.small("ℹ").on_hover_text(text)
     }
 
-    fn header2(&mut self, text: impl Into<String>) -> Response {
+    fn heading2(&mut self, text: impl Into<String>) -> Response {
         self.label(RichText::new(text).text_style(TextStyle::Name("header2".into())))
     }
 }
