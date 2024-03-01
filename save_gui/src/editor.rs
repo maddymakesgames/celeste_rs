@@ -71,100 +71,9 @@ impl EditorScreen {
     }
 
     pub fn display(&mut self, ui: &mut Ui, rt: &Runtime) {
-        if let Some(recv) = &mut self.merge_file_listener {
-            match recv.try_recv() {
-                Ok(contents) => {
-                    if let Some(contents) = contents {
-                        println!("Meriging in file!!!");
-                        let save = SaveData::from_reader(contents.as_slice())
-                            .expect("Invalid file provided to merge operation");
-                        self.save.merge_data(&save);
+        self.update_listeners();
 
-                        self.vanilla_level_set = LevelSetStats {
-                            name: "Celeste".to_owned(),
-                            areas: self.save.areas.clone(),
-                            poem: self.save.poem.clone(),
-                            unlocked_areas: self.save.unlocked_areas,
-                            total_strawberries: self.save.total_strawberries,
-                        };
-                    }
-                    self.merge_file_listener = None;
-                }
-                Err(TryRecvError::Closed) => {
-                    eprintln!("Sender closed before we got merge contents");
-                    self.merge_file_listener = None;
-                }
-                Err(TryRecvError::Empty) => {}
-            }
-        }
-
-        TopBottomPanel::top("operations_panel").show_inside(ui, |ui| {
-            ui.vertical(|ui| {
-                // TODO: remove most expects from this impl
-                ui.horizontal(|ui| {
-                    if ui.button(RichText::new("Save File").heading2()).clicked() {
-                        let file_dialogue =
-                            rfd::AsyncFileDialog::new().set_file_name(&self.file_name);
-                        let serialized = self.save.to_string().expect("Error serializing file");
-
-                        spawn(rt, async move {
-                            if let Some(file) = file_dialogue.save_file().await {
-                                #[cfg(not(target_family = "wasm"))]
-                                {
-                                    let mut file = OpenOptions::new()
-                                        .create(true)
-                                        .write(true)
-                                        .open(file.path())
-                                        .expect("Error opening file");
-
-                                    file.write_all(serialized.as_bytes())
-                                        .expect("Error writing to file");
-                                }
-                                #[cfg(target_family = "wasm")]
-                                {
-                                    file.write(serialized.as_bytes())
-                                        .await
-                                        .expect("Error writing to file");
-                                }
-                            }
-                        });
-                    }
-
-                    if ui
-                        .button(RichText::new("Merge in file").heading2())
-                        .clicked()
-                    {
-                        let file_dialogue = rfd::AsyncFileDialog::new()
-                            .add_filter("Celeste Save File", &["celeste"])
-                            .set_directory(celeste_save_dir().unwrap_or_default());
-
-                        let (send, recv) = tokio::sync::oneshot::channel();
-                        self.merge_file_listener = Some(recv);
-                        spawn(rt, async move {
-                            if let Some(file) = file_dialogue.pick_file().await {
-                                let contents = file.read().await;
-                                send.send(Some(contents))
-                                    .expect("Error sending to reciever");
-                            } else {
-                                send.send(None).expect("Error sending to reciever");
-                            }
-                        })
-                    }
-                });
-
-                ui.horizontal(|ui| {
-                    ui.label("Disable Safety Checks:");
-                    ui.checkbox(&mut self.safety_off, "");
-                    ui.info_hover(
-                        "Check this to enable editing every field.\nThis is off by default as \
-                         some values should not be independently edited.\nMake sure you know what \
-                         you're doing when you check this.\nYou can hover on a disable item to \
-                         see why it might be unsafe.\n(as of alpha version not all tooltips \
-                         implemented and not all auto-editing implemented)",
-                    )
-                });
-            });
-        });
+        TopBottomPanel::top("operations_panel").show_inside(ui, |ui| self.show_operations(ui, rt));
 
         SidePanel::left("stats_panel").show_inside(ui, |ui| {
             ScrollArea::both()
@@ -186,6 +95,36 @@ impl EditorScreen {
         });
         CentralPanel::default().show_inside(ui, |ui| {
             ScrollArea::horizontal().show(ui, |ui| self.show_level_sets(ui));
+        });
+    }
+
+    fn show_operations(&mut self, ui: &mut Ui, rt: &Runtime) {
+        ui.vertical(|ui| {
+            // TODO: remove most expects from this impl
+            ui.horizontal(|ui| {
+                if ui.button(RichText::new("Save File").heading2()).clicked() {
+                    self.save_file(rt);
+                }
+
+                if ui
+                    .button(RichText::new("Merge in file").heading2())
+                    .clicked()
+                {
+                    self.merge_file(rt);
+                }
+            });
+
+            ui.horizontal(|ui| {
+                ui.label("Disable Safety Checks:");
+                ui.checkbox(&mut self.safety_off, "");
+                ui.info_hover(
+                    "Check this to enable editing every field.\nThis is off by default as some \
+                     values should not be independently edited.\nMake sure you know what you're \
+                     doing when you check this.\nYou can hover on a disable item to see why it \
+                     might be unsafe.\n(as of alpha version not all tooltips implemented and not \
+                     all auto-editing implemented)",
+                )
+            });
         });
     }
 
@@ -499,6 +438,79 @@ impl EditorScreen {
                 level_set_widget(ui, self.safety_off, level_set);
             }
         });
+    }
+
+    fn save_file(&self, rt: &Runtime) {
+        let file_dialogue = rfd::AsyncFileDialog::new().set_file_name(&self.file_name);
+        let serialized = self.save.to_string().expect("Error serializing file");
+
+        spawn(rt, async move {
+            if let Some(file) = file_dialogue.save_file().await {
+                #[cfg(not(target_family = "wasm"))]
+                {
+                    let mut file = OpenOptions::new()
+                        .create(true)
+                        .write(true)
+                        .open(file.path())
+                        .expect("Error opening file");
+
+                    file.write_all(serialized.as_bytes())
+                        .expect("Error writing to file");
+                }
+                #[cfg(target_family = "wasm")]
+                {
+                    file.write(serialized.as_bytes())
+                        .await
+                        .expect("Error writing to file");
+                }
+            }
+        });
+    }
+
+    fn merge_file(&mut self, rt: &Runtime) {
+        let file_dialogue = rfd::AsyncFileDialog::new()
+            .add_filter("Celeste Save File", &["celeste"])
+            .set_directory(celeste_save_dir().unwrap_or_default());
+
+        let (send, recv) = tokio::sync::oneshot::channel();
+        self.merge_file_listener = Some(recv);
+        spawn(rt, async move {
+            if let Some(file) = file_dialogue.pick_file().await {
+                let contents = file.read().await;
+                send.send(Some(contents))
+                    .expect("Error sending to reciever");
+            } else {
+                send.send(None).expect("Error sending to reciever");
+            }
+        });
+    }
+
+    fn update_listeners(&mut self) {
+        if let Some(recv) = &mut self.merge_file_listener {
+            match recv.try_recv() {
+                Ok(contents) => {
+                    if let Some(contents) = contents {
+                        let save = SaveData::from_reader(contents.as_slice())
+                            .expect("Invalid file provided to merge operation");
+                        self.save.merge_data(&save);
+
+                        self.vanilla_level_set = LevelSetStats {
+                            name: "Celeste".to_owned(),
+                            areas: self.save.areas.clone(),
+                            poem: self.save.poem.clone(),
+                            unlocked_areas: self.save.unlocked_areas,
+                            total_strawberries: self.save.total_strawberries,
+                        };
+                    }
+                    self.merge_file_listener = None;
+                }
+                Err(TryRecvError::Closed) => {
+                    eprintln!("Sender closed before we got merge contents");
+                    self.merge_file_listener = None;
+                }
+                Err(TryRecvError::Empty) => {}
+            }
+        }
     }
 }
 
