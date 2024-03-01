@@ -2595,6 +2595,7 @@ dependencies = [
  "tokio",
  "tracing-subscriber",
  "tracing-wasm",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]

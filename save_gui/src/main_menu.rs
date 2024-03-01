@@ -2,12 +2,12 @@ use eframe::egui::Ui;
 use rfd::{AsyncFileDialog, FileHandle};
 use tokio::{
     runtime::Runtime,
-    sync::mpsc::{error::TryRecvError, UnboundedReceiver},
+    sync::oneshot::{error::TryRecvError, Receiver, Sender},
 };
 
 #[derive(Default)]
 pub struct MainMenu {
-    file_listener: Option<UnboundedReceiver<Option<FileHandle>>>,
+    file_listener: Option<Receiver<Option<(String, Vec<u8>)>>>,
 }
 
 impl MainMenu {
@@ -15,9 +15,9 @@ impl MainMenu {
         if let Some(recv) = &mut self.file_listener {
             match recv.try_recv() {
                 Ok(file) => {
-                    if let Some(file) = file {
-                        println!("{}", file.file_name());
-                        return Some(rt.block_on(async { file.read().await }));
+                    if let Some((file_name, contents)) = file {
+                        println!("{}", file_name);
+                        return Some(contents);
                     } else {
                         println!("File picker closed :(");
                     }
@@ -25,7 +25,7 @@ impl MainMenu {
                     self.file_listener = None;
                 }
                 Err(TryRecvError::Empty) => {}
-                Err(TryRecvError::Disconnected) => {
+                Err(TryRecvError::Closed) => {
                     self.file_listener = None;
                     panic!("FileHandle sender dropped before it sent any signals!")
                 }
@@ -34,21 +34,37 @@ impl MainMenu {
 
         ui.set_enabled(self.file_listener.is_none());
         if ui.button("Open File").clicked() {
-            let file_dialogue = AsyncFileDialog::new()
-                .add_filter("Celeste Save File", &["celeste"])
-                .pick_file();
+            let file_dialogue =
+                AsyncFileDialog::new().add_filter("Celeste Save File", &["celeste"]);
 
-            let (send, recv) = tokio::sync::mpsc::unbounded_channel();
+            let (send, recv) = tokio::sync::oneshot::channel();
 
-            rt.spawn(async move {
-                let file = file_dialogue.await;
-                send.send(file)
-                    .expect("Error sending file handle back to ui task");
-            });
+            #[cfg(not(target_family = "wasm"))]
+            rt.spawn(handle_file_picker(file_dialogue, send));
+            #[cfg(target_family = "wasm")]
+            wasm_bindgen_futures::spawn_local(handle_file_picker(file_dialogue, send));
 
             self.file_listener = Some(recv);
         }
 
         None
+    }
+}
+
+async fn handle_file_picker(
+    file_dialogue: AsyncFileDialog,
+    send: Sender<Option<(String, Vec<u8>)>>,
+) {
+    let file = file_dialogue.pick_file().await;
+    if let Some(file) = file {
+        let name = file.file_name();
+        let contents = file.read().await;
+        drop(file);
+
+        send.send(Some((name, contents)))
+            .expect("Error sending file handle back to ui task");
+    } else {
+        send.send(None)
+            .expect("Error sending file handle back to ui task");
     }
 }

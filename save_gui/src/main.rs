@@ -37,12 +37,16 @@ fn main() {
     // Redirect tracing to console.log and friends:
     tracing_wasm::set_as_global_default();
 
-    eframe::run_web(
-        "main_canvas",
-        WebOptions::default(),
-        Box::new(|_cc| Box::new(SaveEditor {})),
-    )
-    .unwrap()
+    wasm_bindgen_futures::spawn_local(async {
+        eframe::WebRunner::new()
+            .start(
+                "the_canvas_id",
+                eframe::WebOptions::default(),
+                Box::new(|cc| Box::new(SaveEditor::new(cc))),
+            )
+            .await
+            .expect("Error starting eframe app")
+    });
 }
 
 // Global state struct for the editor
@@ -90,12 +94,6 @@ impl App for SaveEditor {
             ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| self.screen.update(ui, &self.runtime));
-        });
-
-        #[cfg(target_family = "wasm")]
-        self.runtime.block_on(async {
-            tokio::task::yield_now().await;
-            ctx.request_repaint();
         });
     }
 }
