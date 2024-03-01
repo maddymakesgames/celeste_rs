@@ -102,14 +102,11 @@ impl EditorScreen {
         ui.vertical(|ui| {
             // TODO: remove most expects from this impl
             ui.horizontal(|ui| {
-                if ui.button(RichText::new("Save File").heading2()).clicked() {
+                if ui.button(RichText::new("Save File").info()).clicked() {
                     self.save_file(rt);
                 }
 
-                if ui
-                    .button(RichText::new("Merge in file").heading2())
-                    .clicked()
-                {
+                if ui.button(RichText::new("Merge in file").info()).clicked() {
                     self.merge_file(rt);
                 }
 
