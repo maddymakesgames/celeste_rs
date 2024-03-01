@@ -71,6 +71,7 @@ impl SaveEditor {
 
         style.text_styles = [
             (Heading, FontId::new(32.0, Proportional)),
+            (Name("header2".into()), FontId::new(26.0, Proportional)),
             (Body, FontId::new(18.0, Proportional)),
             (Name("info".into()), FontId::new(16.0, Proportional)),
             (Monospace, FontId::new(18.0, FontFamily::Monospace)),

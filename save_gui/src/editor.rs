@@ -23,6 +23,7 @@ use eframe::{
         TextEdit,
         TextStyle,
         Ui,
+        Vec2b,
         WidgetText,
     },
     epaint::{vec2, Color32},
@@ -70,21 +71,21 @@ impl EditorScreen {
             })
         });
 
-        CollapsingHeader::new(RichText::new("Save Metadata").heading())
+        CollapsingHeader::new(RichText::new("Save Metadata").heading2())
             .default_open(true)
-            .show_unindented(ui, |ui| self.show_metadata(ui));
-        CollapsingHeader::new(RichText::new("Flags").heading())
+            .show(ui, |ui| self.show_metadata(ui));
+        CollapsingHeader::new(RichText::new("Flags").heading2())
             .default_open(false)
-            .show_unindented(ui, |ui| self.show_flags(ui));
-        CollapsingHeader::new(RichText::new("Assists").heading())
+            .show(ui, |ui| self.show_flags(ui));
+        CollapsingHeader::new(RichText::new("Assists").heading2())
             .default_open(false)
-            .show_unindented(ui, |ui| self.show_assists(ui));
-        CollapsingHeader::new(RichText::new("Stats").heading())
+            .show(ui, |ui| self.show_assists(ui));
+        CollapsingHeader::new(RichText::new("Stats").heading2())
             .default_open(true)
-            .show_unindented(ui, |ui: &mut Ui| self.show_stats(ui));
-        CollapsingHeader::new(RichText::new("Level Sets").heading())
+            .show(ui, |ui: &mut Ui| self.show_stats(ui));
+        CollapsingHeader::new(RichText::new("Level Sets").heading2())
             .default_open(true)
-            .show_unindented(ui, |ui| self.show_level_sets(ui));
+            .show(ui, |ui| self.show_level_sets(ui));
     }
 
     pub fn show_metadata(&mut self, ui: &mut Ui) {
@@ -176,68 +177,78 @@ impl EditorScreen {
 
         ui.horizontal(|ui| {
             ui.label("Total Playtime: ");
-            ui.add_enabled_ui(self.safety_off, |ui| file_time_widget(&mut save.time, ui));
-            ui.info_hover(
-                "We update this based on modifications in the playtime of individual \
-                 levels.\nModifying this means the total playtime of your levels will not be the \
-                 same as the displayed file playtime.",
-            );
+            ui.horizontal(|ui| {
+                ui.add_enabled_ui(self.safety_off, |ui| file_time_widget(&mut save.time, ui));
+                ui.info_hover(
+                    "We update this based on modifications in the playtime of individual \
+                     levels.\nModifying this means the total playtime of your levels will not be \
+                     the same as the displayed file playtime.",
+                );
+            });
         });
 
+        // If we have 2 verticals wrapped in a horizontal
+        // we can have all the DragValues be aligned
         ui.horizontal(|ui| {
-            ui.label("Total Deaths:");
-            ui.add_enabled(self.safety_off, DragValue::new(&mut save.total_deaths));
-            ui.info_hover(
-                "We update this based on any modifications to the death counts of individual \
-                 levels.\nModifying this means the death counts of all your levels won't add up \
-                 to the total deaths on the save.",
-            );
+            ui.vertical(|ui| {
+                ui.label("Total Deaths:");
+                ui.label("Vanilla Strawberries:");
+                ui.label("Total Golden Strawberries:");
+                ui.label("Jump Count:");
+                ui.label("Wall Jump Count:");
+                ui.label("Dash Count:");
+            });
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.add_enabled(self.safety_off, DragValue::new(&mut save.total_deaths));
+                    ui.info_hover(
+                        "We update this based on any modifications to the death counts of \
+                         individual levels.\nModifying this means the death counts of all your \
+                         levels won't add up to the total deaths on the save.",
+                    );
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add_enabled(
+                        self.safety_off,
+                        DragValue::new(&mut save.total_strawberries),
+                    );
+                    ui.info_hover(
+                        "We update the strawberry count based on modifications to the \
+                         strawberries in vanilla levels.\nModifying this means the total \
+                         strawberry count won't equal the number of vanilla strawberries actually \
+                         collected.",
+                    );
+                });
+
+                // TODO: add tooltip
+                ui.horizontal(|ui| {
+                    ui.add_enabled(
+                        self.safety_off,
+                        DragValue::new(&mut save.total_golden_strawberries),
+                    );
+                    ui.info_hover("TODO")
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut save.total_jumps));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut save.total_wall_jumps));
+                });
+
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut save.total_dashes));
+                });
+
+
+                ui.horizontal(|ui| {
+                    ui.add(DragValue::new(&mut save.unlocked_areas).clamp_range(1 ..= 10));
+                });
+            });
         });
 
-        ui.horizontal(|ui| {
-            ui.label("Vanilla Strawberries:");
-            ui.add_enabled(
-                self.safety_off,
-                DragValue::new(&mut save.total_strawberries),
-            );
-            ui.info_hover(
-                "We update the strawberry count based on modifications to the strawberries in \
-                 vanilla levels.\nModifying this means the total strawberry count won't equal the \
-                 number of vanilla strawberries actually collected.",
-            );
-        });
-
-        // TODO: add tooltip
-        ui.horizontal(|ui| {
-            ui.label("Total Golden Strawberries:");
-
-            ui.add_enabled(
-                self.safety_off,
-                DragValue::new(&mut save.total_golden_strawberries),
-            );
-            ui.info_hover("TODO")
-        });
-
-        ui.horizontal(|ui| {
-            ui.label("Jump Count:");
-            ui.add(DragValue::new(&mut save.total_jumps));
-        });
-
-        ui.horizontal(|ui| {
-            ui.label("Wall Jump Count:");
-            ui.add(DragValue::new(&mut save.total_wall_jumps));
-        });
-
-        ui.horizontal(|ui| {
-            ui.label("Dash Count:");
-            ui.add(DragValue::new(&mut save.total_dashes));
-        });
-
-
-        ui.horizontal(|ui| {
-            ui.label("Number of unlocked areas:");
-            ui.add(DragValue::new(&mut save.unlocked_areas).clamp_range(1 ..= 10));
-        });
 
         ui.checkbox(&mut save.revealed_farewell, "Revealed Farewell");
     }
@@ -368,9 +379,8 @@ impl EditorScreen {
         let search_text = self.level_sets_search.to_ascii_lowercase();
 
         ScrollArea::vertical()
-            .hscroll(false)
             .max_height(600.0)
-            .auto_shrink(false)
+            .auto_shrink(Vec2b::new(true, false))
             .show(ui, |ui| {
                 if ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
                     && level_set_widget(ui, self.safety_off, &mut self.vanilla_level_set)
@@ -500,10 +510,25 @@ fn level_set_widget(
     })
 }
 
+trait CelesteEditorRichTextExt {
+    fn info(self) -> RichText;
+    fn heading2(self) -> RichText;
+}
+
+impl CelesteEditorRichTextExt for RichText {
+    fn info(self) -> RichText {
+        self.text_style(TextStyle::Name("info".into()))
+    }
+
+    fn heading2(self) -> RichText {
+        self.text_style(TextStyle::Name("header2".into()))
+    }
+}
 
 trait CelesteEditorUiExt {
     fn info(&mut self, text: impl Into<String>) -> Response;
     fn info_hover(&mut self, text: impl Into<WidgetText>) -> Response;
+    fn header2(&mut self, text: impl Into<String>) -> Response;
 }
 
 impl CelesteEditorUiExt for Ui {
@@ -513,5 +538,9 @@ impl CelesteEditorUiExt for Ui {
 
     fn info_hover(&mut self, text: impl Into<WidgetText>) -> Response {
         self.small("ℹ").on_hover_text(text)
+    }
+
+    fn header2(&mut self, text: impl Into<String>) -> Response {
+        self.label(RichText::new(text).text_style(TextStyle::Name("header2".into())))
     }
 }
