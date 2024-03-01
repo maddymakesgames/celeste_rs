@@ -9,6 +9,7 @@ use crate::{celeste_save_dir, spawn};
 
 #[derive(Default)]
 pub struct MainMenu {
+    #[allow(clippy::type_complexity)]
     file_listener: Option<Receiver<Option<(String, Vec<u8>)>>>,
 }
 
