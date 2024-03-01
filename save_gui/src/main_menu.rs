@@ -1,5 +1,7 @@
+use std::path::PathBuf;
+
 use eframe::egui::Ui;
-use rfd::{AsyncFileDialog, FileHandle};
+use rfd::AsyncFileDialog;
 use tokio::{
     runtime::Runtime,
     sync::oneshot::{error::TryRecvError, Receiver, Sender},
@@ -34,8 +36,10 @@ impl MainMenu {
 
         ui.set_enabled(self.file_listener.is_none());
         if ui.button("Open File").clicked() {
-            let file_dialogue =
-                AsyncFileDialog::new().add_filter("Celeste Save File", &["celeste"]);
+            println!("{:?}", celeste_save_dir());
+            let file_dialogue = AsyncFileDialog::new()
+                .add_filter("Celeste Save File", &["celeste"])
+                .set_directory(celeste_save_dir().unwrap_or_default());
 
             let (send, recv) = tokio::sync::oneshot::channel();
 
@@ -47,6 +51,17 @@ impl MainMenu {
             self.file_listener = Some(recv);
         }
 
+        None
+    }
+}
+
+fn celeste_save_dir() -> Option<PathBuf> {
+    // Celeste puts its save data in the 'local' folder for the os
+    if cfg!(target_family = "unix") {
+        Some(PathBuf::from(std::env::var("HOME").ok()?).join(".local/share/Celeste/Saves"))
+    } else if cfg!(target_family = "windows") {
+        Some(PathBuf::from(std::env::var("LOCALAPPDATA").ok()?).join("Celeste/Saves"))
+    } else {
         None
     }
 }
