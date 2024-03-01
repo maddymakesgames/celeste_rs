@@ -112,6 +112,13 @@ impl EditorScreen {
                 {
                     self.merge_file(rt);
                 }
+
+                ui.info_hover(
+                    "Merges in any applicable data from a different save file into this \
+                     one.\nThis might not merge all the data you would want it to and there may \
+                     still be bugs, so it is highly recommended you keep backups of your saves \
+                     before using this.",
+                )
             });
 
             ui.horizontal(|ui| {
