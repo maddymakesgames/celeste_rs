@@ -2,6 +2,8 @@
 
 mod editor;
 mod main_menu;
+use std::{future::Future, path::PathBuf};
+
 use editor::EditorScreen;
 use eframe::{
     egui::{CentralPanel, FontFamily, FontId, ScrollArea, Ui},
@@ -111,8 +113,8 @@ impl ScreenState {
         match self {
             ScreenState::Startup => *self = ScreenState::Menu(MainMenu::default()),
             ScreenState::Menu(m) =>
-                if let Some(file) = m.display(ui, rt) {
-                    match EditorScreen::new(file) {
+                if let Some((file_name, contents)) = m.display(ui, rt) {
+                    match EditorScreen::new(file_name, contents) {
                         Ok(e) => *self = ScreenState::Editor(e),
                         Err(e) => eprintln!("{e}"),
                     }
@@ -121,5 +123,33 @@ impl ScreenState {
                 e.display(ui, rt);
             }
         }
+    }
+}
+
+// Provide a function for easily spawning futures on both native and web platforms
+// While the native impl requires Send and wasm doesn't that shouldn't matter
+// Since we develop for native first and that is the one with the stricter requirements
+// We do need wasm to not require Send because rfd's FileHandle isn't Send on wasm
+#[cfg(not(target_family = "wasm"))]
+pub fn spawn<F>(rt: &Runtime, future: F)
+where F: Future<Output = ()> + Send + 'static {
+    rt.spawn(future);
+}
+
+#[cfg(target_family = "wasm")]
+pub fn spawn<F>(_rt: &Runtime, future: F)
+where F: Future<Output = ()> + 'static {
+    wasm_bindgen_futures::spawn_local(future)
+}
+
+
+fn celeste_save_dir() -> Option<PathBuf> {
+    // Celeste puts its save data in the 'local' folder for the os
+    if cfg!(target_family = "unix") {
+        Some(PathBuf::from(std::env::var("HOME").ok()?).join(".local/share/Celeste/Saves"))
+    } else if cfg!(target_family = "windows") {
+        Some(PathBuf::from(std::env::var("LOCALAPPDATA").ok()?).join("Celeste/Saves"))
+    } else {
+        None
     }
 }
