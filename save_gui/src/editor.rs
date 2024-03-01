@@ -138,11 +138,8 @@ impl EditorScreen {
             ui.label("Save Version: ");
             ui.add_enabled(self.safety_off, TextEdit::singleline(&mut save.version));
             ui.info_hover(
-                "Check this to enable editing every field.\nThis is off by default as some values \
-                 should not be independently edited.\nMake sure you know what you're doing when \
-                 you check this.\nYou can hover on a disable item to see why it might be \
-                 unsafe.\n(as of alpha version not all tooltips implemented and not all \
-                 independent editing implemented)",
+                "Modifying this could make the save not load if the game version you try to load \
+                 the save with doesn't match this.",
             )
         });
         ui.horizontal(|ui| {
