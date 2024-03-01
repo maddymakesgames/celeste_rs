@@ -2,3 +2,4 @@ test_saves
 target
 *.xml
 dist/
+/*.celeste
