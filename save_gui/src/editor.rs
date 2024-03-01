@@ -422,9 +422,15 @@ impl EditorScreen {
 
         ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
             if ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
-                && level_set_widget(ui, self.safety_off, &mut self.vanilla_level_set)
-                    .body_returned
-                    .unwrap_or_default()
+                && level_set_widget(
+                    ui,
+                    self.safety_off,
+                    &mut save.total_deaths,
+                    &mut save.time,
+                    &mut self.vanilla_level_set,
+                )
+                .body_returned
+                .unwrap_or_default()
             {
                 save.areas = self.vanilla_level_set.areas.clone();
                 save.poem = self.vanilla_level_set.poem.clone();
@@ -432,14 +438,22 @@ impl EditorScreen {
             }
 
             for (level_set, _) in save
-                .all_level_sets_mut()
-                .into_iter()
+                .level_sets
+                .iter_mut()
+                .map(|a| (a, false))
+                .chain(save.level_set_recycle_bin.iter_mut().map(|a| (a, true)))
                 .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
             {
                 if level_set.name == "Celeste" {
                     continue;
                 }
-                level_set_widget(ui, self.safety_off, level_set);
+                level_set_widget(
+                    ui,
+                    self.safety_off,
+                    &mut save.total_deaths,
+                    &mut save.time,
+                    level_set,
+                );
             }
         });
     }
@@ -524,11 +538,17 @@ fn file_time_widget(filetime: &mut FileTime, ui: &mut Ui) -> InnerResponse<bool>
         let (mut hours, mut mins, mut secs, mut millis) = filetime.as_parts();
         changed |= ui.add(DragValue::new(&mut hours)).changed();
         ui.label("hours");
-        changed |= ui.add(DragValue::new(&mut mins)).changed();
+        changed |= ui
+            .add(DragValue::new(&mut mins).clamp_range(0 ..= 59))
+            .changed();
         ui.label("minutes");
-        changed |= ui.add(DragValue::new(&mut secs)).changed();
+        changed |= ui
+            .add(DragValue::new(&mut secs).clamp_range(0 ..= 59))
+            .changed();
         ui.label("seconds");
-        changed |= ui.add(DragValue::new(&mut millis)).changed();
+        changed |= ui
+            .add(DragValue::new(&mut millis).clamp_range(0 ..= 999))
+            .changed();
         ui.label("milliseconds");
 
         *filetime = FileTime::from_parts(hours, mins, secs, millis);
@@ -539,6 +559,8 @@ fn file_time_widget(filetime: &mut FileTime, ui: &mut Ui) -> InnerResponse<bool>
 fn level_set_widget(
     ui: &mut Ui,
     safety_off: bool,
+    total_deaths: &mut u64,
+    total_time: &mut FileTime,
     level_set: &mut LevelSetStats,
 ) -> CollapsingResponse<bool> {
     ui.collapsing(&level_set.name, |ui| {
@@ -563,9 +585,17 @@ fn level_set_widget(
                         .show(ui, |ui| {
                             ui.horizontal(|ui| {
                                 ui.label("Play Time:");
+                                let time = stats.time_played;
                                 changed |= file_time_widget(&mut stats.time_played, ui)
                                     .response
-                                    .changed()
+                                    .changed();
+                                if time != stats.time_played {
+                                    if time > stats.time_played {
+                                        total_time.0 -= (time - stats.time_played).0
+                                    } else {
+                                        total_time.0 += (stats.time_played - time).0
+                                    }
+                                }
                             });
 
                             ui.checkbox(&mut stats.completed, "Completed");
@@ -598,7 +628,20 @@ fn level_set_widget(
 
                             ui.horizontal(|ui| {
                                 ui.label("Deaths:");
-                                changed |= ui.add(DragValue::new(&mut stats.deaths)).changed()
+                                let deaths = stats.deaths;
+                                changed |= ui
+                                    .add(
+                                        DragValue::new(&mut stats.deaths)
+                                            .clamp_range(0 ..= i64::MAX),
+                                    )
+                                    .changed();
+                                if deaths != stats.deaths {
+                                    if deaths > stats.deaths {
+                                        *total_deaths -= deaths - stats.deaths
+                                    } else {
+                                        *total_deaths += stats.deaths - deaths
+                                    }
+                                }
                             });
 
                             ui.horizontal(|ui| {
