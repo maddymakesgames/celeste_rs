@@ -258,17 +258,21 @@ impl EditorScreen {
                         "We update the strawberry count based on modifications to the \
                          strawberries in vanilla levels.\nModifying this means the total \
                          strawberry count won't equal the number of vanilla strawberries actually \
-                         collected.",
+                         collected.\n\nThis is the count of all vanilla strawberries collected, \
+                         including goldens.",
                     );
                 });
 
                 // TODO: add tooltip
                 ui.horizontal(|ui| {
-                    ui.add_enabled(
-                        self.safety_off,
-                        DragValue::new(&mut save.total_golden_strawberries),
-                    );
-                    ui.info_hover("TODO")
+                    ui.add(DragValue::new(&mut save.total_golden_strawberries));
+                    ui.info_hover(
+                        "Unlike the total strawberries stat this does take into account modded \
+                         goldens.\nDue to the way strawberries are stored in the save file, we \
+                         cannot know if a strawberry is normal or golden and thus we cannot \
+                         automatically update this value.\nWe assume that all strawberries added \
+                         or removed are red berries.",
+                    )
                 });
 
                 ui.horizontal(|ui| {

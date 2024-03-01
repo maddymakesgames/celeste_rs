@@ -57,14 +57,14 @@ pub struct SaveData {
     /// The total amount of deaths in the save file
     #[serde(rename = "TotalDeaths")]
     pub total_deaths: u64,
-    /// The total amount of strawberries collected
+    /// The total amount of vanilla strawberries collected
     ///
-    /// This does not account for modded or golden strawberries
+    /// This does not account for modded strawberries but does count vanilla golden strawberries.
     #[serde(rename = "TotalStrawberries")]
     pub total_strawberries: u16,
     /// The total amount of golden strawberries collected
     ///
-    /// Unlike [total_strawberries](SaveData::total_strawberries) this DOES include modded golden berries
+    /// Unlike [total_strawberries](SaveData::total_strawberries) this DOES include modded berries
     #[serde(rename = "TotalGoldenStrawberries")]
     pub total_golden_strawberries: u16,
     /// The total amount of jumps on the save file
