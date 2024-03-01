@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::saves::def::{Areas, Poem};
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LevelSetStats {
     #[serde(rename = "@Name")]

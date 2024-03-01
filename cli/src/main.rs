@@ -7,7 +7,6 @@ use std::{
 
 use celeste_rs::saves::def::SaveData;
 
-
 fn main() {
     let mut args = std::env::args().skip(1);
 
@@ -44,7 +43,6 @@ fn main() {
         }
     }
 
-
     match command.as_str() {
         "merge" => merge_saves(arguments, verbose),
         "stats" => print_stats(arguments, verbose),
@@ -54,7 +52,6 @@ fn main() {
         }
     };
 }
-
 
 fn print_help() {
     println!(
@@ -72,7 +69,6 @@ fn merge_saves(args: Vec<String>, verbose: bool) -> Option<()> {
         return None;
     }
 
-
     let mut save_a = load_save(&args[0], verbose)?;
     let save_b = load_save(&args[1], verbose)?;
 
@@ -84,8 +80,9 @@ fn merge_saves(args: Vec<String>, verbose: bool) -> Option<()> {
         Err(ref e) => {
             match e.kind() {
                 io::ErrorKind::NotFound => println!("The path '{out_path}' is not found."),
-                io::ErrorKind::PermissionDenied =>
-                    println!("You do not have permissions to access the path '{out_path}'."),
+                io::ErrorKind::PermissionDenied => {
+                    println!("You do not have permissions to access the path '{out_path}'.")
+                }
                 _ => println!("Error accessing path '{out_path}': {e}"),
             };
             return None;
@@ -206,8 +203,9 @@ fn load_save(path: impl AsRef<Path> + Display, verbose: bool) -> Option<SaveData
         },
         Err(ref e) => match e.kind() {
             io::ErrorKind::NotFound => println!("The path '{path}' is not found."),
-            io::ErrorKind::PermissionDenied =>
-                println!("You do not have permissions to access the path '{path}'."),
+            io::ErrorKind::PermissionDenied => {
+                println!("You do not have permissions to access the path '{path}'.")
+            }
             _ => println!("Error accessing path '{path}': {e}"),
         },
     }

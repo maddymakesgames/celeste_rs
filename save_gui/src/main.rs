@@ -142,7 +142,6 @@ where F: Future<Output = ()> + 'static {
     wasm_bindgen_futures::spawn_local(future)
 }
 
-
 fn celeste_save_dir() -> Option<PathBuf> {
     // Celeste puts its save data in the 'local' folder for the os
     if cfg!(target_family = "unix") {

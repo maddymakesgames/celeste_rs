@@ -107,7 +107,6 @@ impl EditorScreen {
                             rfd::AsyncFileDialog::new().set_file_name(&self.file_name);
                         let serialized = self.save.to_string().expect("Error serializing file");
 
-
                         spawn(rt, async move {
                             if let Some(file) = file_dialogue.save_file().await {
                                 #[cfg(not(target_family = "wasm"))]
@@ -152,7 +151,6 @@ impl EditorScreen {
                         })
                     }
                 });
-
 
                 ui.horizontal(|ui| {
                     ui.label("Disable Safety Checks:");
@@ -345,13 +343,11 @@ impl EditorScreen {
                     ui.add(DragValue::new(&mut save.total_dashes));
                 });
 
-
                 ui.horizontal(|ui| {
                     ui.add(DragValue::new(&mut save.unlocked_areas).clamp_range(1 ..= 10));
                 });
             });
         });
-
 
         ui.checkbox(&mut save.revealed_farewell, "Revealed Farewell");
     }
@@ -363,7 +359,6 @@ impl EditorScreen {
         let mut met_theo2 = met_theo;
         let theo_knows_name = save.flags.contains(&VanillaFlags::TheoKnowsName.into());
         let mut theo_knows_name2 = theo_knows_name;
-
 
         ui.heading("Vanilla Flags");
         ui.checkbox(&mut met_theo2, "Met Theo");
@@ -584,7 +579,6 @@ fn level_set_widget(
                                     .changed();
                                 ui.info_hover("TODO");
                             });
-
 
                             ui.horizontal(|ui| {
                                 ui.label("Deaths:");

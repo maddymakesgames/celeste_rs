@@ -2,7 +2,6 @@ use std::ops::{Deref, DerefMut};
 
 use crate::saves::def::vanilla::*;
 
-
 impl Deref for Areas {
     type Target = Vec<AreaStats>;
 

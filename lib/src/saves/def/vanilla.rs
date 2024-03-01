@@ -26,7 +26,6 @@ pub struct LastAreaRef {
     pub s_id: String,
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AreaStats {
     #[serde(flatten)]
