@@ -27,6 +27,8 @@ impl MainMenu {
                     panic!("FileHandle sender dropped before it sent any signals!")
                 }
             }
+
+            ui.spinner();
         }
 
         ui.set_enabled(self.file_listener.is_none());
