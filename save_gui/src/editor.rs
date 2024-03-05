@@ -13,7 +13,6 @@ use celeste_rs::saves::{
 };
 use eframe::{
     egui::{
-        CentralPanel,
         CollapsingHeader,
         CollapsingResponse,
         ComboBox,
@@ -24,10 +23,8 @@ use eframe::{
         Response,
         RichText,
         ScrollArea,
-        SidePanel,
         TextEdit,
         TextStyle,
-        TopBottomPanel,
         Ui,
         WidgetText,
     },
@@ -38,12 +35,13 @@ use tokio::{
     sync::oneshot::{error::TryRecvError, Receiver},
 };
 
-use crate::{celeste_save_dir, spawn};
+use crate::{celeste_save_dir, spawn, tabbed::TabbedContentWidget};
 
 pub struct EditorScreen {
     file_name: String,
     save: SaveData,
     safety_off: bool,
+    selected_panel: usize,
     level_sets_search: String,
     vanilla_level_set: LevelSetStats,
     merge_file_listener: Option<Receiver<Option<Vec<u8>>>>,
@@ -66,6 +64,7 @@ impl EditorScreen {
             safety_off: false,
             level_sets_search: String::new(),
             vanilla_level_set,
+            selected_panel: 0,
             merge_file_listener: None,
         })
     }
@@ -73,29 +72,23 @@ impl EditorScreen {
     pub fn display(&mut self, ui: &mut Ui, rt: &Runtime) {
         self.update_listeners();
 
-        TopBottomPanel::top("operations_panel").show_inside(ui, |ui| self.show_operations(ui, rt));
-
-        SidePanel::left("stats_panel").show_inside(ui, |ui| {
-            ScrollArea::both()
-                .auto_shrink([true, false])
-                .show(ui, |ui| {
-                    CollapsingHeader::new(RichText::new("Save Metadata").heading2())
-                        .default_open(true)
-                        .show(ui, |ui| self.show_metadata(ui));
-                    CollapsingHeader::new(RichText::new("Flags").heading2())
-                        .default_open(false)
-                        .show(ui, |ui| self.show_flags(ui));
-                    CollapsingHeader::new(RichText::new("Assists").heading2())
-                        .default_open(false)
-                        .show(ui, |ui| self.show_assists(ui));
-                    CollapsingHeader::new(RichText::new("Stats").heading2())
-                        .default_open(true)
-                        .show(ui, |ui: &mut Ui| self.show_stats(ui));
-                });
-        });
-        CentralPanel::default().show_inside(ui, |ui| {
-            ScrollArea::horizontal().show(ui, |ui| self.show_level_sets(ui));
-        });
+        let mut selected_panel = self.selected_panel;
+        TabbedContentWidget::show(
+            ui,
+            &mut selected_panel,
+            ["Metadata", "Stats", "Assists", "Level Sets", "Operations"],
+            |idx, ui| match idx {
+                0 => self.show_metadata(ui),
+                1 => self.show_stats(ui),
+                2 => self.show_assists(ui),
+                3 => self.show_level_sets(ui),
+                4 => self.show_operations(ui, rt),
+                _ => {
+                    ui.label("Trying to show an unknown panel. Whoops!");
+                }
+            },
+        );
+        self.selected_panel = selected_panel;
     }
 
     fn show_operations(&mut self, ui: &mut Ui, rt: &Runtime) {
@@ -158,6 +151,8 @@ impl EditorScreen {
         });
 
         ui.checkbox(&mut save.has_modded_save_data, "Has modded data");
+
+        self.show_flags(ui);
     }
 
     pub fn show_assists(&mut self, ui: &mut Ui) {

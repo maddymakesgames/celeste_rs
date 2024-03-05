@@ -2,6 +2,7 @@
 
 mod editor;
 mod main_menu;
+mod tabbed;
 use std::{future::Future, path::PathBuf};
 
 use editor::EditorScreen;
