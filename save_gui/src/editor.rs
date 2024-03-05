@@ -416,42 +416,66 @@ impl EditorScreen {
 
         let search_text = self.level_sets_search.to_ascii_lowercase();
 
-        ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
-            if ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
-                && level_set_widget(
-                    ui,
-                    self.safety_off,
-                    &mut save.total_deaths,
-                    &mut save.time,
-                    &mut self.vanilla_level_set,
-                )
-                .body_returned
-                .unwrap_or_default()
-            {
-                save.areas = self.vanilla_level_set.areas.clone();
-                save.poem = self.vanilla_level_set.poem.clone();
-                save.total_strawberries = self.vanilla_level_set.total_strawberries;
-            }
-
-            for (level_set, _) in save
-                .level_sets
-                .iter_mut()
-                .map(|a| (a, false))
-                .chain(save.level_set_recycle_bin.iter_mut().map(|a| (a, true)))
-                .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
-            {
-                if level_set.name == "Celeste" {
-                    continue;
+        let row_height = ui.text_style_height(&TextStyle::Body);
+        let row_count = save
+            .all_level_sets()
+            .iter()
+            .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
+            .count();
+        // This isn't necessarily the correct way to implement this *but* its probably good enough to work.
+        ScrollArea::vertical().auto_shrink(false).show_rows(
+            ui,
+            row_height,
+            row_count,
+            |ui, row_range| {
+                let mut range_start = row_range.start;
+                if range_start == 0
+                    && ("celeste".contains(&search_text) || "vanilla".contains(&search_text))
+                {
+                    let widget_return = level_set_widget(
+                        ui,
+                        self.safety_off,
+                        &mut save.total_deaths,
+                        &mut save.time,
+                        &mut self.vanilla_level_set,
+                    )
+                    .body_returned
+                    .unwrap_or_default();
+                    range_start = 1;
+                    if widget_return {
+                        save.areas = self.vanilla_level_set.areas.clone();
+                        save.poem = self.vanilla_level_set.poem.clone();
+                        save.total_strawberries = self.vanilla_level_set.total_strawberries;
+                    }
                 }
-                level_set_widget(
-                    ui,
-                    self.safety_off,
-                    &mut save.total_deaths,
-                    &mut save.time,
-                    level_set,
-                );
-            }
-        });
+
+                for (idx, (level_set, _)) in save
+                    .level_sets
+                    .iter_mut()
+                    .map(|a| (a, false))
+                    .chain(save.level_set_recycle_bin.iter_mut().map(|a| (a, true)))
+                    .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
+                    .skip(range_start)
+                    .enumerate()
+                {
+                    if idx > row_range.end {
+                        break;
+                    }
+
+                    if level_set.name == "Celeste" {
+                        continue;
+                    }
+
+                    level_set_widget(
+                        ui,
+                        self.safety_off,
+                        &mut save.total_deaths,
+                        &mut save.time,
+                        level_set,
+                    );
+                }
+            },
+        );
     }
 
     fn save_file(&self, rt: &Runtime) {
