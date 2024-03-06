@@ -7,7 +7,7 @@ use celeste_rs::saves::{
     everest::LevelSetStats,
     ops::DeError,
     util::FileTime,
-    vanilla::{AreaMode, Modes},
+    vanilla::Modes,
     DashMode,
     SaveData,
     VanillaFlags,
