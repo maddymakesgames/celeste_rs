@@ -3,12 +3,6 @@ use serde::{Deserialize, Serialize};
 use crate::saves::def::{FileTime, Strawberries};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum VanillaFlags {
-    MetTheo,
-    TheoKnowsName,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Areas {
     #[serde(rename = "AreaStats")]
     #[serde(default)]
