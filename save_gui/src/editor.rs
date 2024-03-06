@@ -449,6 +449,15 @@ impl EditorScreen {
                     }
                 }
 
+                // BUG:
+                // Because of how show_rows works this fucks everything up when something is open
+                // Specifically we'll skip an entry if the level set id is scrolled past
+                // when we want more complex logic to skip over it when it's open.
+                // This is too much for me to think about right now and while it's bad
+                // for testing and an initial release its pretty much functional
+                //
+                // The biggest issue is that we do want to keep using show_rows (or show_viewport)
+                // due to how large the level_sets list can get
                 for (idx, (level_set, _)) in save
                     .level_sets
                     .iter_mut()
