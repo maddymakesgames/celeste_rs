@@ -7,6 +7,7 @@ use celeste_rs::saves::{
     everest::LevelSetStats,
     ops::DeError,
     util::FileTime,
+    vanilla::{AreaMode, Modes},
     DashMode,
     SaveData,
     VanillaFlags,
@@ -45,6 +46,7 @@ pub struct EditorScreen {
     level_sets_search: String,
     vanilla_level_set: LevelSetStats,
     merge_file_listener: Option<Receiver<Option<Vec<u8>>>>,
+    selected_session_panel: usize,
 }
 
 impl EditorScreen {
@@ -65,6 +67,7 @@ impl EditorScreen {
             level_sets_search: String::new(),
             vanilla_level_set,
             selected_panel: 0,
+            selected_session_panel: 0,
             merge_file_listener: None,
         })
     }
@@ -76,13 +79,21 @@ impl EditorScreen {
         TabbedContentWidget::show(
             ui,
             &mut selected_panel,
-            ["Metadata", "Stats", "Assists", "Level Sets", "Operations"],
+            [
+                "Metadata",
+                "Stats",
+                "Assists",
+                "Level Sets",
+                "Session",
+                "Operations",
+            ],
             |idx, ui| match idx {
                 0 => self.show_metadata(ui),
                 1 => self.show_stats(ui),
                 2 => self.show_assists(ui),
                 3 => self.show_level_sets(ui),
-                4 => self.show_operations(ui, rt),
+                4 => self.show_session(ui),
+                5 => self.show_operations(ui, rt),
                 _ => {
                     ui.label("Trying to show an unknown panel. Whoops!");
                 }
@@ -487,6 +498,129 @@ impl EditorScreen {
         );
     }
 
+    fn show_session(&mut self, ui: &mut Ui) {
+        #[allow(clippy::overly_complex_bool_expr)]
+        if self.save.current_session_safe.is_some() && false {
+            let mut selected = self.selected_session_panel;
+            TabbedContentWidget::show(
+                ui,
+                &mut selected,
+                ["Vanilla Session", "Modded Session"],
+                |selection, ui| match selection {
+                    0 => {
+                        // TODO: check that this isn't misinformation
+                        ui.info(
+                            "Since you have a modded session this will not load when you are \
+                             running Everest. This wille only be used if you boot into vanilla \
+                             Celeste.",
+                        );
+                        self.show_vanilla_session(ui);
+                    }
+                    1 => self.show_modded_session(ui),
+                    _ => {
+                        ui.info("Invalid session panel selected");
+                    }
+                },
+            );
+            self.selected_session_panel = selected;
+        } else {
+            if self.save.current_session_safe.is_some() {
+                self.show_modded_session(ui);
+            }
+
+            if false {
+                self.show_vanilla_session(ui);
+            }
+        }
+    }
+
+    fn show_vanilla_session(&mut self, _ui: &mut Ui) {
+        // TODO: we currently don't support the CurrentSession tag in the save file
+    }
+
+    fn show_modded_session(&mut self, ui: &mut Ui) {
+        let save = &mut self.save;
+        if let Some(session) = &mut save.current_session_safe {
+            ui.horizontal(|ui| {
+                ui.label("Current area sid: ");
+                ui.add_enabled(
+                    self.safety_off,
+                    TextEdit::singleline(&mut session.area.s_id),
+                );
+                ui.info_hover(
+                    "You probably shouldn't change the map the session is in as the rest of the \
+                     data will likely be invalid.",
+                );
+            });
+
+            ui.label("Respawn point");
+            ui.horizontal(|ui| {
+                ui.label("x");
+                ui.add_enabled(
+                    self.safety_off,
+                    DragValue::new(&mut session.respawn_point.x),
+                );
+                ui.label("y");
+                ui.add_enabled(
+                    self.safety_off,
+                    DragValue::new(&mut session.respawn_point.y),
+                );
+                ui.info_hover(
+                    "Changing the respawn point manually seems like a bad idea! You can open the \
+                     debug map in everest with f6 and then use that to manually set a respawn \
+                     point with at least an idea of where you'll end up.",
+                );
+            });
+
+            ui.heading2("Inventory");
+            ui.horizontal(|ui| {
+                ui.label("Dashes");
+                ui.add(DragValue::new(&mut session.inventory.dashes));
+            });
+
+            ui.checkbox(&mut session.inventory.dream_dash, "Dream dash");
+            ui.checkbox(&mut session.inventory.backpack, "Backpack");
+            ui.checkbox(&mut session.inventory.no_refills, "No refills");
+
+            if !session.counters.is_empty() {
+                ui.heading2("Counters");
+                for counter in session.counters.iter_mut() {
+                    ui.horizontal(|ui| {
+                        ui.label(&counter.key);
+                        ui.add(DragValue::new(&mut counter.value));
+                    });
+                }
+            }
+
+            ui.heading2("Old Stats");
+            ui.info("These are the stats you had before you started the current session.");
+            ui.checkbox(&mut session.old_stats.area.cassette, "Cassette collected");
+
+            area_mode_widget(
+                ui,
+                "",
+                &session.old_stats.area.sid,
+                self.safety_off,
+                &mut save.total_deaths,
+                &mut save.time,
+                &mut session.old_stats.modes,
+            );
+
+            ui.horizontal(|ui| {
+                ui.label("Furthest Seen Level");
+                ui.add_enabled(
+                    self.safety_off,
+                    TextEdit::singleline(&mut session.furthest_seen_level),
+                );
+                ui.info_hover("TODO");
+            });
+
+
+            ui.checkbox(&mut session.beat_best_time, "Beat best time");
+            ui.checkbox(&mut session.restarted_from_golden, "Restarted from golden");
+        }
+    }
+
     fn save_file(&self, rt: &Runtime) {
         let file_dialogue = rfd::AsyncFileDialog::new().set_file_name(&self.file_name);
         let serialized = self.save.to_string().expect("Error serializing file");
@@ -596,99 +730,117 @@ fn level_set_widget(
         let mut changed = false;
         let name = level_set.name.clone();
         for area in level_set.areas.iter_mut() {
-            // *Pretty sure* that there can only ever be a, b, and c sides
-            // But this should work for extensions.
-            // If modes can be of any length we could use .enumerated() and use the index
-            // to get the side name "{(idx + 101) as char}-Side"
-            let sid = area.def.sid.clone();
-            ui.collapsing(&area.def.sid, |ui| {
-                for (mode, side_name) in area
-                    .modes
-                    .iter_mut()
-                    .zip(["A-Side", "B-Side", "C-Side", "D-Side", "E-Side"])
-                {
-                    let stats = &mut mode.stats;
-                    let id_name = format!("{name}/{sid}/{side_name}");
-                    CollapsingHeader::new(RichText::new(side_name))
-                        .id_source(id_name)
-                        .show(ui, |ui| {
-                            ui.horizontal(|ui| {
-                                ui.label("Play Time:");
-                                let time = stats.time_played;
-                                changed |= file_time_widget(&mut stats.time_played, ui)
-                                    .response
-                                    .changed();
-                                if time != stats.time_played {
-                                    if time > stats.time_played {
-                                        total_time.0 -= (time - stats.time_played).0
-                                    } else {
-                                        total_time.0 += (stats.time_played - time).0
-                                    }
-                                }
-                            });
-
-                            ui.checkbox(&mut stats.completed, "Completed");
-                            ui.checkbox(&mut stats.single_run_completed, "Completed in one run");
-                            ui.horizontal(|ui| {
-                                ui.label("Best Time:");
-                                changed |= file_time_widget(&mut stats.best_time, ui)
-                                    .response
-                                    .changed()
-                            });
-
-                            ui.checkbox(&mut stats.full_clear, "Full Cleared");
-                            ui.horizontal(|ui| {
-                                ui.label("Best Full Clear Time:");
-                                changed |= file_time_widget(&mut stats.best_full_clear_time, ui)
-                                    .response
-                                    .changed()
-                            });
-
-                            ui.horizontal(|ui| {
-                                ui.label("Total Strawberries:");
-                                changed |= ui
-                                    .add_enabled(
-                                        safety_off,
-                                        DragValue::new(&mut stats.total_strawberries),
-                                    )
-                                    .changed();
-                                ui.info_hover("TODO");
-                            });
-
-                            ui.horizontal(|ui| {
-                                ui.label("Deaths:");
-                                let deaths = stats.deaths;
-                                changed |= ui
-                                    .add(
-                                        DragValue::new(&mut stats.deaths)
-                                            .clamp_range(0 ..= i64::MAX),
-                                    )
-                                    .changed();
-                                if deaths != stats.deaths {
-                                    if deaths > stats.deaths {
-                                        *total_deaths -= deaths - stats.deaths
-                                    } else {
-                                        *total_deaths += stats.deaths - deaths
-                                    }
-                                }
-                            });
-
-                            ui.horizontal(|ui| {
-                                ui.label("Best Dashes:");
-                                changed |= ui.add(DragValue::new(&mut stats.best_dashes)).changed()
-                            });
-
-                            ui.horizontal(|ui| {
-                                ui.label("Best Deaths:");
-                                changed |= ui.add(DragValue::new(&mut stats.best_deaths)).changed()
-                            });
-
-                            ui.checkbox(&mut stats.heart_gem, "Heart Collected");
-                        });
-                }
-            });
+            changed |= area_mode_widget(
+                ui,
+                &name,
+                &area.def.sid,
+                safety_off,
+                total_deaths,
+                total_time,
+                &mut area.modes,
+            )
+            .body_returned
+            .unwrap_or_default();
         }
 
+        changed
+    })
+}
+
+fn area_mode_widget(
+    ui: &mut Ui,
+    name: &str,
+    sid: &str,
+    safety_off: bool,
+    total_deaths: &mut u64,
+    total_time: &mut FileTime,
+    modes: &mut Modes,
+) -> CollapsingResponse<bool> {
+    let mut changed = false;
+
+    // *Pretty sure* that there can only ever be a, b, and c sides
+    // But this should work for extensions.
+    // If modes can be of any length we could use .enumerated() and use the index
+    // to get the side name "{(idx + 101) as char}-Side"
+
+    ui.collapsing(sid, |ui| {
+        for (mode, side_name) in modes
+            .iter_mut()
+            .zip(["A-Side", "B-Side", "C-Side", "D-Side", "E-Side"])
+        {
+            let stats = &mut mode.stats;
+            let id_name = format!("{name}/{sid}/{side_name}");
+            CollapsingHeader::new(RichText::new(side_name))
+                .id_source(id_name)
+                .show(ui, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.label("Play Time:");
+                        let time = stats.time_played;
+                        changed |= file_time_widget(&mut stats.time_played, ui)
+                            .response
+                            .changed();
+                        if time != stats.time_played {
+                            if time > stats.time_played {
+                                total_time.0 -= (time - stats.time_played).0
+                            } else {
+                                total_time.0 += (stats.time_played - time).0
+                            }
+                        }
+                    });
+
+                    ui.checkbox(&mut stats.completed, "Completed");
+                    ui.checkbox(&mut stats.single_run_completed, "Completed in one run");
+                    ui.horizontal(|ui| {
+                        ui.label("Best Time:");
+                        changed |= file_time_widget(&mut stats.best_time, ui)
+                            .response
+                            .changed()
+                    });
+
+                    ui.checkbox(&mut stats.full_clear, "Full Cleared");
+                    ui.horizontal(|ui| {
+                        ui.label("Best Full Clear Time:");
+                        changed |= file_time_widget(&mut stats.best_full_clear_time, ui)
+                            .response
+                            .changed()
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label("Total Strawberries:");
+                        changed |= ui
+                            .add_enabled(safety_off, DragValue::new(&mut stats.total_strawberries))
+                            .changed();
+                        ui.info_hover("TODO");
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label("Deaths:");
+                        let deaths = stats.deaths;
+                        changed |= ui
+                            .add(DragValue::new(&mut stats.deaths).clamp_range(0 ..= i64::MAX))
+                            .changed();
+                        if deaths != stats.deaths {
+                            if deaths > stats.deaths {
+                                *total_deaths -= deaths - stats.deaths
+                            } else {
+                                *total_deaths += stats.deaths - deaths
+                            }
+                        }
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label("Best Dashes:");
+                        changed |= ui.add(DragValue::new(&mut stats.best_dashes)).changed()
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label("Best Deaths:");
+                        changed |= ui.add(DragValue::new(&mut stats.best_deaths)).changed()
+                    });
+
+                    ui.checkbox(&mut stats.heart_gem, "Heart Collected");
+                });
+        }
         changed
     })
 }
