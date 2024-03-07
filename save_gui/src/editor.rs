@@ -469,12 +469,11 @@ impl EditorScreen {
                 //
                 // The biggest issue is that we do want to keep using show_rows (or show_viewport)
                 // due to how large the level_sets list can get
-                for (idx, (level_set, _)) in save
+                for (idx, level_set) in save
                     .level_sets
                     .iter_mut()
-                    .map(|a| (a, false))
-                    .chain(save.level_set_recycle_bin.iter_mut().map(|a| (a, true)))
-                    .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
+                    .chain(save.level_set_recycle_bin.iter_mut())
+                    .filter(|l| l.name.to_ascii_lowercase().contains(&search_text))
                     .skip(range_start)
                     .enumerate()
                 {
