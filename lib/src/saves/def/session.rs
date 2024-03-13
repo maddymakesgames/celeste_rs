@@ -1,11 +1,85 @@
 use serde::{Deserialize, Serialize};
+use serde_aux::field_attributes::{deserialize_bool_from_anything, deserialize_number_from_string};
 
-use crate::saves::def::{util::RespawnPoint, AreaDef, EntityID, LastAreaRef, Modes};
+use crate::saves::def::{util::RespawnPoint, AreaDef, EntityID, FileTime, Modes};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct CurrentSession {
+pub struct SessionAreaRef {
+    #[serde(rename = "@ID")]
+    #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
+    pub id: u16,
+    #[serde(rename = "@Mode")]
+    pub mode: String,
+    /// The SID of the last level played
+    ///
+    /// This is `None` in a Vanilla session, and is always Some in a modded session.<br>
+    /// Modded sessions will always be stored in [CurrentSession_Safe](crate::saves::def::SaveData::current_session_safe) and any vanilla sessions will always be stored in [CurrentSession](crate::saves::def::SaveData::current_session)
+    #[serde(rename = "@SID")]
+    pub s_id: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SessionStats {
+    #[serde(rename = "@Level")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub level: u8,
+    #[serde(rename = "@Time")]
+    pub time: FileTime,
+    #[serde(rename = "@StartedFromBeginning")]
+    #[serde(deserialize_with = "deserialize_bool_from_anything")]
+    pub started_from_beginning: bool,
+    #[serde(rename = "@Deaths")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub deaths: u64,
+    #[serde(rename = "@Dashes")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub dashes: u64,
+    #[serde(rename = "@DashesAtLevelStart")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub dashes_at_start: u64,
+    #[serde(rename = "@DeathsInCurrentLevel")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub session_deaths: u64,
+    #[serde(rename = "@InArea")]
+    #[serde(deserialize_with = "deserialize_bool_from_anything")]
+    pub in_area: bool,
+    #[serde(rename = "@FirstLevel")]
+    #[serde(deserialize_with = "deserialize_bool_from_anything")]
+    pub first_level: bool,
+    #[serde(rename = "@Cassette")]
+    #[serde(deserialize_with = "deserialize_bool_from_anything")]
+    pub cassette: bool,
+    #[serde(rename = "@HeartGem")]
+    #[serde(deserialize_with = "deserialize_bool_from_anything")]
+    pub heart_gem: bool,
+    #[serde(rename = "@Dreaming")]
+    #[serde(deserialize_with = "deserialize_bool_from_anything")]
+    pub dreaming: bool,
+    #[serde(rename = "@LightingAlphaAdd")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub lighting_alpha_add: u8,
+    #[serde(rename = "@BloomBaseAdd")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub bloom_base_add: u8,
+    #[serde(rename = "@DarkRoomAlpha")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
+    pub dark_room_alpha: f32,
+    #[serde(rename = "@CoreMode")]
+    pub core_more: String,
+    #[serde(rename = "@GrabbedGolden")]
+    #[serde(deserialize_with = "deserialize_bool_from_anything")]
+    pub grabbed_golden: bool,
+    #[serde(rename = "@HitCheckpoint")]
+    #[serde(deserialize_with = "deserialize_bool_from_anything")]
+    pub hit_checkpoint: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct SavedSession {
+    #[serde(flatten)]
+    stats: SessionStats,
     #[serde(rename = "Area")]
-    pub area: LastAreaRef,
+    pub area: SessionAreaRef,
     #[serde(rename = "RespawnPoint")]
     pub respawn_point: RespawnPoint,
     #[serde(rename = "Audio")]

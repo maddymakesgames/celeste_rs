@@ -542,10 +542,12 @@ impl EditorScreen {
         if let Some(session) = &mut save.current_session_safe {
             ui.horizontal(|ui| {
                 ui.label("Current area sid: ");
-                ui.add_enabled(
-                    self.safety_off,
-                    TextEdit::singleline(&mut session.area.s_id),
-                );
+                // Modded session levels will ALWAYS have a session id so this will always show
+                if let Some(s_id) = &mut session.area.s_id {
+                    ui.add_enabled(self.safety_off, TextEdit::singleline(s_id));
+                }
+
+
                 ui.info_hover(
                     "You probably shouldn't change the map the session is in as the rest of the \
                      data will likely be invalid.",

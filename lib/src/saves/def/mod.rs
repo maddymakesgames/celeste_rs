@@ -94,6 +94,11 @@ pub struct SaveData {
     /// The last vanilla area that was played
     #[serde(rename = "LastArea")]
     pub last_area: LastAreaRef,
+    /// The saved session
+    ///
+    /// This is only used by vanilla celeste, everest uses [current_session_safe](SaveData::current_session_safe)
+    #[serde(rename = "CurrentSession")]
+    pub current_session: Option<SavedSession>,
     /// Data about each vanilla area
     ///
     /// While the vanilla levels also have an entry in [level_sets](SaveData::level_sets)
@@ -117,7 +122,7 @@ pub struct SaveData {
     ///
     /// This is what is saved when you use "save & exit" while in a level
     #[serde(rename = "CurrentSession_Safe")]
-    pub current_session_safe: Option<CurrentSession>,
+    pub current_session_safe: Option<SavedSession>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
