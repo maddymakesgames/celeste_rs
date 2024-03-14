@@ -6,6 +6,7 @@ use std::{
 use celeste_rs::saves::{
     everest::LevelSetStats,
     ops::DeError,
+    session::SavedSession,
     util::FileTime,
     vanilla::Modes,
     DashMode,
@@ -499,7 +500,7 @@ impl EditorScreen {
 
     fn show_session(&mut self, ui: &mut Ui) {
         #[allow(clippy::overly_complex_bool_expr)]
-        if self.save.current_session_safe.is_some() && false {
+        if self.save.current_session_safe.is_some() && self.save.current_session.is_some() {
             let mut selected = self.selected_session_panel;
             TabbedContentWidget::show(
                 ui,
@@ -513,113 +514,138 @@ impl EditorScreen {
                              running Everest. This wille only be used if you boot into vanilla \
                              Celeste.",
                         );
-                        self.show_vanilla_session(ui);
+                        if let Some(session) = self.save.current_session.as_mut() {
+                            Self::show_session_impl(
+                                ui,
+                                session,
+                                self.safety_off,
+                                &mut self.save.total_deaths,
+                                &mut self.save.time,
+                            );
+                        }
                     }
-                    1 => self.show_modded_session(ui),
+                    1 =>
+                        if let Some(session) = self.save.current_session_safe.as_mut() {
+                            Self::show_session_impl(
+                                ui,
+                                session,
+                                self.safety_off,
+                                &mut self.save.total_deaths,
+                                &mut self.save.time,
+                            );
+                        },
                     _ => {
                         ui.info("Invalid session panel selected");
                     }
                 },
             );
             self.selected_session_panel = selected;
-        } else {
-            if self.save.current_session_safe.is_some() {
-                self.show_modded_session(ui);
-            }
-
-            if false {
-                self.show_vanilla_session(ui);
-            }
-        }
-    }
-
-    fn show_vanilla_session(&mut self, _ui: &mut Ui) {
-        // TODO: we currently don't support the CurrentSession tag in the save file
-    }
-
-    fn show_modded_session(&mut self, ui: &mut Ui) {
-        let save = &mut self.save;
-        if let Some(session) = &mut save.current_session_safe {
-            ui.horizontal(|ui| {
-                ui.label("Current area sid: ");
-                // Modded session levels will ALWAYS have a session id so this will always show
-                if let Some(s_id) = &mut session.area.s_id {
-                    ui.add_enabled(self.safety_off, TextEdit::singleline(s_id));
-                }
-
-
-                ui.info_hover(
-                    "You probably shouldn't change the map the session is in as the rest of the \
-                     data will likely be invalid.",
-                );
-            });
-
-            ui.label("Respawn point");
-            ui.horizontal(|ui| {
-                ui.label("x");
-                ui.add_enabled(
-                    self.safety_off,
-                    DragValue::new(&mut session.respawn_point.x),
-                );
-                ui.label("y");
-                ui.add_enabled(
-                    self.safety_off,
-                    DragValue::new(&mut session.respawn_point.y),
-                );
-                ui.info_hover(
-                    "Changing the respawn point manually seems like a bad idea! You can open the \
-                     debug map in everest with f6 and then use that to manually set a respawn \
-                     point with at least an idea of where you'll end up.",
-                );
-            });
-
-            ui.heading2("Inventory");
-            ui.horizontal(|ui| {
-                ui.label("Dashes");
-                ui.add(DragValue::new(&mut session.inventory.dashes));
-            });
-
-            ui.checkbox(&mut session.inventory.dream_dash, "Dream dash");
-            ui.checkbox(&mut session.inventory.backpack, "Backpack");
-            ui.checkbox(&mut session.inventory.no_refills, "No refills");
-
-            if !session.counters.is_empty() {
-                ui.heading2("Counters");
-                for counter in session.counters.iter_mut() {
-                    ui.horizontal(|ui| {
-                        ui.label(&counter.key);
-                        ui.add(DragValue::new(&mut counter.value));
-                    });
-                }
-            }
-
-            ui.heading2("Old Stats");
-            ui.info("These are the stats you had before you started the current session.");
-            ui.checkbox(&mut session.old_stats.area.cassette, "Cassette collected");
-
-            area_mode_widget(
+        } else if let Some(session) = self.save.current_session_safe.as_mut() {
+            Self::show_session_impl(
                 ui,
-                "",
-                &session.old_stats.area.sid,
+                session,
                 self.safety_off,
-                &mut save.total_deaths,
-                &mut save.time,
-                &mut session.old_stats.modes,
+                &mut self.save.total_deaths,
+                &mut self.save.time,
             );
-
-            ui.horizontal(|ui| {
-                ui.label("Furthest Seen Level");
-                ui.add_enabled(
-                    self.safety_off,
-                    TextEdit::singleline(&mut session.furthest_seen_level),
-                );
-                ui.info_hover("TODO");
-            });
-
-
-            ui.checkbox(&mut session.beat_best_time, "Beat best time");
-            ui.checkbox(&mut session.restarted_from_golden, "Restarted from golden");
+        } else if let Some(session) = self.save.current_session.as_mut() {
+            Self::show_session_impl(
+                ui,
+                session,
+                self.safety_off,
+                &mut self.save.total_deaths,
+                &mut self.save.time,
+            );
+        } else {
+            ui.info("No saved session found.");
         }
+    }
+
+    fn show_session_impl(
+        ui: &mut Ui,
+        session: &mut SavedSession,
+        safety_off: bool,
+        total_deaths: &mut u64,
+        total_time: &mut FileTime,
+    ) {
+        ui.horizontal(|ui| {
+            ui.label("Current area sid: ");
+            // Modded session levels will ALWAYS have a session id so this will always show
+            if let Some(s_id) = &mut session.area.s_id {
+                ui.add_enabled(safety_off, TextEdit::singleline(s_id));
+            }
+
+
+            ui.info_hover(
+                "You probably shouldn't change the map the session is in as the rest of the data \
+                 will likely be invalid.",
+            );
+        });
+
+        ui.label("Respawn point");
+        ui.horizontal(|ui| {
+            ui.label("x");
+            ui.add_enabled(safety_off, DragValue::new(&mut session.respawn_point.x));
+            ui.label("y");
+            ui.add_enabled(safety_off, DragValue::new(&mut session.respawn_point.y));
+            ui.info_hover(
+                "Changing the respawn point manually seems like a bad idea! You can open the \
+                 debug map in everest with f6 and then use that to manually set a respawn point \
+                 with at least an idea of where you'll end up.",
+            );
+        });
+
+        ui.heading2("Inventory");
+        ui.horizontal(|ui| {
+            ui.label("Dashes");
+            ui.add(DragValue::new(&mut session.inventory.dashes));
+        });
+
+        ui.checkbox(&mut session.inventory.dream_dash, "Dream dash");
+        ui.checkbox(&mut session.inventory.backpack, "Backpack");
+        ui.checkbox(&mut session.inventory.no_refills, "No refills");
+
+        if !session.counters.is_empty() {
+            ui.heading2("Counters");
+            for counter in session.counters.iter_mut() {
+                ui.horizontal(|ui| {
+                    ui.label(&counter.key);
+                    ui.add(DragValue::new(&mut counter.value));
+                });
+            }
+        }
+
+        ui.heading2("Old Stats");
+        ui.info("These are the stats you had before you started the current session.");
+        ui.checkbox(&mut session.old_stats.area.cassette, "Cassette collected");
+
+        area_mode_widget(
+            ui,
+            "",
+            &session.old_stats.area.sid,
+            safety_off,
+            total_deaths,
+            total_time,
+            &mut session.old_stats.modes,
+        );
+
+        ui.horizontal(|ui| {
+            ui.label("Furthest Seen Level");
+            if let Some(furthest_seen_level) = session.furthest_seen_level.as_mut() {
+                ui.add_enabled(safety_off, TextEdit::singleline(furthest_seen_level));
+            } else {
+                let mut buf = String::new();
+                ui.add_enabled(safety_off, TextEdit::singleline(&mut buf));
+                if !buf.is_empty() {
+                    session.furthest_seen_level = Some(buf);
+                }
+            }
+            ui.info_hover("TODO");
+        });
+
+
+        ui.checkbox(&mut session.beat_best_time, "Beat best time");
+        ui.checkbox(&mut session.restarted_from_golden, "Restarted from golden");
     }
 
     fn save_file(&self, rt: &Runtime) {
