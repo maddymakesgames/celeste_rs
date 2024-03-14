@@ -20,10 +20,11 @@ pub struct SessionAreaRef {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SessionStats {
+    /// The name of the screen the session is in
     #[serde(rename = "@Level")]
-    #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub level: u8,
+    pub level: String,
     #[serde(rename = "@Time")]
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub time: FileTime,
     #[serde(rename = "@StartedFromBeginning")]
     #[serde(deserialize_with = "deserialize_bool_from_anything")]
@@ -57,10 +58,10 @@ pub struct SessionStats {
     pub dreaming: bool,
     #[serde(rename = "@LightingAlphaAdd")]
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub lighting_alpha_add: u8,
+    pub lighting_alpha_add: f32,
     #[serde(rename = "@BloomBaseAdd")]
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub bloom_base_add: u8,
+    pub bloom_base_add: f32,
     #[serde(rename = "@DarkRoomAlpha")]
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub dark_room_alpha: f32,
@@ -104,8 +105,12 @@ pub struct SavedSession {
     pub old_stats: OldStats,
     #[serde(rename = "UnlockedCSide")]
     pub unlocked_c_side: bool,
+    //TODO: Figure this out
+    /// The furthest screen reached in the map
+    ///
+    /// Don't currently know what causes this to be `None` but I just know it can be
     #[serde(rename = "FurthestSeenLevel")]
-    pub furthest_seen_level: String,
+    pub furthest_seen_level: Option<String>,
     #[serde(rename = "BeatBestTime")]
     pub beat_best_time: bool,
     #[serde(rename = "RestartedFromGolden")]
