@@ -12,5 +12,5 @@ This app uses the [egui]() gui library. This is mainly due to it being something
 ## TODO
 - [ ] Strawberry addition / deletion
 - [ ] Proper error messages
-- [ ] Session editing
+- [x] Session editing
 - [ ] Some `modsave` or `modsession` editing for popular mods 
