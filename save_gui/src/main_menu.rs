@@ -58,9 +58,13 @@ async fn handle_file_picker(
         let contents = file.read().await;
         drop(file);
 
+        // Expect is fine. Theres not much we can do if this fails
+        // And theres no real way to display an error anyway
         send.send(Some((name, contents)))
             .expect("Error sending file handle back to ui task");
     } else {
+        // Expect is fine. Theres not much we can do if this fails
+        // And theres no real way to display an error anyway
         send.send(None)
             .expect("Error sending file handle back to ui task");
     }
