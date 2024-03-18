@@ -351,7 +351,7 @@ impl EditorScreen {
             let mut from = None;
             let mut to = None;
 
-            ui.dnd_drop_zone::<usize>(Frame::default().inner_margin(4.0), |ui| {
+            ui.dnd_drop_zone::<usize, _>(Frame::default().inner_margin(4.0), |ui| {
                 ui.set_min_size(vec2(64.0, 32.0));
 
                 for (idx, entry) in save.poem.iter().enumerate() {
