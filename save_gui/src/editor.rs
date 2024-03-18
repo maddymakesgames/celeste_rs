@@ -520,7 +520,7 @@ impl EditorScreen {
                         // TODO: check that this isn't misinformation
                         ui.info(
                             "Since you have a modded session this will not load when you are \
-                             running Everest. This wille only be used if you boot into vanilla \
+                             running Everest. This will only be used if you boot into vanilla \
                              Celeste.",
                         );
                         if let Some(session) = self.save.current_session.as_mut() {
