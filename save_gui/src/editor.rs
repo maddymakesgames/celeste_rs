@@ -93,16 +93,18 @@ impl EditorScreen {
                 "Session",
                 "Operations",
             ],
-            |idx, ui| match idx {
-                0 => self.show_metadata(ui),
-                1 => self.show_stats(ui),
-                2 => self.show_assists(ui),
-                3 => self.show_level_sets(ui),
-                4 => self.show_session(ui),
-                5 => self.show_operations(ui, rt, popups),
-                _ => {
-                    ui.label("Trying to show an unknown panel. Whoops!");
-                }
+            |idx, ui| {
+                ScrollArea::vertical().show(ui, |ui| match idx {
+                    0 => self.show_metadata(ui),
+                    1 => self.show_stats(ui),
+                    2 => self.show_assists(ui),
+                    3 => self.show_level_sets(ui),
+                    4 => self.show_session(ui),
+                    5 => self.show_operations(ui, rt, popups),
+                    _ => {
+                        ui.label("Trying to show an unknown panel. Whoops!");
+                    }
+                })
             },
         );
         self.selected_panel = selected_panel;

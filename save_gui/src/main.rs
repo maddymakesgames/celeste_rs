@@ -15,7 +15,6 @@ use eframe::{
         FontFamily,
         FontId,
         RichText,
-        ScrollArea,
         Ui,
         ViewportCommand,
         WidgetText,
@@ -113,9 +112,7 @@ impl SaveEditor {
 impl App for SaveEditor {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         CentralPanel::default().show(ctx, |ui| {
-            ScrollArea::vertical()
-                .auto_shrink(false)
-                .show(ui, |ui| self.screen.update(ui, &self.runtime, &self.popups));
+            self.screen.update(ui, &self.runtime, &self.popups)
         });
 
         let mut popup_guard = self.popups.blocking_lock();
