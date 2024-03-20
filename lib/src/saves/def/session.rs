@@ -78,7 +78,7 @@ pub struct SessionStats {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SavedSession {
     #[serde(flatten)]
-    stats: SessionStats,
+    pub stats: SessionStats,
     #[serde(rename = "Area")]
     pub area: SessionAreaRef,
     #[serde(rename = "RespawnPoint")]

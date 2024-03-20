@@ -29,6 +29,7 @@ use eframe::{
         TextEdit,
         TextStyle,
         Ui,
+        Widget,
         WidgetText,
     },
     epaint::{vec2, Color32},
@@ -530,6 +531,7 @@ impl EditorScreen {
                                 self.safety_off,
                                 &mut self.save.total_deaths,
                                 &mut self.save.time,
+                                "vanilla_session",
                             );
                         }
                     }
@@ -541,6 +543,7 @@ impl EditorScreen {
                                 self.safety_off,
                                 &mut self.save.total_deaths,
                                 &mut self.save.time,
+                                "modded_session",
                             );
                         },
                     _ => {
@@ -556,6 +559,7 @@ impl EditorScreen {
                 self.safety_off,
                 &mut self.save.total_deaths,
                 &mut self.save.time,
+                "modded_session",
             );
         } else if let Some(session) = self.save.current_session.as_mut() {
             Self::show_session_impl(
@@ -564,6 +568,7 @@ impl EditorScreen {
                 self.safety_off,
                 &mut self.save.total_deaths,
                 &mut self.save.time,
+                "vanilla_session",
             );
         } else {
             ui.info("No saved session found.");
@@ -576,6 +581,7 @@ impl EditorScreen {
         safety_off: bool,
         total_deaths: &mut u64,
         total_time: &mut FileTime,
+        id_filler: &'static str,
     ) {
         ui.horizontal(|ui| {
             ui.label("Current area sid: ");
@@ -624,19 +630,82 @@ impl EditorScreen {
             }
         }
 
-        ui.heading2("Old Stats");
-        ui.info("These are the stats you had before you started the current session.");
-        ui.checkbox(&mut session.old_stats.area.cassette, "Cassette collected");
+        CollapsingHeader::new(RichText::new("Session Stats").heading2())
+            .default_open(true)
+            .show(ui, |ui| {
+                let stats = &mut session.stats;
 
-        area_mode_widget(
-            ui,
-            "",
-            &session.old_stats.area.sid,
-            safety_off,
-            total_deaths,
-            total_time,
-            &mut session.old_stats.modes,
-        );
+                ui.info("These are the stats for the current session.");
+                ui.horizontal(|ui| {
+                    ui.label("Screen Name: ");
+                    ui.add_enabled(safety_off, TextEdit::singleline(&mut stats.level));
+                    ui.info_hover("You need to make sure the screen name is valid for the map.");
+                });
+
+                ui.horizontal(|ui| {
+                    ui.label("Session Time:");
+                    file_time_widget(&mut stats.time, ui);
+                });
+
+                ui.checkbox(
+                    &mut stats.started_from_beginning,
+                    "Session started from the beginning: ",
+                );
+
+                ui.horizontal(|ui| {
+                    ui.label("Session Deaths: ");
+                    let deaths = stats.deaths;
+                    if ui.add(DragValue::new(&mut stats.deaths)).changed() {
+                        if deaths > stats.deaths {
+                            *total_deaths -= deaths.abs_diff(stats.deaths);
+                        } else {
+                            *total_deaths += deaths.abs_diff(stats.deaths);
+                        }
+                    }
+                });
+
+                ui.labeled("Session Dashes: ", DragValue::new(&mut stats.dashes));
+                ui.labeled(
+                    "Dashes at start: ",
+                    DragValue::new(&mut stats.dashes_at_start),
+                );
+                ui.labeled(
+                    "Deaths in current level: ",
+                    DragValue::new(&mut stats.session_deaths),
+                );
+
+                ui.checkbox(&mut stats.in_area, "In Area: ");
+                ui.checkbox(&mut stats.first_level, "Is the first level played: ");
+                ui.checkbox(&mut stats.cassette, "Cassette collected: ");
+                ui.checkbox(&mut stats.heart_gem, "Crystal heart collected: ");
+                ui.checkbox(&mut stats.dreaming, "Dreaming: ");
+
+                ui.checkbox(&mut stats.grabbed_golden, "Has a golden: ");
+                ui.checkbox(&mut stats.hit_checkpoint, "Hit checkpoint: ");
+            });
+
+        ui.collapsing(RichText::new("Old stats").heading2(), |ui| {
+            ui.info("These are the stats you had before you started the current session.");
+            ui.checkbox(&mut session.old_stats.area.cassette, "Cassette collected");
+
+            ui.horizontal(|ui| {
+                ui.add_enabled_ui(safety_off, |ui| {
+                    area_mode_widget(
+                        ui,
+                        id_filler,
+                        &session.old_stats.area.sid,
+                        safety_off,
+                        total_deaths,
+                        total_time,
+                        &mut session.old_stats.modes,
+                    );
+                });
+                ui.info_hover(
+                    "These stats should be identical to the stats in the LevelStats tab.\nIf you \
+                     want to change the stats you should change them there instead.",
+                );
+            });
+        });
 
         ui.horizontal(|ui| {
             ui.label("Furthest Seen Level");
@@ -969,6 +1038,12 @@ trait CelesteEditorUiExt {
     fn info(&mut self, text: impl Into<String>) -> Response;
     fn info_hover(&mut self, text: impl Into<WidgetText>) -> Response;
     fn heading2(&mut self, text: impl Into<String>) -> Response;
+    fn drag_value(
+        &mut self,
+        label: impl Into<WidgetText>,
+        value: &mut impl eframe::emath::Numeric,
+    ) -> Response;
+    fn labeled(&mut self, label: impl Into<WidgetText>, widget: impl Widget) -> Response;
 }
 
 impl CelesteEditorUiExt for Ui {
@@ -982,5 +1057,25 @@ impl CelesteEditorUiExt for Ui {
 
     fn heading2(&mut self, text: impl Into<String>) -> Response {
         self.label(RichText::new(text).text_style(TextStyle::Name("header2".into())))
+    }
+
+    fn drag_value(
+        &mut self,
+        label: impl Into<WidgetText>,
+        value: &mut impl eframe::emath::Numeric,
+    ) -> Response {
+        self.horizontal(|ui| {
+            ui.label(label);
+            ui.add(DragValue::new(value))
+        })
+        .response
+    }
+
+    fn labeled(&mut self, label: impl Into<WidgetText>, widget: impl Widget) -> Response {
+        self.horizontal(|ui| {
+            ui.label(label);
+            ui.add(widget)
+        })
+        .response
     }
 }
