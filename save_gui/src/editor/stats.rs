@@ -53,7 +53,6 @@ impl EditorScreen {
                     );
                 });
 
-                // TODO: add tooltip
                 ui.horizontal(|ui| {
                     ui.add(DragValue::new(&mut save.total_golden_strawberries));
                     ui.info_hover(
