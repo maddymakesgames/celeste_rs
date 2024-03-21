@@ -24,7 +24,6 @@ impl EditorScreen {
         popups: &Arc<Mutex<Vec<PopupWindow>>>,
     ) {
         ui.vertical(|ui| {
-            // TODO: remove most expects from this impl
             ui.horizontal(|ui| {
                 if ui.button(RichText::new("Save File").info()).clicked() {
                     self.save_file(rt, popups);
