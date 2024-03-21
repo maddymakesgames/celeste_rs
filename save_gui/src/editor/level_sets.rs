@@ -165,17 +165,26 @@ impl LevelSetsPanel {
                         let area = set.areas.get_mut(area_idx).unwrap();
                         let mode = area.modes.get_mut(mode_idx).unwrap();
 
-                        ScrollArea::both().auto_shrink(false).show(ui, |ui| {
-                            mode_widget(
-                                ui,
-                                &area.def.sid,
-                                safety_off,
-                                &mut 0,
-                                &mut FileTime(0),
-                                mode,
-                                &mut self.add_strawberry_buff,
-                            );
-                        });
+                        let changed = ScrollArea::both()
+                            .auto_shrink(false)
+                            .show(ui, |ui| {
+                                mode_widget(
+                                    ui,
+                                    &area.def.sid,
+                                    safety_off,
+                                    &mut save.total_deaths,
+                                    &mut save.time,
+                                    mode,
+                                    &mut self.add_strawberry_buff,
+                                )
+                            })
+                            .inner;
+
+                        if changed && set_idx == 0 {
+                            save.areas = set.areas.clone();
+                            save.poem = set.poem.clone();
+                            save.total_strawberries = set.total_strawberries;
+                        }
                     });
                 }
             }
