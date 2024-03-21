@@ -39,6 +39,8 @@ impl EditorScreen {
                                 &mut self.save.time,
                                 "vanilla_session",
                                 &mut self.session_add_strawb_buff,
+                                &mut self.session_add_key_buf,
+                                &mut self.session_add_dnl_buf,
                             );
                         }
                     }
@@ -52,6 +54,8 @@ impl EditorScreen {
                                 &mut self.save.time,
                                 "modded_session",
                                 &mut self.session_add_strawb_buff,
+                                &mut self.session_add_key_buf,
+                                &mut self.session_add_dnl_buf,
                             );
                         },
                     _ => {
@@ -69,6 +73,8 @@ impl EditorScreen {
                 &mut self.save.time,
                 "modded_session",
                 &mut self.session_add_strawb_buff,
+                &mut self.session_add_key_buf,
+                &mut self.session_add_dnl_buf,
             );
         } else if let Some(session) = self.save.current_session.as_mut() {
             Self::show_session_impl(
@@ -79,12 +85,15 @@ impl EditorScreen {
                 &mut self.save.time,
                 "vanilla_session",
                 &mut self.session_add_strawb_buff,
+                &mut self.session_add_key_buf,
+                &mut self.session_add_dnl_buf,
             );
         } else {
             ui.info("No saved session found.");
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn show_session_impl(
         ui: &mut Ui,
         session: &mut SavedSession,
@@ -93,6 +102,8 @@ impl EditorScreen {
         total_time: &mut FileTime,
         id_filler: &'static str,
         strawb_add_buff: &mut String,
+        key_add_buf: &mut String,
+        dnl_add_buf: &mut String,
     ) {
         ui.horizontal(|ui| {
             ui.label("Current area sid: ");
@@ -148,8 +159,8 @@ impl EditorScreen {
                 "Strawberries",
                 &mut session.strawberries,
                 safety_off,
-                &mut 0,
-                &mut String::new(),
+                None,
+                strawb_add_buff,
             );
         });
 
@@ -160,8 +171,8 @@ impl EditorScreen {
                 "Keys",
                 &mut session.keys,
                 safety_off,
-                &mut 0,
-                &mut String::new(),
+                None,
+                key_add_buf,
             )
         });
 
@@ -172,8 +183,8 @@ impl EditorScreen {
                 "Entity",
                 &mut session.do_not_load,
                 safety_off,
-                &mut 0,
-                &mut String::new(),
+                None,
+                dnl_add_buf,
             );
         });
 

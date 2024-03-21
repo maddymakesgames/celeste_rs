@@ -254,7 +254,7 @@ pub fn mode_widget(
             "Strawberry",
             &mut mode.strawberries,
             safety_off,
-            &mut stats.total_strawberries,
+            Some(&mut stats.total_strawberries),
             add_strawberry_buff,
         )
     });

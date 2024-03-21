@@ -41,6 +41,8 @@ pub struct EditorScreen {
     selected_session_panel: usize,
     level_sets_panel: LevelSetsPanel,
     session_add_strawb_buff: String,
+    session_add_key_buf: String,
+    session_add_dnl_buf: String,
 }
 
 impl EditorScreen {
@@ -63,6 +65,8 @@ impl EditorScreen {
             selected_session_panel: 0,
             merge_file_listener: None,
             session_add_strawb_buff: String::new(),
+            session_add_key_buf: String::new(),
+            session_add_dnl_buf: String::new(),
         })
     }
 
@@ -132,7 +136,7 @@ fn entity_id_list_widget(
     entity_title: &str,
     entities: &mut Vec<EntityID>,
     safety_off: bool,
-    total_entity_count: &mut u8,
+    total_entity_count: Option<&mut u8>,
     add_entity_buff: &mut String,
 ) {
     ui.push_id(id, |ui| {
@@ -163,8 +167,10 @@ fn entity_id_list_widget(
             });
 
         if let Some(idx) = to_remove {
-            entities.remove(idx);
-            *total_entity_count -= 1;
+            if let Some(counter) = total_entity_count {
+                entities.remove(idx);
+                *counter -= 1;
+            }
         }
     });
     ui.horizontal(|ui| {
