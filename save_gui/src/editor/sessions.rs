@@ -261,7 +261,7 @@ impl EditorScreen {
                     session.furthest_seen_level = Some(buf);
                 }
             }
-            ui.info_hover("TODO");
+            ui.info_hover("This needs to actually be a valid room inside the map.");
         });
 
 
