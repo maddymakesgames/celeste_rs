@@ -8,7 +8,7 @@ use celeste_rs::saves::{
     everest::LevelSetStats,
     ops::DeError,
     session::SavedSession,
-    util::FileTime,
+    util::{EntityID, FileTime},
     vanilla::Modes,
     DashMode,
     SaveData,
@@ -34,6 +34,7 @@ use eframe::{
     },
     epaint::{vec2, Color32},
 };
+use egui_extras::{Column, TableBuilder};
 use tokio::{
     runtime::Runtime,
     sync::{
@@ -632,6 +633,43 @@ impl EditorScreen {
             }
         }
 
+        ui.collapsing("Collected Strawberries", |ui| {
+            entity_id_list_widget(
+                ui,
+                "session_strawberries",
+                "Strawberries",
+                &mut session.strawberries,
+                safety_off,
+                &mut 0,
+                &mut String::new(),
+            );
+        });
+
+        ui.collapsing("Held Keys", |ui| {
+            entity_id_list_widget(
+                ui,
+                "session_keys",
+                "Keys",
+                &mut session.keys,
+                safety_off,
+                &mut 0,
+                &mut String::new(),
+            )
+        });
+
+        ui.collapsing("Entities marked 'do not load'", |ui| {
+            entity_id_list_widget(
+                ui,
+                "session_dnl",
+                "Entity",
+                &mut session.do_not_load,
+                safety_off,
+                &mut 0,
+                &mut String::new(),
+            );
+        });
+
+
         CollapsingHeader::new(RichText::new("Session Stats").heading2())
             .default_open(true)
             .show(ui, |ui| {
@@ -944,11 +982,11 @@ fn area_mode_widget(
             .iter_mut()
             .zip(["A-Side", "B-Side", "C-Side", "D-Side", "E-Side"])
         {
-            let stats = &mut mode.stats;
             let id_name = format!("{name}/{sid}/{side_name}");
             CollapsingHeader::new(RichText::new(side_name))
                 .id_source(id_name)
                 .show(ui, |ui| {
+                    let stats = &mut mode.stats;
                     ui.horizontal(|ui| {
                         ui.label("Play Time:");
                         let time = stats.time_played;
@@ -989,6 +1027,18 @@ fn area_mode_widget(
                         ui.info_hover("TODO");
                     });
 
+                    ui.collapsing("Strawberries", |ui| {
+                        entity_id_list_widget(
+                            ui,
+                            &format!("strawberry_{sid}_{side_name}"),
+                            "Strawberry",
+                            &mut mode.strawberries,
+                            safety_off,
+                            &mut stats.total_strawberries,
+                            &mut String::new(),
+                        )
+                    });
+
                     ui.horizontal(|ui| {
                         ui.label("Deaths:");
                         let deaths = stats.deaths;
@@ -1019,6 +1069,58 @@ fn area_mode_widget(
         }
         changed
     })
+}
+
+fn entity_id_list_widget(
+    ui: &mut Ui,
+    id: &str,
+    entity_title: &str,
+    entities: &mut Vec<EntityID>,
+    safety_off: bool,
+    total_entity_count: &mut u8,
+    add_entity_buff: &mut String,
+) {
+    ui.push_id(id, |ui| {
+        let mut to_remove = None;
+        TableBuilder::new(ui)
+            .column(Column::auto())
+            .column(Column::remainder())
+            .header(18.0, |mut header| {
+                header.col(|ui| {
+                    ui.label(RichText::new(entity_title).strong());
+                });
+                header.col(|_ui| {});
+            })
+            .body(|body| {
+                body.rows(18.0, entities.len(), |mut row| {
+                    let idx = row.index();
+                    row.col(|ui| {
+                        ui.label(&entities[idx].key);
+                    });
+                    row.col(|ui| {
+                        if ui.button("remove").clicked() {
+                            to_remove = Some(idx);
+                        }
+                    });
+                })
+            });
+
+        if let Some(idx) = to_remove {
+            entities.remove(idx);
+            *total_entity_count -= 1;
+        }
+    });
+    ui.horizontal(|ui| {
+        ui.label("Add new entity: ");
+        ui.add_enabled_ui(safety_off, |ui| {
+            ui.text_edit_singleline(add_entity_buff);
+            if ui.button("Add").clicked() {
+                entities.push(EntityID {
+                    key: std::mem::take(add_entity_buff),
+                });
+            }
+        });
+    });
 }
 
 trait CelesteEditorRichTextExt {
