@@ -30,17 +30,16 @@ pub mod sessions;
 pub mod stats;
 
 
-use crate::{tabbed::TabbedContentWidget, PopupWindow};
+use crate::{editor::level_sets::LevelSetsPanel, tabbed::TabbedContentWidget, PopupWindow};
 
 pub struct EditorScreen {
     file_name: String,
     save: SaveData,
     safety_off: bool,
     selected_panel: usize,
-    level_sets_search: String,
-    vanilla_level_set: LevelSetStats,
     merge_file_listener: Option<Receiver<Option<Vec<u8>>>>,
     selected_session_panel: usize,
+    level_sets_panel: LevelSetsPanel,
 }
 
 impl EditorScreen {
@@ -58,8 +57,7 @@ impl EditorScreen {
             file_name,
             save,
             safety_off: false,
-            level_sets_search: String::new(),
-            vanilla_level_set,
+            level_sets_panel: LevelSetsPanel::new(vanilla_level_set),
             selected_panel: 0,
             selected_session_panel: 0,
             merge_file_listener: None,
@@ -86,7 +84,9 @@ impl EditorScreen {
                     0 => self.show_metadata(ui),
                     1 => self.show_stats(ui),
                     2 => self.show_assists(ui),
-                    3 => self.show_level_sets(ui),
+                    3 => self
+                        .level_sets_panel
+                        .show(ui, &mut self.save, self.safety_off),
                     4 => self.show_session(ui),
                     5 => self.show_operations(ui, rt, popups),
                     _ => {
@@ -135,17 +135,18 @@ fn entity_id_list_widget(
 ) {
     ui.push_id(id, |ui| {
         let mut to_remove = None;
+        let text_size = ui.text_style_height(&TextStyle::Body);
         TableBuilder::new(ui)
-            .column(Column::auto())
+            .column(Column::auto().resizable(true))
             .column(Column::remainder())
-            .header(18.0, |mut header| {
+            .header(text_size, |mut header| {
                 header.col(|ui| {
-                    ui.label(RichText::new(entity_title).strong());
+                    ui.label(RichText::new(format!("{entity_title} ID")).strong());
                 });
                 header.col(|_ui| {});
             })
             .body(|body| {
-                body.rows(18.0, entities.len(), |mut row| {
+                body.rows(text_size, entities.len(), |mut row| {
                     let idx = row.index();
                     row.col(|ui| {
                         ui.label(&entities[idx].key);

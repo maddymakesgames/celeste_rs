@@ -179,7 +179,7 @@ impl EditorScreen {
                         };
                         self.save.merge_data(&save);
 
-                        self.vanilla_level_set = LevelSetStats {
+                        self.level_sets_panel.vanilla_level_set = LevelSetStats {
                             name: "Celeste".to_owned(),
                             areas: self.save.areas.clone(),
                             poem: self.save.poem.clone(),
