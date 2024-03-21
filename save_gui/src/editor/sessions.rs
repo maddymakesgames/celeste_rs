@@ -112,7 +112,6 @@ impl EditorScreen {
                 ui.add_enabled(safety_off, TextEdit::singleline(s_id));
             }
 
-
             ui.info_hover(
                 "You probably shouldn't change the map the session is in as the rest of the data \
                  will likely be invalid.",

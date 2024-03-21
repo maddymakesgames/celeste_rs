@@ -183,6 +183,7 @@ fn entity_id_list_widget(
                 });
             }
         });
+        ui.info_hover("The Entity ID needs to be for an entity that actually exists in the level.");
     });
 }
 

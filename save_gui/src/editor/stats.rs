@@ -18,8 +18,6 @@ impl EditorScreen {
             });
         });
 
-        // If we have 2 verticals wrapped in a horizontal
-        // we can have all the DragValues be aligned
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.label("Total Deaths:");
