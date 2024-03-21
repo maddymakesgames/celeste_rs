@@ -31,6 +31,24 @@ impl MainMenu {
             ui.spinner();
         }
 
+        #[cfg(target_family = "wasm")]
+        {
+            ui.vertical(|ui| {
+                ui.label(
+                    "While the web version of this app should be perfectly functional, it is \
+                     primarily developed for native and thus there could be bugs / performance \
+                     issues.",
+                );
+                ui.horizontal(|ui| {
+                    ui.label("You can find native downloads of the app ");
+                    ui.hyperlink_to(
+                        "on the github",
+                        "https://github.com/maddymakesgames/celeste_rs/releases",
+                    );
+                })
+            })
+        }
+
         ui.set_enabled(self.file_listener.is_none());
         if ui.button("Open File").clicked() {
             let file_dialogue = AsyncFileDialog::new()
