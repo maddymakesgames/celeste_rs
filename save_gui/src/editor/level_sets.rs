@@ -27,6 +27,7 @@ pub struct LevelSetsPanel {
     selected_level_set: Option<usize>,
     selected_area: Option<usize>,
     selected_mode: Option<usize>,
+    add_strawberry_buff: String,
 }
 
 impl LevelSetsPanel {
@@ -37,6 +38,7 @@ impl LevelSetsPanel {
             selected_mode: None,
             selected_level_set: None,
             selected_area: None,
+            add_strawberry_buff: String::new(),
         }
     }
 
@@ -171,6 +173,7 @@ impl LevelSetsPanel {
                                 &mut 0,
                                 &mut FileTime(0),
                                 mode,
+                                &mut self.add_strawberry_buff,
                             );
                         });
                     });
@@ -187,6 +190,7 @@ pub fn mode_widget(
     total_deaths: &mut u64,
     total_time: &mut FileTime,
     mode: &mut AreaMode,
+    add_strawberry_buff: &mut String,
 ) -> bool {
     let mut changed = false;
     let stats = &mut mode.stats;
@@ -238,7 +242,7 @@ pub fn mode_widget(
             &mut mode.strawberries,
             safety_off,
             &mut stats.total_strawberries,
-            &mut String::new(),
+            add_strawberry_buff,
         )
     });
 
@@ -293,7 +297,15 @@ pub fn area_mode_widget(
             CollapsingHeader::new(RichText::new(side_name))
                 .id_source(id_name)
                 .show(ui, |ui| {
-                    changed |= mode_widget(ui, sid, safety_off, total_deaths, total_time, mode);
+                    changed |= mode_widget(
+                        ui,
+                        sid,
+                        safety_off,
+                        total_deaths,
+                        total_time,
+                        mode,
+                        &mut String::new(),
+                    );
                 });
         }
         changed
