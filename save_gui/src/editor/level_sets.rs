@@ -240,7 +240,11 @@ pub fn mode_widget(
         changed |= ui
             .add_enabled(safety_off, DragValue::new(&mut stats.total_strawberries))
             .changed();
-        ui.info_hover("TODO");
+        ui.info_hover(
+            "This is updated based off any updates to the strawberries list.\nThis should not be \
+             manually edited to avoid desyncing between the count of strawberries and the actual \
+             number of strawberries collected.",
+        );
     });
 
     ui.collapsing("Strawberries", |ui| {
