@@ -289,6 +289,8 @@ pub fn mode_widget(
     changed
 }
 
+
+#[allow(clippy::too_many_arguments)]
 pub fn area_mode_widget(
     ui: &mut Ui,
     name: &str,
@@ -297,6 +299,7 @@ pub fn area_mode_widget(
     total_deaths: &mut u64,
     total_time: &mut FileTime,
     modes: &mut Modes,
+    add_strawberry_buff: &mut String,
 ) -> CollapsingResponse<bool> {
     let mut changed = false;
 
@@ -317,7 +320,7 @@ pub fn area_mode_widget(
                         total_deaths,
                         total_time,
                         mode,
-                        &mut String::new(),
+                        add_strawberry_buff,
                     );
                 });
         }

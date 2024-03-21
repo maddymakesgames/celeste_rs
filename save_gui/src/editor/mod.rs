@@ -40,6 +40,7 @@ pub struct EditorScreen {
     merge_file_listener: Option<Receiver<Option<Vec<u8>>>>,
     selected_session_panel: usize,
     level_sets_panel: LevelSetsPanel,
+    session_add_strawb_buff: String,
 }
 
 impl EditorScreen {
@@ -61,6 +62,7 @@ impl EditorScreen {
             selected_panel: 0,
             selected_session_panel: 0,
             merge_file_listener: None,
+            session_add_strawb_buff: String::new(),
         })
     }
 

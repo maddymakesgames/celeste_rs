@@ -38,6 +38,7 @@ impl EditorScreen {
                                 &mut self.save.total_deaths,
                                 &mut self.save.time,
                                 "vanilla_session",
+                                &mut self.session_add_strawb_buff,
                             );
                         }
                     }
@@ -50,6 +51,7 @@ impl EditorScreen {
                                 &mut self.save.total_deaths,
                                 &mut self.save.time,
                                 "modded_session",
+                                &mut self.session_add_strawb_buff,
                             );
                         },
                     _ => {
@@ -66,6 +68,7 @@ impl EditorScreen {
                 &mut self.save.total_deaths,
                 &mut self.save.time,
                 "modded_session",
+                &mut self.session_add_strawb_buff,
             );
         } else if let Some(session) = self.save.current_session.as_mut() {
             Self::show_session_impl(
@@ -75,6 +78,7 @@ impl EditorScreen {
                 &mut self.save.total_deaths,
                 &mut self.save.time,
                 "vanilla_session",
+                &mut self.session_add_strawb_buff,
             );
         } else {
             ui.info("No saved session found.");
@@ -88,6 +92,7 @@ impl EditorScreen {
         total_deaths: &mut u64,
         total_time: &mut FileTime,
         id_filler: &'static str,
+        strawb_add_buff: &mut String,
     ) {
         ui.horizontal(|ui| {
             ui.label("Current area sid: ");
@@ -241,6 +246,7 @@ impl EditorScreen {
                         total_deaths,
                         total_time,
                         &mut session.old_stats.modes,
+                        strawb_add_buff,
                     );
                 });
                 ui.info_hover(
