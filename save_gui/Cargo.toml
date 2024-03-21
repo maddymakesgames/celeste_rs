@@ -6,7 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = { git = "https://github.com/emilk/egui.git" }
+eframe = { git = "https://github.com/emilk/egui.git", rev = "3258cd2" }
+egui_extras = { git = "https://github.com/emilk/egui.git", rev = "3258cd2" }
 celeste_rs = { path = "../lib" }
 rfd = "0.14"
 tokio = { version = "1", features = ["rt", "sync"] }
