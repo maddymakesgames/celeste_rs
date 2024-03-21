@@ -36,9 +36,9 @@ impl EditorScreen {
 
                 ui.info_hover(
                     "Merges in any applicable data from a different save file into this \
-                     one.\nThis might not merge all the data you would want it to and there may \
-                     still be bugs, so it is highly recommended you keep backups of your saves \
-                     before using this.",
+                     one.\nWhile this has been tested, it might not merge all the data you would \
+                     want it to and there may still be bugs.\nIt is highly recommended you keep \
+                     backups of your saves before using this.",
                 )
             });
 
