@@ -149,6 +149,7 @@ fn entity_id_list_widget(
                 body.rows(text_size, entities.len(), |mut row| {
                     let idx = row.index();
                     row.col(|ui| {
+                        ui.style_mut().wrap = Some(false);
                         ui.label(&entities[idx].key);
                     });
                     row.col(|ui| {
