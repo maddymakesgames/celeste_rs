@@ -422,8 +422,6 @@ impl EditorScreen {
 
     pub fn show_level_sets(&mut self, ui: &mut Ui) {
         let save = &mut self.save;
-
-        ui.heading2("Level Sets");
         ui.separator();
         ui.label(
             RichText::new(
