@@ -119,8 +119,8 @@ impl EditorScreen {
             );
         });
 
-        ui.label("Respawn point");
         ui.horizontal(|ui| {
+            ui.label("Respawn point: ");
             ui.label("x");
             ui.add_enabled(safety_off, DragValue::new(&mut session.respawn_point.x));
             ui.label("y");
@@ -132,27 +132,47 @@ impl EditorScreen {
             );
         });
 
-        ui.heading2("Inventory");
         ui.horizontal(|ui| {
-            ui.label("Dashes");
-            ui.add(DragValue::new(&mut session.inventory.dashes));
+            ui.label("Furthest Seen Level");
+            if let Some(furthest_seen_level) = session.furthest_seen_level.as_mut() {
+                ui.add_enabled(safety_off, TextEdit::singleline(furthest_seen_level));
+            } else {
+                let mut buf = String::new();
+                ui.add_enabled(safety_off, TextEdit::singleline(&mut buf));
+                if !buf.is_empty() {
+                    session.furthest_seen_level = Some(buf);
+                }
+            }
+            ui.info_hover("This needs to actually be a valid room inside the map.");
         });
 
-        ui.checkbox(&mut session.inventory.dream_dash, "Dream dash");
-        ui.checkbox(&mut session.inventory.backpack, "Backpack");
-        ui.checkbox(&mut session.inventory.no_refills, "No refills");
+
+        ui.checkbox(&mut session.beat_best_time, "Beat best time");
+        ui.checkbox(&mut session.restarted_from_golden, "Restarted from golden");
+
+        ui.collapsing(RichText::new("Inventory").heading2(), |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Dashes");
+                ui.add(DragValue::new(&mut session.inventory.dashes));
+            });
+
+            ui.checkbox(&mut session.inventory.dream_dash, "Dream dash");
+            ui.checkbox(&mut session.inventory.backpack, "Backpack");
+            ui.checkbox(&mut session.inventory.no_refills, "No refills");
+        });
 
         if !session.counters.is_empty() {
-            ui.heading2("Counters");
-            for counter in session.counters.iter_mut() {
-                ui.horizontal(|ui| {
-                    ui.label(&counter.key);
-                    ui.add(DragValue::new(&mut counter.value));
-                });
-            }
+            ui.collapsing(RichText::new("Counters").heading2(), |ui| {
+                for counter in session.counters.iter_mut() {
+                    ui.horizontal(|ui| {
+                        ui.label(&counter.key);
+                        ui.add(DragValue::new(&mut counter.value));
+                    });
+                }
+            });
         }
 
-        ui.collapsing("Collected Strawberries", |ui| {
+        ui.collapsing(RichText::new("Collected Strawberries").heading2(), |ui| {
             entity_id_list_widget(
                 ui,
                 "session_strawberries",
@@ -164,7 +184,7 @@ impl EditorScreen {
             );
         });
 
-        ui.collapsing("Held Keys", |ui| {
+        ui.collapsing(RichText::new("Held Keys").heading2(), |ui| {
             entity_id_list_widget(
                 ui,
                 "session_keys",
@@ -176,17 +196,20 @@ impl EditorScreen {
             )
         });
 
-        ui.collapsing("Entities marked 'do not load'", |ui| {
-            entity_id_list_widget(
-                ui,
-                "session_dnl",
-                "Entity",
-                &mut session.do_not_load,
-                safety_off,
-                None,
-                dnl_add_buf,
-            );
-        });
+        ui.collapsing(
+            RichText::new("Entities marked 'do not load'").heading2(),
+            |ui| {
+                entity_id_list_widget(
+                    ui,
+                    "session_dnl",
+                    "Entity",
+                    &mut session.do_not_load,
+                    safety_off,
+                    None,
+                    dnl_add_buf,
+                );
+            },
+        );
 
 
         CollapsingHeader::new(RichText::new("Session Stats").heading2())
@@ -206,41 +229,52 @@ impl EditorScreen {
                     file_time_widget(&mut stats.time, ui);
                 });
 
-                ui.checkbox(
-                    &mut stats.started_from_beginning,
-                    "Session started from the beginning: ",
-                );
-
                 ui.horizontal(|ui| {
-                    ui.label("Session Deaths: ");
-                    let deaths = stats.deaths;
-                    if ui.add(DragValue::new(&mut stats.deaths)).changed() {
-                        if deaths > stats.deaths {
-                            *total_deaths -= deaths.abs_diff(stats.deaths);
-                        } else {
-                            *total_deaths += deaths.abs_diff(stats.deaths);
+                    ui.vertical(|ui| {
+                        ui.label("Session Deaths: ");
+                        ui.label("Session Dashes: ");
+                        ui.label("Dashes at Start: ");
+                        ui.label("Deaths in Level: ");
+                    });
+
+                    ui.vertical(|ui| {
+                        let deaths = stats.deaths;
+                        if ui.add(DragValue::new(&mut stats.deaths)).changed() {
+                            if deaths > stats.deaths {
+                                *total_deaths -= deaths.abs_diff(stats.deaths);
+                            } else {
+                                *total_deaths += deaths.abs_diff(stats.deaths);
+                            }
+                            ui.add(DragValue::new(&mut stats.dashes));
+                            ui.add(DragValue::new(&mut stats.dashes_at_start));
+                            ui.add(DragValue::new(&mut stats.session_deaths));
                         }
-                    }
+                    });
                 });
 
-                ui.labeled("Session Dashes: ", DragValue::new(&mut stats.dashes));
-                ui.labeled(
-                    "Dashes at start: ",
-                    DragValue::new(&mut stats.dashes_at_start),
-                );
-                ui.labeled(
-                    "Deaths in current level: ",
-                    DragValue::new(&mut stats.session_deaths),
-                );
+                ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        ui.label("In Area: ");
+                        ui.label("First Level Played: ");
+                        ui.label("Cassette Collected: ");
+                        ui.label("Crystal Heart Collected: ");
+                        ui.label("Dreaming: ");
+                        ui.label("Started From Beginning: ");
+                        ui.label("Has A Golden: ");
+                        ui.label("Hit Checkpoint: ");
+                    });
 
-                ui.checkbox(&mut stats.in_area, "In Area: ");
-                ui.checkbox(&mut stats.first_level, "Is the first level played: ");
-                ui.checkbox(&mut stats.cassette, "Cassette collected: ");
-                ui.checkbox(&mut stats.heart_gem, "Crystal heart collected: ");
-                ui.checkbox(&mut stats.dreaming, "Dreaming: ");
-
-                ui.checkbox(&mut stats.grabbed_golden, "Has a golden: ");
-                ui.checkbox(&mut stats.hit_checkpoint, "Hit checkpoint: ");
+                    ui.vertical(|ui| {
+                        ui.checkbox(&mut stats.in_area, "");
+                        ui.checkbox(&mut stats.first_level, "");
+                        ui.checkbox(&mut stats.cassette, "");
+                        ui.checkbox(&mut stats.heart_gem, "");
+                        ui.checkbox(&mut stats.dreaming, "");
+                        ui.checkbox(&mut stats.started_from_beginning, "");
+                        ui.checkbox(&mut stats.grabbed_golden, "");
+                        ui.checkbox(&mut stats.hit_checkpoint, "");
+                    });
+                });
             });
 
         ui.collapsing(RichText::new("Old stats").heading2(), |ui| {
@@ -266,23 +300,5 @@ impl EditorScreen {
                 );
             });
         });
-
-        ui.horizontal(|ui| {
-            ui.label("Furthest Seen Level");
-            if let Some(furthest_seen_level) = session.furthest_seen_level.as_mut() {
-                ui.add_enabled(safety_off, TextEdit::singleline(furthest_seen_level));
-            } else {
-                let mut buf = String::new();
-                ui.add_enabled(safety_off, TextEdit::singleline(&mut buf));
-                if !buf.is_empty() {
-                    session.furthest_seen_level = Some(buf);
-                }
-            }
-            ui.info_hover("This needs to actually be a valid room inside the map.");
-        });
-
-
-        ui.checkbox(&mut session.beat_best_time, "Beat best time");
-        ui.checkbox(&mut session.restarted_from_golden, "Restarted from golden");
     }
 }
