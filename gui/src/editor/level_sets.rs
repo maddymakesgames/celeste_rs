@@ -46,9 +46,9 @@ impl LevelSetsPanel {
         TopBottomPanel::top("level_sets_info_panel").show_inside(ui, |ui| {
             ui.label(
                 RichText::new(
-                    "Each level in a level set has an a, b, and c-side in the save file.\nThis \
-                     does not mean that the level actually includes 3 different sides. So make \
-                     sure you know what you're editing before you change anything.",
+                    "Each level in a level set has an A, B, and C-side in the save file.\nThis \
+                     does not mean that the level actually includes 3 different sides. Most \
+                     modded maps will only have an A-Side.",
                 )
                 .weak(),
             );
