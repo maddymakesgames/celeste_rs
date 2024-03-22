@@ -60,7 +60,7 @@ impl EditorScreen {
             safety_off: false,
             level_sets_panel: LevelSetsPanel::new(vanilla_level_set),
             selected_panel: 0,
-            selected_session_panel: 0,
+            selected_session_panel: 1,
             merge_file_listener: None,
             session_add_strawb_buff: String::new(),
             session_add_key_buf: String::new(),
