@@ -149,8 +149,8 @@ impl ScreenState {
         match self {
             ScreenState::Startup => *self = ScreenState::Menu(MainMenu::default()),
             ScreenState::Menu(m) =>
-                if let Some((file_name, contents)) = m.display(ui, rt) {
-                    match EditorScreen::new(file_name, contents) {
+                if let Some((file_name, save)) = m.display(ui, rt, popups) {
+                    match EditorScreen::new(file_name, save) {
                         Ok(e) => *self = ScreenState::Editor(e),
                         Err(e) => {
                             let mut popups = popups.blocking_lock();

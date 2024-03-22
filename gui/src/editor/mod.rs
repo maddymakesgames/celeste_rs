@@ -1,4 +1,4 @@
-use std::{io::Cursor, sync::Arc};
+use std::sync::Arc;
 
 use celeste_rs::saves::{
     everest::LevelSetStats,
@@ -46,8 +46,7 @@ pub struct EditorScreen {
 }
 
 impl EditorScreen {
-    pub fn new(file_name: String, bytes: Vec<u8>) -> Result<EditorScreen, DeError> {
-        let save = SaveData::from_reader(Cursor::new(bytes))?;
+    pub fn new(file_name: String, save: SaveData) -> Result<EditorScreen, DeError> {
         let vanilla_level_set = LevelSetStats {
             name: "Celeste".to_owned(),
             areas: save.areas.clone(),
