@@ -83,11 +83,11 @@
             DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
         <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
-        <Property Id='DiskPrompt' Value='save_gui Installation'/>
+        <Property Id='DiskPrompt' Value='celeste_rs_gui Installation'/>
 
         <Directory Id='TARGETDIR' Name='SourceDir'>
             <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
-                <Directory Id='APPLICATIONFOLDER' Name='save_gui'>
+                <Directory Id='APPLICATIONFOLDER' Name='celeste_rs_gui'>
                     
                     <!--
                       Enabling the license sidecar file in the installer is a four step process:
@@ -123,9 +123,9 @@
                         <Component Id='binary0' Guid='*'>
                             <File
                                 Id='exe0'
-                                Name='save_gui.exe'
+                                Name='celeste_rs_gui.exe'
                                 DiskId='1'
-                                Source='$(var.CargoTargetBinDir)\save_gui.exe'
+                                Source='$(var.CargoTargetBinDir)\celeste_rs_gui.exe'
                                 KeyPath='yes'/>
                         </Component>
                     </Directory>
