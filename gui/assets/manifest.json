@@ -1,6 +1,6 @@
 {
-  "name": "Celeste Save Editor",
-  "short_name": "celeste-save-editor",
+  "name": "celeste.rs gui",
+  "short_name": "c_rs_gui",
   "icons": [
     {
       "src": "./icon-256.png",

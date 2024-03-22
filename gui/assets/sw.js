@@ -2,8 +2,8 @@ var cacheName = 'celeste-save-editor';
 var filesToCache = [
   './',
   './index.html',
-  './save_gui.js',
-  './save_gui_bg.wasm',
+  './celeste_rs_gui.js',
+  './celeste_rs_gui_bg.wasm',
 ];
 
 /* Start the service worker and cache all of the app's content */

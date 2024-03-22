@@ -35,7 +35,7 @@ fn main() {
 
     // Expect is fine since its on startup
     eframe::run_native(
-        "Celeste Save Editor",
+        "celeste.rs",
         NativeOptions {
             viewport: ViewportBuilder::default().with_drag_and_drop(true),
             ..Default::default()

@@ -46,7 +46,7 @@ impl MainMenu {
                         "https://github.com/maddymakesgames/celeste_rs/releases",
                     );
                 })
-            })
+            });
         }
 
         ui.set_enabled(self.file_listener.is_none());

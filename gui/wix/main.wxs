@@ -60,7 +60,7 @@
 
     <Product
         Id='*'
-        Name='save_gui'
+        Name='celeste_rs_gui'
         UpgradeCode='9142F3DB-4ECF-4096-BC14-33F18C294E10'
         Manufacturer='Maddymakesgames (madelinemakesgames@gmail.com)'
         Language='1033'

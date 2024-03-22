@@ -1,9 +1,10 @@
 [package]
-name = "save_gui"
+name = "celeste_rs_gui"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/maddymakesgames/celeste_rs"
 authors = ["Maddymakesgames (madelinemakesgames@gmail.com)"]
+description = "GUI editor for celeste save files"
 
 [package.metadata.wix]
 upgrade-guid = "9142F3DB-4ECF-4096-BC14-33F18C294E10"
