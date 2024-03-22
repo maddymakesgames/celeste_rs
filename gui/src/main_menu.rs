@@ -40,7 +40,7 @@ impl MainMenu {
                      issues.",
                 );
                 ui.horizontal(|ui| {
-                    ui.label("You can find native downloads of the app ");
+                    ui.label("You can find native downloads of the app");
                     ui.hyperlink_to(
                         "on the github",
                         "https://github.com/maddymakesgames/celeste_rs/releases",
