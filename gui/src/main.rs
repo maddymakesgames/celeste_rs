@@ -13,8 +13,10 @@ use eframe::{
         Color32,
         Context,
         FontFamily,
+        FontFamily::Proportional,
         FontId,
         RichText,
+        TextStyle::*,
         Ui,
         WidgetText,
         Window,
@@ -75,6 +77,9 @@ struct SaveEditor {
 impl SaveEditor {
     fn new(cc: &CreationContext) -> SaveEditor {
         // expects are fine since if this fails theres nothing we can do
+        // We create a multithreading runtime on native, and a single-threaded runtime on wasm.
+        // We don't *really* use the runtime on wasm but it'd be too annoying for it to not exist
+        // We also can rewrite the code easily to actually use the runtime so /shrug
         #[cfg(not(target_family = "wasm"))]
         let runtime = tokio::runtime::Runtime::new().expect("Error creating tokio runtime");
         #[cfg(target_family = "wasm")]
@@ -83,10 +88,10 @@ impl SaveEditor {
             .build()
             .expect("Error creating tokio runtime");
 
+
         let mut style = (*cc.egui_ctx.style()).clone();
 
-        use eframe::egui::{FontFamily::Proportional, TextStyle::*};
-
+        // Modify the text_styles to include our own font sizes
         style.text_styles = [
             (Heading, FontId::new(32.0, Proportional)),
             (Name("header2".into()), FontId::new(26.0, Proportional)),
@@ -110,19 +115,21 @@ impl SaveEditor {
 
 impl App for SaveEditor {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
+        // Show the main window contents
         CentralPanel::default().show(ctx, |ui| {
             self.screen.update(ui, &self.runtime, &self.popups)
         });
 
         let mut popup_guard = self.popups.blocking_lock();
         let mut to_remove = None;
+        // Loop over any open popups and display them
         for (i, popup) in popup_guard.iter().enumerate() {
             match popup.show(ctx) {
                 PopupResult::ClosePopup => to_remove = Some(i),
                 PopupResult::Nothing => {}
                 PopupResult::CloseApp => {
-                    // unwraps are safe cause window will always exist and I don't think reload can fail
                     #[cfg(target_family = "wasm")]
+                    // unwraps are safe cause window will always exist and I don't think reload can fail
                     web_sys::window().unwrap().location().reload().unwrap();
                     #[cfg(not(target_family = "wasm"))]
                     {
@@ -133,6 +140,7 @@ impl App for SaveEditor {
             }
         }
 
+        // If the user closed a popup remove it from the list
         if let Some(to_remove) = to_remove {
             popup_guard.remove(to_remove);
         }
@@ -149,23 +157,15 @@ enum ScreenState {
 impl ScreenState {
     fn update(&mut self, ui: &mut Ui, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
         match self {
+            // Startup just immediately transitions to the main menu
             ScreenState::Startup => *self = ScreenState::Menu(MainMenu::default()),
             ScreenState::Menu(m) =>
+            // The main menu displays until a file has been opened
+            // In which case we transition to the editor
                 if let Some((file_name, save)) = m.display(ui, rt, popups) {
-                    match EditorScreen::new(file_name, save) {
-                        Ok(e) => *self = ScreenState::Editor(e),
-                        Err(e) => {
-                            let mut popups = popups.blocking_lock();
-                            popups.push(PopupWindow::new(
-                                ErrorSeverity::Error,
-                                format!(
-                                    "Error reading savefile: {e:?}.\nMake sure this actually is a \
-                                     save file."
-                                ),
-                            ))
-                        }
-                    }
+                    *self = ScreenState::Editor(EditorScreen::new(file_name, save))
                 },
+            // The editor (current) doesn't ever transition out
             ScreenState::Editor(e) => {
                 e.display(ui, rt, popups);
             }
@@ -200,7 +200,9 @@ fn celeste_save_dir() -> Option<PathBuf> {
     }
 }
 
+/// An error popup window
 struct PopupWindow {
+    /// The severity of the message
     severity: ErrorSeverity,
     /// The text displayed on the popup
     text: String,

@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use celeste_rs::saves::{
     everest::LevelSetStats,
-    ops::DeError,
     util::{EntityID, FileTime},
     SaveData,
 };
@@ -46,7 +45,7 @@ pub struct EditorScreen {
 }
 
 impl EditorScreen {
-    pub fn new(file_name: String, save: SaveData) -> Result<EditorScreen, DeError> {
+    pub fn new(file_name: String, save: SaveData) -> EditorScreen {
         let vanilla_level_set = LevelSetStats {
             name: "Celeste".to_owned(),
             areas: save.areas.clone(),
@@ -55,7 +54,7 @@ impl EditorScreen {
             total_strawberries: save.total_strawberries,
         };
 
-        Ok(EditorScreen {
+        EditorScreen {
             file_name,
             save,
             safety_off: false,
@@ -66,7 +65,7 @@ impl EditorScreen {
             session_add_strawb_buff: String::new(),
             session_add_key_buf: String::new(),
             session_add_dnl_buf: String::new(),
-        })
+        }
     }
 
     pub fn display(&mut self, ui: &mut Ui, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
