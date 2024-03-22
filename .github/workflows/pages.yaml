@@ -1,15 +1,15 @@
 name: Github Pages
 
 # By default, runs if you push to master. keeps your deployed app in sync with master branch.
-on:
-  push:
-    branches:
-      - master
-# to only run when you do a new github release, comment out above part and uncomment the below trigger.
 # on:
-#   release:
-#     types:
-#       - published
+#   push:
+#     branches:
+#       - master
+# to only run when you do a new github release, comment out above part and uncomment the below trigger.
+on:
+  release:
+    types:
+      - published
 
 permissions:
   contents: write # for committing to gh-pages branch.
