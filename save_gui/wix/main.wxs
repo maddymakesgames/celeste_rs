@@ -69,6 +69,7 @@
 
         <Package Id='*'
             Keywords='Installer'
+            Description='GUI editor for celeste save files'
             Manufacturer='Maddymakesgames (madelinemakesgames@gmail.com)'
             InstallerVersion='450'
             Languages='1033'
