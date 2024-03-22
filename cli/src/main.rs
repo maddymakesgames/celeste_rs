@@ -75,7 +75,12 @@ fn merge_saves(args: Vec<String>, verbose: bool) -> Option<()> {
     save_a.merge_data(&save_b);
 
     let out_path = &args[2];
-    let mut out_file = match OpenOptions::new().create(true).write(true).open(out_path) {
+    let mut out_file = match OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(out_path)
+    {
         Ok(f) => f,
         Err(ref e) => {
             match e.kind() {
