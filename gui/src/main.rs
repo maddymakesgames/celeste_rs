@@ -16,7 +16,6 @@ use eframe::{
         FontId,
         RichText,
         Ui,
-        ViewportCommand,
         WidgetText,
         Window,
     },
@@ -126,7 +125,10 @@ impl App for SaveEditor {
                     #[cfg(target_family = "wasm")]
                     web_sys::window().unwrap().location().reload().unwrap();
                     #[cfg(not(target_family = "wasm"))]
-                    ctx.send_viewport_cmd(ViewportCommand::Close);
+                    {
+                        use eframe::egui::ViewportCommand;
+                        ctx.send_viewport_cmd(ViewportCommand::Close);
+                    }
                 }
             }
         }

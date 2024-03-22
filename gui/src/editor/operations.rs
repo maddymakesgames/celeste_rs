@@ -1,4 +1,4 @@
-use std::{fs::OpenOptions, io::Write, sync::Arc};
+use std::sync::Arc;
 
 use celeste_rs::saves::{everest::LevelSetStats, SaveData};
 use eframe::egui::{RichText, Ui};
@@ -76,6 +76,7 @@ impl EditorScreen {
             if let Some(file) = file_dialogue.save_file().await {
                 #[cfg(not(target_family = "wasm"))]
                 {
+                    use std::{fs::OpenOptions, io::Write};
                     let mut file = match OpenOptions::new()
                         .create(true)
                         .write(true)
