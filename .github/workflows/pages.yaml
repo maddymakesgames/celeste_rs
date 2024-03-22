@@ -6,10 +6,12 @@ name: Github Pages
 #     branches:
 #       - master
 # to only run when you do a new github release, comment out above part and uncomment the below trigger.
+# I think the default release setting might be broken when working with cargo-dist
+# We will only release through cargo-dist so we can just trigger them at the same time
 on:
   release:
-    types:
-      - published
+    tags:
+      - '**[0-9]+.[0-9]+.[0-9]+*'
 
 permissions:
   contents: write # for committing to gh-pages branch.
