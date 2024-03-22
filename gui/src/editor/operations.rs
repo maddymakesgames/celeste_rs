@@ -79,6 +79,7 @@ impl EditorScreen {
                     use std::{fs::OpenOptions, io::Write};
                     let mut file = match OpenOptions::new()
                         .create(true)
+                        .truncate(true)
                         .write(true)
                         .open(file.path())
                     {
