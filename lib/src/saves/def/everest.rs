@@ -11,7 +11,7 @@ pub struct LevelSetStats {
     #[serde(rename = "Poem")]
     pub poem: Poem,
     #[serde(rename = "UnlockedAreas")]
-    pub unlocked_areas: u8,
+    pub unlocked_areas: i16,
     #[serde(rename = "TotalStrawberries")]
     pub total_strawberries: u16,
 }
