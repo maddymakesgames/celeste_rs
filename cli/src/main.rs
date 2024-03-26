@@ -120,7 +120,8 @@ fn print_stats(args: Vec<String>, verbose: bool) -> Option<()> {
             println!(
                 r#"SID: {}
 ID: {}"#,
-                area.def.sid, area.def.id
+                area.def.sid(),
+                area.def.id
             );
 
             for (i, mode) in area.modes.iter().enumerate() {
@@ -166,7 +167,7 @@ ID: {}"#,
             save_file.total_jumps,
             save_file.total_dashes,
             save_file.total_jumps,
-            save_file.last_area.s_id,
+            save_file.last_area.sid(),
             save_file.has_modded_save_data,
         );
 
@@ -179,7 +180,7 @@ ID: {}"#,
 
             println!(
                 "Number of modded level sets: {num_mods}\nLast modded area played: {}",
-                save_file.last_area_safe.as_ref().unwrap().s_id
+                save_file.last_area_safe.as_ref().unwrap().sid()
             );
         }
     }
