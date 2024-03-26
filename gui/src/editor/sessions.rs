@@ -147,7 +147,12 @@ impl EditorScreen {
 
 
         ui.checkbox(&mut session.beat_best_time, "Beat best time");
-        ui.checkbox(&mut session.restarted_from_golden, "Restarted from golden");
+        if session.restarted_from_golden.is_some() {
+            ui.checkbox(
+                session.restarted_from_golden.as_mut().unwrap(),
+                "Restarted from golden",
+            );
+        }
 
         ui.collapsing(RichText::new("Inventory").heading2(), |ui| {
             ui.horizontal(|ui| {
@@ -285,7 +290,7 @@ impl EditorScreen {
                     area_mode_widget(
                         ui,
                         id_filler,
-                        &session.old_stats.area.sid,
+                        session.old_stats.area.sid(),
                         safety_off,
                         total_deaths,
                         total_time,

@@ -123,7 +123,7 @@ impl LevelSetsPanel {
                         }
 
                         if ui
-                            .selectable_label(self.selected_area == Some(idx), &area.def.sid)
+                            .selectable_label(self.selected_area == Some(idx), area.def.sid())
                             .clicked()
                         {
                             self.selected_area = Some(idx);
@@ -170,7 +170,7 @@ impl LevelSetsPanel {
                             .show(ui, |ui| {
                                 mode_widget(
                                     ui,
-                                    &area.def.sid,
+                                    area.def.sid(),
                                     safety_off,
                                     &mut save.total_deaths,
                                     &mut save.time,
