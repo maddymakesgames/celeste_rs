@@ -107,9 +107,13 @@ pub struct SaveData {
     pub areas: Areas,
     /// Data about all the modded level sets that were loaded last time this save was played on
     #[serde(rename = "LevelSets")]
+    #[serde(default)]
+    #[serde(skip_serializing_if = "LevelSets::is_inner_empty")]
     pub level_sets: LevelSets,
     /// Data about the all the modded level sets ever loaded on this save file
     #[serde(rename = "LevelSetRecycleBin")]
+    #[serde(default)]
+    #[serde(skip_serializing_if = "LevelSets::is_inner_empty")]
     pub level_set_recycle_bin: LevelSets,
     /// Whether this save file has been loaded into everest before
     #[serde(rename = "HasModdedSaveData")]
