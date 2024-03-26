@@ -17,7 +17,8 @@ pub struct LastAreaRef {
     #[serde(rename = "@Mode")]
     pub mode: String,
     #[serde(rename = "@SID")]
-    pub s_id: String,
+    /// Is `None` in a non-modded save
+    pub s_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
