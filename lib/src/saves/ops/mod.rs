@@ -226,16 +226,21 @@ impl SaveData {
                 for (self_mode, other_mode) in
                     self_area.modes.iter_mut().zip(other_area.modes.iter())
                 {
-                    // We assume checkpoints can't be unlocked out of order
-                    // and thus if they have the same len they have the same checkpoints
-                    // TODO: verify this
-                    if other_mode.checkpoints.len() > self_mode.checkpoints.len() {
-                        for i in 0 .. other_mode.checkpoints.len() {
-                            if other_mode.checkpoints.get(i) != self_mode.checkpoints.get(i) {
-                                self_mode
-                                    .checkpoints
-                                    .insert(i, other_mode.checkpoints[i].clone());
-                            }
+                    for (idx, cp) in other_mode.checkpoints.iter().enumerate() {
+                        if !self_mode.checkpoints.contains(cp) {
+                            // We assume if the other save has a cp in the same position
+                            // that it comes earlier than the cps we have.
+                            // there is no real good way to handle conflicts in the middle of the list
+                            // but this allows merging [a, b, c] into [b, c] to work properly
+                            // while keeping [a, b, c] into [a, b] working properly
+                            //
+                            // The only map I know of that has cps that you might miss is solaris
+                            // but even then the cps come after the original cps.
+                            //
+                            // Ultimately I have no idea if this is a correct implementation
+                            // but also it shouldn't matter cause the amount of times
+                            // an issue will occur is likely very small
+                            self_mode.checkpoints.insert(idx, cp.clone());
                         }
                     }
 
