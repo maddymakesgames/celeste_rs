@@ -43,7 +43,8 @@ pub struct AreaDef {
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
     pub cassette: bool,
     #[serde(rename = "@SID")]
-    pub sid: String,
+    /// Is `None` in a non-modded save
+    pub sid: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

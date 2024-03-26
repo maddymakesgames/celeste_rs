@@ -23,6 +23,10 @@ pub mod session;
 pub mod util;
 pub mod vanilla;
 
+fn area_sid_matches(area: &AreaStats, sid: &str) -> bool {
+    area.def.sid.as_ref().is_some_and(|a_sid| a_sid == sid)
+}
+
 impl SaveData {
     pub fn from_reader(reader: impl BufRead) -> Result<Self, DeError> {
         quick_xml::de::from_reader(reader)
@@ -102,17 +106,17 @@ impl SaveData {
     /// Returns `None` if no area with the given sid is found.
     pub fn find_area_by_sid<'a>(&'a self, sid: &str) -> Option<&'a AreaStats> {
         if sid.starts_with("Celeste") {
-            self.areas.iter().find(|a| a.def.sid == sid)
+            self.areas.iter().find(|a| area_sid_matches(a, sid))
         } else {
             self.level_sets
                 .iter()
                 .flat_map(|l| l.areas.iter())
-                .find(|a| a.def.sid == sid)
+                .find(|a| area_sid_matches(a, sid))
                 .or(self
                     .level_set_recycle_bin
                     .iter()
                     .flat_map(|l| l.areas.iter())
-                    .find(|a| a.def.sid == sid))
+                    .find(|a| area_sid_matches(a, sid)))
         }
     }
 
@@ -121,17 +125,17 @@ impl SaveData {
     /// Returns `None` if no area with the given sid is found.
     pub fn find_area_by_sid_mut<'a>(&'a mut self, sid: &str) -> Option<&'a mut AreaStats> {
         if sid.starts_with("Celeste") {
-            self.areas.iter_mut().find(|a| a.def.sid == sid)
+            self.areas.iter_mut().find(|a| area_sid_matches(a, sid))
         } else {
             self.level_sets
                 .iter_mut()
                 .flat_map(|l| l.areas.iter_mut())
-                .find(|a| a.def.sid == sid)
+                .find(|a| area_sid_matches(a, sid))
                 .or(self
                     .level_set_recycle_bin
                     .iter_mut()
                     .flat_map(|l| l.areas.iter_mut())
-                    .find(|a| a.def.sid == sid))
+                    .find(|a| area_sid_matches(a, sid)))
         }
     }
 
@@ -147,17 +151,17 @@ impl SaveData {
         source: AreaSource,
     ) -> Option<&'a AreaStats> {
         match source {
-            AreaSource::Vanilla => self.areas.areas.iter().find(|a| a.def.sid == sid),
+            AreaSource::Vanilla => self.areas.areas.iter().find(|a| area_sid_matches(a, sid)),
             AreaSource::LevelSets => self
                 .level_sets
                 .iter()
                 .flat_map(|l| l.areas.iter())
-                .find(|a| a.def.sid == sid),
+                .find(|a| area_sid_matches(a, sid)),
             AreaSource::LevelSetRecycleBin => self
                 .level_set_recycle_bin
                 .iter()
                 .flat_map(|l| l.areas.iter())
-                .find(|a| a.def.sid == sid),
+                .find(|a| area_sid_matches(a, sid)),
         }
     }
 
@@ -173,17 +177,17 @@ impl SaveData {
         source: AreaSource,
     ) -> Option<&'a mut AreaStats> {
         match source {
-            AreaSource::Vanilla => self.areas.iter_mut().find(|a| a.def.sid == sid),
+            AreaSource::Vanilla => self.areas.iter_mut().find(|a| area_sid_matches(a, sid)),
             AreaSource::LevelSets => self
                 .level_sets
                 .iter_mut()
                 .flat_map(|l| l.areas.iter_mut())
-                .find(|a| a.def.sid == sid),
+                .find(|a| area_sid_matches(a, sid)),
             AreaSource::LevelSetRecycleBin => self
                 .level_set_recycle_bin
                 .iter_mut()
                 .flat_map(|l| l.areas.iter_mut())
-                .find(|a| a.def.sid == sid),
+                .find(|a| area_sid_matches(a, sid)),
         }
     }
 
