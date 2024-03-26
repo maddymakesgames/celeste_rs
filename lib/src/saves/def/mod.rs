@@ -15,6 +15,13 @@ use vanilla::*;
 
 use chrono::NaiveDateTime;
 
+pub type AreaCount = i16;
+pub type StrawberryCount = u16;
+pub type DeathCount = u64;
+pub type DashCount = u64;
+pub type JumpCount = u64;
+pub type AreaId = u16;
+
 /// The root of a celeste save file
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SaveData {
@@ -53,29 +60,29 @@ pub struct SaveData {
     ///
     /// This only takes into account vanilla areas
     #[serde(rename = "UnlockedAreas")]
-    pub unlocked_areas: u8,
+    pub unlocked_areas: AreaCount,
     /// The total amount of deaths in the save file
     #[serde(rename = "TotalDeaths")]
-    pub total_deaths: u64,
+    pub total_deaths: DeathCount,
     /// The total amount of vanilla strawberries collected
     ///
     /// This does not account for modded strawberries but does count vanilla golden strawberries.
     #[serde(rename = "TotalStrawberries")]
-    pub total_strawberries: u16,
+    pub total_strawberries: StrawberryCount,
     /// The total amount of golden strawberries collected
     ///
     /// Unlike [total_strawberries](SaveData::total_strawberries) this DOES include modded berries
     #[serde(rename = "TotalGoldenStrawberries")]
-    pub total_golden_strawberries: u16,
+    pub total_golden_strawberries: StrawberryCount,
     /// The total amount of jumps on the save file
     #[serde(rename = "TotalJumps")]
-    pub total_jumps: u64,
+    pub total_jumps: JumpCount,
     /// The total amount of wall jumps on the save file
     #[serde(rename = "TotalWallJumps")]
-    pub total_wall_jumps: u64,
+    pub total_wall_jumps: JumpCount,
     /// The total amount of dashes on the save file
     #[serde(rename = "TotalDashes")]
-    pub total_dashes: u64,
+    pub total_dashes: DashCount,
     /// The flags used in the vanilla storyline
     #[serde(rename = "Flags")]
     pub flags: Flags,

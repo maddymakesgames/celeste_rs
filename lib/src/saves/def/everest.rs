@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-use crate::saves::def::{Areas, Poem};
+use crate::saves::{
+    def::{Areas, Poem},
+    AreaCount,
+    StrawberryCount,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LevelSetStats {
@@ -11,9 +15,9 @@ pub struct LevelSetStats {
     #[serde(rename = "Poem")]
     pub poem: Poem,
     #[serde(rename = "UnlockedAreas")]
-    pub unlocked_areas: i16,
+    pub unlocked_areas: AreaCount,
     #[serde(rename = "TotalStrawberries")]
-    pub total_strawberries: u16,
+    pub total_strawberries: StrawberryCount,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

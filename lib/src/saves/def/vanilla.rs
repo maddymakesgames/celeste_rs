@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-use crate::saves::def::{FileTime, Strawberries};
+use crate::saves::{
+    def::{FileTime, Strawberries},
+    AreaId,
+    DashCount,
+    DeathCount,
+    StrawberryCount,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Areas {
@@ -13,7 +19,7 @@ pub struct Areas {
 pub struct LastAreaRef {
     #[serde(rename = "@ID")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
-    pub id: u16,
+    pub id: AreaId,
     #[serde(rename = "@Mode")]
     pub mode: String,
     #[serde(rename = "@SID")]
@@ -38,7 +44,7 @@ pub struct Modes {
 pub struct AreaDef {
     #[serde(rename = "@ID")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
-    pub id: u16,
+    pub id: AreaId,
     #[serde(rename = "@Cassette")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
     pub cassette: bool,
@@ -68,7 +74,7 @@ pub struct Checkpoints {
 pub struct AreaModeStats {
     #[serde(rename = "@TotalStrawberries")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
-    pub total_strawberries: u8,
+    pub total_strawberries: StrawberryCount,
     #[serde(rename = "@Completed")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_bool_from_anything")]
     pub completed: bool,
@@ -80,7 +86,7 @@ pub struct AreaModeStats {
     pub full_clear: bool,
     #[serde(rename = "@Deaths")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
-    pub deaths: u64,
+    pub deaths: DeathCount,
     #[serde(rename = "@TimePlayed")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
     pub time_played: FileTime,
@@ -92,10 +98,10 @@ pub struct AreaModeStats {
     pub best_full_clear_time: FileTime,
     #[serde(rename = "@BestDashes")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
-    pub best_dashes: u64,
+    pub best_dashes: DashCount,
     #[serde(rename = "@BestDeaths")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
-    pub best_deaths: u64,
+    pub best_deaths: DeathCount,
     #[serde(rename = "@HeartGem")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_bool_from_anything")]
     pub heart_gem: bool,

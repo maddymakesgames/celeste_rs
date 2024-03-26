@@ -14,6 +14,7 @@ use crate::saves::{
     Flags,
     Poem,
     SaveData,
+    StrawberryCount,
     VanillaFlags,
     VanillaFlagsWrapper,
 };
@@ -291,7 +292,7 @@ impl SaveData {
                     self_stats.deaths += other_stats.deaths;
                     self_stats.time_played += other_stats.time_played;
 
-                    self_stats.total_strawberries = self_mode.strawberries.len() as u8;
+                    self_stats.total_strawberries = self_mode.strawberries.len() as StrawberryCount;
                 }
             }
         }

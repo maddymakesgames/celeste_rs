@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::{deserialize_bool_from_anything, deserialize_number_from_string};
 
-use crate::saves::def::{util::RespawnPoint, AreaDef, EntityID, FileTime, Modes};
+use crate::saves::{
+    def::{util::RespawnPoint, AreaDef, EntityID, FileTime, Modes},
+    DashCount,
+    DeathCount,
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SessionAreaRef {
@@ -31,16 +35,16 @@ pub struct SessionStats {
     pub started_from_beginning: bool,
     #[serde(rename = "@Deaths")]
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub deaths: u64,
+    pub deaths: DeathCount,
     #[serde(rename = "@Dashes")]
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub dashes: u64,
+    pub dashes: DashCount,
     #[serde(rename = "@DashesAtLevelStart")]
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub dashes_at_start: u64,
+    pub dashes_at_start: DashCount,
     #[serde(rename = "@DeathsInCurrentLevel")]
     #[serde(deserialize_with = "deserialize_number_from_string")]
-    pub session_deaths: u64,
+    pub session_deaths: DeathCount,
     #[serde(rename = "@InArea")]
     #[serde(deserialize_with = "deserialize_bool_from_anything")]
     pub in_area: bool,

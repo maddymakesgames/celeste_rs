@@ -4,6 +4,7 @@ use celeste_rs::saves::{
     everest::LevelSetStats,
     util::{EntityID, FileTime},
     SaveData,
+    StrawberryCount,
 };
 use eframe::egui::{
     DragValue,
@@ -134,7 +135,7 @@ fn entity_id_list_widget(
     entity_title: &str,
     entities: &mut Vec<EntityID>,
     safety_off: bool,
-    total_entity_count: Option<&mut u8>,
+    total_entity_count: Option<&mut StrawberryCount>,
     add_entity_buff: &mut String,
 ) {
     ui.push_id(id, |ui| {
