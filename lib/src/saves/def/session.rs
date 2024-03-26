@@ -114,7 +114,8 @@ pub struct SavedSession {
     #[serde(rename = "BeatBestTime")]
     pub beat_best_time: bool,
     #[serde(rename = "RestartedFromGolden")]
-    pub restarted_from_golden: bool,
+    // Seems to be None in vanilla saves
+    pub restarted_from_golden: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
