@@ -166,7 +166,13 @@ pub struct Audio {
     #[serde(rename = "Ambience")]
     pub ambience: Music,
     #[serde(rename = "AmbienceVolume")]
-    pub ambience_volume: (),
+    pub ambience_volume: Option<AmbienceVolume>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AmbienceVolume {
+    #[serde(rename = "@xsi:nil")]
+    val: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
