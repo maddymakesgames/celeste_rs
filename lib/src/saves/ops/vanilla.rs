@@ -31,7 +31,7 @@ impl LastAreaRef {
     /// Gets a reference to an sid for the level
     pub fn sid(&self) -> &str {
         // see the comment for AreaDef::sid
-        self.s_id
+        self.sid
             .as_deref()
             .unwrap_or(VANILLA_SIDS[self.id as usize])
     }

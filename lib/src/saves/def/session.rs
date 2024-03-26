@@ -19,7 +19,7 @@ pub struct SessionAreaRef {
     /// This is `None` in a Vanilla session, and is always Some in a modded session.<br>
     /// Modded sessions will always be stored in [CurrentSession_Safe](crate::saves::def::SaveData::current_session_safe) and any vanilla sessions will always be stored in [CurrentSession](crate::saves::def::SaveData::current_session)
     #[serde(rename = "@SID")]
-    pub s_id: Option<String>,
+    pub sid: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

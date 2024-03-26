@@ -108,8 +108,8 @@ impl EditorScreen {
         ui.horizontal(|ui| {
             ui.label("Current area sid: ");
             // Modded session levels will ALWAYS have a session id so this will always show
-            if let Some(s_id) = &mut session.area.s_id {
-                ui.add_enabled(safety_off, TextEdit::singleline(s_id));
+            if let Some(sid) = &mut session.area.sid {
+                ui.add_enabled(safety_off, TextEdit::singleline(sid));
             }
 
             ui.info_hover(
