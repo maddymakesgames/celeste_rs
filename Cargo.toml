@@ -3,6 +3,10 @@ members = ["lib", "cli", "test_bin", "gui"]
 resolver = "2"
 package.repository = "https://github.com/maddymakesgames/celeste_rs"
 package.authors = ["Maddymakesgames (madelinemakesgames@gmail.com)"]
+package.license = "MIT"
+package.homepage = "https://github.com/maddymakesgames/celeste_rs"
+package.keywords = ["celeste"]
+package.categories = ["data-structures"]
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
