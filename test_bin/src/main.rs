@@ -17,7 +17,7 @@ fn main() -> std::io::Result<()> {
         }
     };
 
-    let xml = quick_xml::se::to_string(&document).unwrap();
+    let xml = document.to_string().unwrap();
     std::fs::write("./test.xml", xml).unwrap();
     Ok(())
 }
