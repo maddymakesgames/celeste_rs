@@ -24,6 +24,8 @@ pub mod session;
 pub mod util;
 pub mod vanilla;
 
+const XML_VERSION_HEADER: &str = r#"<?xml version="1.0" encoding="utf-8"?>"#;
+
 fn area_sid_matches(area: &AreaStats, sid: &str) -> bool {
     area.def.sid.as_ref().is_some_and(|a_sid| a_sid == sid)
 }
@@ -39,10 +41,13 @@ impl SaveData {
     }
 
     pub fn to_string(&self) -> Result<String, DeError> {
-        quick_xml::se::to_string(&self)
+        let mut xml = XML_VERSION_HEADER.to_owned();
+        xml.push_str(&quick_xml::se::to_string(&self)?);
+        Ok(xml)
     }
 
-    pub fn to_writer(&self, writer: impl Write) -> Result<(), DeError> {
+    pub fn to_writer(&self, mut writer: impl Write) -> Result<(), DeError> {
+        writer.write_str(XML_VERSION_HEADER)?;
         quick_xml::se::to_writer(writer, &self)
     }
 

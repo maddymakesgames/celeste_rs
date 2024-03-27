@@ -25,6 +25,12 @@ pub type AreaId = u16;
 /// The root of a celeste save file
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SaveData {
+    #[doc(hidden)]
+    #[serde(rename(serialize = "@xmlns:xsi", deserialize = "@xmlns:xsi"))]
+    xsi_url: String,
+    #[doc(hidden)]
+    #[serde(rename(serialize = "@xmlns:xsd", deserialize = "@xmlns:xsd"))]
+    xsd_url: String,
     /// The last celeste version that the save file was opened with
     #[serde(rename = "Version")]
     pub version: String,
