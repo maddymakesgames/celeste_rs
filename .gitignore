@@ -3,3 +3,4 @@ target
 *.xml
 dist/
 /*.celeste
+.vscode/
