@@ -741,7 +741,7 @@ dependencies = [
 
 [[package]]
 name = "celeste_rs_gui"
-version = "0.1.0-prerelease.1"
+version = "0.1.0"
 dependencies = [
  "celeste_rs",
  "console_error_panic_hook",
