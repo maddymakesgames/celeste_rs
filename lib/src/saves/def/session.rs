@@ -176,8 +176,8 @@ pub struct Audio {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AmbienceVolume {
-    #[serde(rename = "@xsi:nil")]
-    val: bool,
+    #[serde(rename(serialize = "@xsi:nil", deserialize = "@nil"))]
+    pub val: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
