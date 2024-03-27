@@ -9,7 +9,7 @@ name: Github Pages
 # I think the default release setting might be broken when working with cargo-dist
 # We will only release through cargo-dist so we can just trigger them at the same time
 on:
-  release:
+  push:
     tags:
       - '**[0-9]+.[0-9]+.[0-9]+*'
 
