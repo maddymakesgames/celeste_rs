@@ -23,7 +23,7 @@ impl AreaDef {
         // Or manually edited saves
         self.sid
             .as_deref()
-            .unwrap_or(VANILLA_SIDS[self.id as usize])
+            .unwrap_or_else(|| VANILLA_SIDS[self.id as usize])
     }
 }
 
@@ -33,7 +33,7 @@ impl LastAreaRef {
         // see the comment for AreaDef::sid
         self.sid
             .as_deref()
-            .unwrap_or(VANILLA_SIDS[self.id as usize])
+            .unwrap_or_else(|| VANILLA_SIDS[self.id as usize])
     }
 }
 
