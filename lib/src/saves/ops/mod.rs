@@ -10,7 +10,9 @@ pub use quick_xml::DeError;
 
 use crate::saves::{
     def::{everest::LevelSetStats, vanilla::AreaStats},
+    DashCount,
     DashMode,
+    DeathCount,
     Flags,
     Poem,
     SaveData,
@@ -279,9 +281,9 @@ impl SaveData {
                     self_stats.heart_gem |= other_stats.heart_gem;
                     self_stats.single_run_completed |= other_stats.single_run_completed;
                     self_stats.best_dashes =
-                        u64::min(self_stats.best_dashes, other_stats.best_dashes);
+                        DashCount::min(self_stats.best_dashes, other_stats.best_dashes);
                     self_stats.best_deaths =
-                        u64::min(self_stats.best_deaths, other_stats.best_deaths);
+                        DeathCount::min(self_stats.best_deaths, other_stats.best_deaths);
                     self_stats.best_full_clear_time =
                         if self_stats.best_full_clear_time < other_stats.best_full_clear_time {
                             self_stats.best_full_clear_time
