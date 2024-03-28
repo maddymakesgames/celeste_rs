@@ -13,7 +13,7 @@ const VANILLA_SIDS: [&str; 11] = [
     "Celeste/7-Summit",
     "Celeste/8-Epilogue",
     "Celeste/9-Core",
-    "Celeste/10-Farewell",
+    "Celeste/LostLevels",
 ];
 
 impl AreaDef {
