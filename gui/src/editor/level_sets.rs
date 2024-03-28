@@ -54,6 +54,14 @@ impl LevelSetsPanel {
             );
         });
 
+        if save.has_modded_save_data {
+            self.show_modded(ui, save, safety_off)
+        } else {
+            self.show_vanilla(ui, save, safety_off)
+        }
+    }
+
+    pub fn show_modded(&mut self, ui: &mut Ui, save: &mut SaveData, safety_off: bool) {
         let row_height = ui.text_style_height(&TextStyle::Body);
 
         SidePanel::left("level_sets_list_panel").show_inside(ui, |ui| {
@@ -187,6 +195,64 @@ impl LevelSetsPanel {
                         }
                     });
                 }
+            }
+        }
+    }
+
+    pub fn show_vanilla(&mut self, ui: &mut Ui, save: &mut SaveData, safety_off: bool) {
+        SidePanel::left("vanilla_area_panel").show_inside(ui, |ui| {
+            ScrollArea::both().auto_shrink(false).show(ui, |ui| {
+                for (idx, area_sid) in save.areas.iter().map(|a| a.def.sid()).enumerate() {
+                    if ui
+                        .selectable_label(self.selected_area == Some(idx), area_sid)
+                        .clicked()
+                    {
+                        self.selected_area = Some(idx);
+                        self.selected_mode = None;
+                    }
+                }
+            });
+        });
+
+        if let Some(area_idx) = self.selected_area {
+            let width = ui
+                .painter()
+                .layout_no_wrap(
+                    "A-Side".to_owned(),
+                    FontId::proportional(18.0),
+                    Color32::BLACK,
+                )
+                .rect
+                .expand(5.0)
+                .width();
+            SidePanel::left("mode_list_panel")
+                .max_width(width)
+                .resizable(false)
+                .show_inside(ui, |ui| {
+                    for (idx, side) in ["A-Side", "B-Side", "C-Side"].iter().enumerate() {
+                        if ui
+                            .selectable_label(self.selected_mode == Some(idx), *side)
+                            .clicked()
+                        {
+                            self.selected_mode = Some(idx);
+                        }
+                    }
+                });
+
+            if let Some(mode_idx) = self.selected_mode {
+                CentralPanel::default().show_inside(ui, |ui| {
+                    let area = &mut save.areas[area_idx];
+
+                    mode_widget(
+                        ui,
+                        area.def.sid(),
+                        safety_off,
+                        &mut save.total_deaths,
+                        &mut save.time,
+                        &mut area.modes[mode_idx],
+                        &mut self.add_strawberry_buff,
+                    );
+                });
             }
         }
     }
