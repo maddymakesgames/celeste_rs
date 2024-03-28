@@ -100,7 +100,6 @@ impl MainMenu {
                                     }
                                 }
 
-                                println!("{:?}", entry.path().extension());
 
                                 if entry.path().extension() != Some(&OsString::from("celeste")) {
                                     continue;
@@ -108,7 +107,6 @@ impl MainMenu {
 
 
                                 if let Ok(file) = OpenOptions::new().read(true).open(entry.path()) {
-                                    println!("opened {file_name}");
                                     match SaveData::from_reader(BufReader::new(file)) {
                                         Ok(save) =>
                                             if send.send(Some((file_name, save))).await.is_err() {
@@ -184,7 +182,6 @@ async fn handle_file_picker(
         for file in files {
             // Read the contents of the file
             let name = file.file_name();
-            println!("{name}");
             let contents = file.read().await;
             drop(file);
 
