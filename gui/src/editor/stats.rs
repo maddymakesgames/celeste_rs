@@ -26,6 +26,7 @@ impl EditorScreen {
                 ui.label("Jump Count:");
                 ui.label("Wall Jump Count:");
                 ui.label("Dash Count:");
+                ui.label("Unlocked Areas: ");
             });
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
