@@ -37,7 +37,11 @@ impl EditorScreen {
                     "Merges in any applicable data from a different save file into this \
                      one.\nWhile this has been tested, it might not merge all the data you would \
                      want it to and there may still be bugs.\nIt is highly recommended you keep \
-                     backups of your saves before using this.",
+                     backups of your saves before using this.\n\nHuge note: this DOES NOT really \
+                     merge in golden strawberry data. With only the save file there is no way to \
+                     tell if a strawberry is a golden or not, and so we cannot properly adjust \
+                     the counts.\nIf you have a save with a lot of goldens and want the merged \
+                     count to be accurate, you'll need to manually adjust the golden count.",
                 )
             });
 
