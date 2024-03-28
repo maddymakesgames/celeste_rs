@@ -33,7 +33,7 @@ pub mod stats;
 use crate::{editor::level_sets::LevelSetsPanel, tabbed::TabbedContentWidget, PopupWindow};
 
 pub struct EditorScreen {
-    file_name: String,
+    pub file_name: String,
     save: SaveData,
     safety_off: bool,
     selected_panel: usize,

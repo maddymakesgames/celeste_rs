@@ -26,7 +26,7 @@ use eframe::{
 };
 use tokio::{runtime::Runtime, sync::Mutex};
 
-use crate::main_menu::MainMenu;
+use crate::{main_menu::MainMenu, tabbed::TabbedContentWidget};
 
 #[cfg(not(target_family = "wasm"))]
 fn main() {
@@ -69,7 +69,8 @@ fn main() {
 
 // Global state struct for the editor
 struct SaveEditor {
-    screen: ScreenState,
+    selected_screen: usize,
+    screens: Vec<ScreenState>,
     runtime: Runtime,
     popups: Arc<Mutex<Vec<PopupWindow>>>,
 }
@@ -106,7 +107,8 @@ impl SaveEditor {
         cc.egui_ctx.set_style(style);
 
         SaveEditor {
-            screen: ScreenState::Startup,
+            selected_screen: 0,
+            screens: vec![ScreenState::Startup],
             runtime,
             popups: Arc::new(Mutex::new(Vec::new())),
         }
@@ -117,8 +119,21 @@ impl App for SaveEditor {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         // Show the main window contents
         CentralPanel::default().show(ctx, |ui| {
-            self.screen.update(ui, &self.runtime, &self.popups)
+            TabbedContentWidget::show(
+                ui,
+                &mut self.selected_screen,
+                self.screens
+                    .iter()
+                    .map(ScreenState::name)
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>(),
+                |selected, ui| self.screens[selected].update(ui, &self.runtime, &self.popups),
+            );
         });
+
+        if matches!(self.screens.last().unwrap(), ScreenState::Editor(_)) {
+            self.screens.push(ScreenState::Startup);
+        }
 
         let mut popup_guard = self.popups.blocking_lock();
         let mut to_remove = None;
@@ -169,6 +184,14 @@ impl ScreenState {
             ScreenState::Editor(e) => {
                 e.display(ui, rt, popups);
             }
+        }
+    }
+
+    fn name(&self) -> &str {
+        match self {
+            ScreenState::Startup => "new tab",
+            ScreenState::Menu(_) => "new tab",
+            ScreenState::Editor(e) => &e.file_name,
         }
     }
 }
