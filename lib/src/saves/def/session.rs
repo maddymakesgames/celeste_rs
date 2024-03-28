@@ -19,6 +19,7 @@ pub struct SessionAreaRef {
     /// This is `None` in a Vanilla session, and is always Some in a modded session.<br>
     /// Modded sessions will always be stored in [CurrentSession_Safe](crate::saves::def::SaveData::current_session_safe) and any vanilla sessions will always be stored in [CurrentSession](crate::saves::def::SaveData::current_session)
     #[serde(rename = "@SID")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 }
 
@@ -114,11 +115,13 @@ pub struct SavedSession {
     ///
     /// Don't currently know what causes this to be `None` but I just know it can be
     #[serde(rename = "FurthestSeenLevel")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub furthest_seen_level: Option<String>,
     #[serde(rename = "BeatBestTime")]
     pub beat_best_time: bool,
     #[serde(rename = "RestartedFromGolden")]
     // Seems to be None in vanilla saves
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub restarted_from_golden: Option<bool>,
 }
 
@@ -171,6 +174,7 @@ pub struct Audio {
     #[serde(rename = "Ambience")]
     pub ambience: Music,
     #[serde(rename = "AmbienceVolume")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub ambience_volume: Option<AmbienceVolume>,
 }
 

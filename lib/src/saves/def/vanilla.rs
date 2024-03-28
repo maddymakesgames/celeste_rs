@@ -24,6 +24,8 @@ pub struct LastAreaRef {
     pub mode: String,
     #[serde(rename = "@SID")]
     /// Is `None` in a non-modded save
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 }
 
@@ -50,6 +52,8 @@ pub struct AreaDef {
     pub cassette: bool,
     #[serde(rename = "@SID")]
     /// Is `None` in a non-modded save
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 }
 

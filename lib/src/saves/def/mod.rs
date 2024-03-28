@@ -100,6 +100,7 @@ pub struct SaveData {
     /// Is `None` if the save has never loaded 7a
     // TODO: idk if the option documentation is correct
     #[serde(rename = "SummitGems")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub summit_gems: Option<SummitGems>,
     /// Whether farewell has been revealed
     #[serde(rename = "RevealedChapter9")]
@@ -111,6 +112,7 @@ pub struct SaveData {
     ///
     /// This is only used by vanilla celeste, everest uses [current_session_safe](SaveData::current_session_safe)
     #[serde(rename = "CurrentSession")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub current_session: Option<SavedSession>,
     /// Data about each vanilla area
     ///
@@ -134,11 +136,13 @@ pub struct SaveData {
     pub has_modded_save_data: bool,
     /// A reference to the last area played, including modded levels
     #[serde(rename = "LastArea_Safe")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_area_safe: Option<LastAreaRef>,
     /// The current session saved on the file
     ///
     /// This is what is saved when you use "save & exit" while in a level
     #[serde(rename = "CurrentSession_Safe")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub current_session_safe: Option<SavedSession>,
 }
 
