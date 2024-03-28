@@ -1,4 +1,8 @@
-use std::{io::Cursor, sync::Arc};
+use std::{
+    ffi::OsString,
+    io::{BufReader, Cursor},
+    sync::Arc,
+};
 
 use celeste_rs::saves::SaveData;
 use eframe::egui::Ui;
@@ -56,8 +60,9 @@ impl MainMenu {
 
         if ui.button("Open Files").clicked() {
             // Create a file dialogue filtered for .celeste files
-            let file_dialogue =
-                AsyncFileDialog::new().add_filter("Celeste Save File", &["celeste"]);
+            let file_dialogue = AsyncFileDialog::new()
+                .set_title("Open Celeste Save File")
+                .add_filter("Celeste Save File", &["celeste"]);
 
             // Create a channel to send the parsed file back through
             let (send, recv) = channel(5);
@@ -66,6 +71,77 @@ impl MainMenu {
             spawn(rt, handle_file_picker(file_dialogue, send, popups.clone()));
 
             // Keep the recieving end of the channel so we can listen for the parsed file
+            self.file_listener = Some(recv);
+        }
+
+        #[cfg(not(target_family = "wasm"))]
+        if ui.button("Load Celeste Save Folder").clicked() {
+            use std::fs::{read_dir, OpenOptions};
+            let file_dialogue = AsyncFileDialog::new()
+                .set_title("Celeste Save Folder")
+                .pick_folder();
+
+            let (send, recv) = channel(5);
+            let popups = popups.clone();
+            spawn(rt, async move {
+                if let Some(dir) = file_dialogue.await {
+                    match read_dir(dir.path()) {
+                        Ok(iter) =>
+                            'dir_iter: for entry in iter.flatten() {
+                                let file_name = entry.file_name().to_string_lossy().to_string();
+
+                                'char_loop: for char in file_name.chars() {
+                                    if char == '.' {
+                                        break 'char_loop;
+                                    }
+
+                                    if !char.is_ascii_digit() {
+                                        continue 'dir_iter;
+                                    }
+                                }
+
+                                println!("{:?}", entry.path().extension());
+
+                                if entry.path().extension() != Some(&OsString::from("celeste")) {
+                                    continue;
+                                }
+
+
+                                if let Ok(file) = OpenOptions::new().read(true).open(entry.path()) {
+                                    println!("opened {file_name}");
+                                    match SaveData::from_reader(BufReader::new(file)) {
+                                        Ok(save) =>
+                                            if send.send(Some((file_name, save))).await.is_err() {
+                                                popups.lock().await.push(PopupWindow::new(
+                                                    ErrorSeverity::Error,
+                                                    "Error sending data back to main \
+                                                     thread.\nThis is a bug, please make a bug \
+                                                     report on github.",
+                                                ))
+                                            },
+                                        Err(e) => {
+                                            popups.lock().await.push(PopupWindow::new(
+                                                ErrorSeverity::Error,
+                                                format!(
+                                                    "Errors found when parsing save file \
+                                                     \"{file_name}\": {e}.\nMake sure the file \
+                                                     you selected is actually a save file.\nIf \
+                                                     this continues please report it as a bug on \
+                                                     github."
+                                                ),
+                                            ));
+                                        }
+                                    }
+                                }
+                            },
+                        Err(e) => popups.lock().await.push(PopupWindow::new(
+                            ErrorSeverity::Error,
+                            format!("Error opening directory: {e}"),
+                        )),
+                    }
+                }
+            });
+
             self.file_listener = Some(recv);
         }
 
