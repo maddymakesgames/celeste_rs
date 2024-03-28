@@ -10,6 +10,7 @@ pub use quick_xml::DeError;
 
 use crate::saves::{
     def::{everest::LevelSetStats, vanilla::AreaStats},
+    AreaCount,
     DashCount,
     DashMode,
     DeathCount,
@@ -202,17 +203,10 @@ impl SaveData {
     /// Merges the applicable data from another [SaveData] into this one
     ///
     /// #### Unmerged Data
-    /// These are the fields that are currently not merged that will be in a future version
-    /// - [SaveData::assists]
-    /// - [SaveData::total_strawberries]
+    /// These are the fields that are currently not merged that might be in a future version
     /// - [SaveData::total_golden_strawberries]
-    /// - [SaveData::unlocked_areas]
     /// - [SaveData::flags]
-    /// - [SaveData::poem]
     /// - [SaveData::summit_gems]
-    /// - [LevelSetStats::poem]
-    /// - [LevelSetStats::unlocked_areas]
-    /// - [LevelSetStats::total_strawberries]
     pub fn merge_data(&mut self, other: &SaveData) {
         // Merge the basic stats
         self.time += other.time;
@@ -225,6 +219,23 @@ impl SaveData {
         self.cheat_mode |= other.cheat_mode;
         self.assist_mode |= other.assist_mode;
         self.variant_mode |= other.variant_mode;
+
+        // This even being a thing could be a negative for some people.
+        // If more than one person asks us about it we cut it.
+        self.assists.badeline |= other.assists.badeline;
+        self.assists.dash_assist |= other.assists.dash_assist;
+        self.assists.full_dashing |= other.assists.full_dashing;
+        self.assists.hiccups |= other.assists.hiccups;
+        self.assists.infinite_stamina |= other.assists.infinite_stamina;
+        self.assists.invincible |= other.assists.invincible;
+        self.assists.invisible_motion |= other.assists.invisible_motion;
+        self.assists.low_friction |= other.assists.low_friction;
+        self.assists.mirror_mode |= other.assists.mirror_mode;
+        self.assists.no_grabbing |= other.assists.no_grabbing;
+        self.assists.super_dash |= other.assists.super_dash;
+
+        self.unlocked_areas = AreaCount::max(self.unlocked_areas, other.unlocked_areas);
+
 
         // Get the areas
         let areas_to_copy = other.all_areas();
@@ -280,16 +291,19 @@ impl SaveData {
                     self_stats.full_clear |= other_stats.full_clear;
                     self_stats.heart_gem |= other_stats.heart_gem;
                     self_stats.single_run_completed |= other_stats.single_run_completed;
+
                     self_stats.best_dashes =
                         DashCount::min(self_stats.best_dashes, other_stats.best_dashes);
                     self_stats.best_deaths =
                         DeathCount::min(self_stats.best_deaths, other_stats.best_deaths);
+
                     self_stats.best_full_clear_time =
                         if self_stats.best_full_clear_time < other_stats.best_full_clear_time {
                             self_stats.best_full_clear_time
                         } else {
                             other_stats.best_full_clear_time
                         };
+
                     self_stats.best_time = if self_stats.best_time < other_stats.best_time {
                         self_stats.best_time
                     } else {
@@ -302,6 +316,39 @@ impl SaveData {
                     self_stats.total_strawberries = self_mode.strawberries.len() as StrawberryCount;
                 }
             }
+        }
+
+        for (set, _) in self.all_level_sets_mut() {
+            set.total_strawberries = set
+                .areas
+                .iter()
+                .flat_map(|a| a.modes.iter())
+                .map(|m| m.strawberries.len())
+                .sum::<usize>() as StrawberryCount;
+
+            if let Some((other_set, _)) = other
+                .all_level_sets()
+                .iter()
+                .find(|(s, _)| s.name == set.name)
+            {
+                set.unlocked_areas = AreaCount::max(set.unlocked_areas, other_set.unlocked_areas);
+            }
+        }
+
+        self.total_strawberries = self
+            .areas
+            .iter()
+            .flat_map(|a| a.modes.iter())
+            .map(|m| m.strawberries.len())
+            .sum::<usize>() as StrawberryCount;
+
+        // This does not actually merge the counts properly BUT it does
+        // merge at least some of the data when `other` has more goldens than us
+        //
+        // Doing this properly would require some indication of which strawberries are goldens in the save
+        if self.total_golden_strawberries < other.total_golden_strawberries {
+            self.total_golden_strawberries +=
+                other.total_golden_strawberries - self.total_golden_strawberries;
         }
     }
 }
