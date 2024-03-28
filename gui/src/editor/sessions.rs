@@ -154,68 +154,6 @@ impl EditorScreen {
             );
         }
 
-        ui.collapsing(RichText::new("Inventory").heading2(), |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Dashes");
-                ui.add(DragValue::new(&mut session.inventory.dashes));
-            });
-
-            ui.checkbox(&mut session.inventory.dream_dash, "Dream dash");
-            ui.checkbox(&mut session.inventory.backpack, "Backpack");
-            ui.checkbox(&mut session.inventory.no_refills, "No refills");
-        });
-
-        if !session.counters.is_empty() {
-            ui.collapsing(RichText::new("Counters").heading2(), |ui| {
-                for counter in session.counters.iter_mut() {
-                    ui.horizontal(|ui| {
-                        ui.label(&counter.key);
-                        ui.add(DragValue::new(&mut counter.value));
-                    });
-                }
-            });
-        }
-
-        ui.collapsing(RichText::new("Collected Strawberries").heading2(), |ui| {
-            entity_id_list_widget(
-                ui,
-                "session_strawberries",
-                "Strawberries",
-                &mut session.strawberries,
-                safety_off,
-                None,
-                strawb_add_buff,
-            );
-        });
-
-        ui.collapsing(RichText::new("Held Keys").heading2(), |ui| {
-            entity_id_list_widget(
-                ui,
-                "session_keys",
-                "Keys",
-                &mut session.keys,
-                safety_off,
-                None,
-                key_add_buf,
-            )
-        });
-
-        ui.collapsing(
-            RichText::new("Entities marked 'do not load'").heading2(),
-            |ui| {
-                entity_id_list_widget(
-                    ui,
-                    "session_dnl",
-                    "Entity",
-                    &mut session.do_not_load,
-                    safety_off,
-                    None,
-                    dnl_add_buf,
-                );
-            },
-        );
-
-
         CollapsingHeader::new(RichText::new("Session Stats").heading2())
             .default_open(true)
             .show(ui, |ui| {
@@ -280,6 +218,67 @@ impl EditorScreen {
                     });
                 });
             });
+
+        ui.collapsing(RichText::new("Inventory").heading2(), |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Dashes");
+                ui.add(DragValue::new(&mut session.inventory.dashes));
+            });
+
+            ui.checkbox(&mut session.inventory.dream_dash, "Dream dash");
+            ui.checkbox(&mut session.inventory.backpack, "Backpack");
+            ui.checkbox(&mut session.inventory.no_refills, "No refills");
+        });
+
+        if !session.counters.is_empty() {
+            ui.collapsing(RichText::new("Counters").heading2(), |ui| {
+                for counter in session.counters.iter_mut() {
+                    ui.horizontal(|ui| {
+                        ui.label(&counter.key);
+                        ui.add(DragValue::new(&mut counter.value));
+                    });
+                }
+            });
+        }
+
+        ui.collapsing(RichText::new("Collected Strawberries").heading2(), |ui| {
+            entity_id_list_widget(
+                ui,
+                "session_strawberries",
+                "Strawberries",
+                &mut session.strawberries,
+                safety_off,
+                None,
+                strawb_add_buff,
+            );
+        });
+
+        ui.collapsing(RichText::new("Held Keys").heading2(), |ui| {
+            entity_id_list_widget(
+                ui,
+                "session_keys",
+                "Keys",
+                &mut session.keys,
+                safety_off,
+                None,
+                key_add_buf,
+            )
+        });
+
+        ui.collapsing(
+            RichText::new("Entities marked 'do not load'").heading2(),
+            |ui| {
+                entity_id_list_widget(
+                    ui,
+                    "session_dnl",
+                    "Entity",
+                    &mut session.do_not_load,
+                    safety_off,
+                    None,
+                    dnl_add_buf,
+                );
+            },
+        );
 
         ui.collapsing(RichText::new("Old stats").heading2(), |ui| {
             ui.info("These are the stats you had before you started the current session.");
