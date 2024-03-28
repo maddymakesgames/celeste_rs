@@ -127,7 +127,13 @@ impl App for SaveEditor {
                     .map(ScreenState::name)
                     .map(str::to_owned)
                     .collect::<Vec<_>>(),
-                |selected, ui| self.screens[selected].update(ui, &self.runtime, &self.popups),
+                |selected, ui| {
+                    if let Some(iter) =
+                        self.screens[selected].update(ui, &self.runtime, &self.popups)
+                    {
+                        self.screens.extend(iter)
+                    }
+                },
             );
         });
 
@@ -170,21 +176,36 @@ enum ScreenState {
 }
 
 impl ScreenState {
-    fn update(&mut self, ui: &mut Ui, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
+    fn update(
+        &mut self,
+        ui: &mut Ui,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) -> Option<impl Iterator<Item = ScreenState>> {
         match self {
             // Startup just immediately transitions to the main menu
             ScreenState::Startup => *self = ScreenState::Menu(MainMenu::default()),
             ScreenState::Menu(m) =>
             // The main menu displays until a file has been opened
             // In which case we transition to the editor
-                if let Some((file_name, save)) = m.display(ui, rt, popups) {
-                    *self = ScreenState::Editor(EditorScreen::new(file_name, save))
+                if let Some(saves) = m.display(ui, rt, popups) {
+                    let mut saves_iter = saves.into_iter();
+                    if let Some((file_name, save)) = saves_iter.next() {
+                        *self = ScreenState::Editor(EditorScreen::new(file_name, save))
+                    }
+
+                    return Some(
+                        saves_iter
+                            .map(|(a, b)| EditorScreen::new(a, b))
+                            .map(ScreenState::Editor),
+                    );
                 },
             // The editor (current) doesn't ever transition out
             ScreenState::Editor(e) => {
                 e.display(ui, rt, popups);
             }
         }
+        None
     }
 
     fn name(&self) -> &str {

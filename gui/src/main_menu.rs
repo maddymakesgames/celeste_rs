@@ -6,7 +6,7 @@ use rfd::AsyncFileDialog;
 use tokio::{
     runtime::Runtime,
     sync::{
-        oneshot::{error::TryRecvError, Receiver, Sender},
+        mpsc::{channel, error::TryRecvError, Receiver, Sender},
         Mutex,
     },
 };
@@ -17,6 +17,7 @@ use crate::{spawn, ErrorSeverity, PopupWindow};
 pub struct MainMenu {
     #[allow(clippy::type_complexity)]
     file_listener: Option<Receiver<Option<(String, SaveData)>>>,
+    output: Vec<(String, SaveData)>,
 }
 
 impl MainMenu {
@@ -25,10 +26,10 @@ impl MainMenu {
         ui: &mut Ui,
         rt: &Runtime,
         popups: &Arc<Mutex<Vec<PopupWindow>>>,
-    ) -> Option<(String, SaveData)> {
+    ) -> Option<Vec<(String, SaveData)>> {
         // Update the listener and return if we've recieved some data
-        if let Some(inner) = self.update_listener(ui, popups) {
-            return inner;
+        if let Some(inner) = self.update_listener(ui) {
+            return Some(inner);
         }
 
         // On wasm make a note of the native version being the preferred way of using the app
@@ -53,13 +54,13 @@ impl MainMenu {
         // disable the ui when we're already trying to read a file
         ui.set_enabled(self.file_listener.is_none());
 
-        if ui.button("Open File").clicked() {
+        if ui.button("Open Files").clicked() {
             // Create a file dialogue filtered for .celeste files
             let file_dialogue =
                 AsyncFileDialog::new().add_filter("Celeste Save File", &["celeste"]);
 
             // Create a channel to send the parsed file back through
-            let (send, recv) = tokio::sync::oneshot::channel();
+            let (send, recv) = channel(5);
 
             // Spawn a task to read and parse the file
             spawn(rt, handle_file_picker(file_dialogue, send, popups.clone()));
@@ -71,31 +72,21 @@ impl MainMenu {
         None
     }
 
-    fn update_listener(
-        &mut self,
-        ui: &mut Ui,
-        popups: &Arc<Mutex<Vec<PopupWindow>>>,
-    ) -> Option<Option<(String, SaveData)>> {
+    fn update_listener(&mut self, ui: &mut Ui) -> Option<Vec<(String, SaveData)>> {
         if let Some(recv) = &mut self.file_listener {
             // Try to recieve file data from the channel
             // We use try_recv because it will give Err(Empty) if it can't immediately read data
             match recv.try_recv() {
-                Ok(file) => {
-                    self.file_listener = None;
-                    return Some(file);
+                Ok(Some(file)) => {
+                    self.output.push(file);
                 }
-                Err(TryRecvError::Empty) => {}
-                Err(TryRecvError::Closed) => {
+                Err(TryRecvError::Disconnected) => {
                     self.file_listener = None;
-                    // If the sender has already close we have a bug and its better to force quit the app
-                    // so that users will immediately make a bug report
-                    popups.blocking_lock().push(PopupWindow::new(
-                        ErrorSeverity::Severe,
-                        "file_listner dropped before it sent any signals.\nThis is a bug and a \
-                         critical issue. Please make a bug report on github.\nThe program will \
-                         now close.",
-                    ));
+                    if !self.output.is_empty() {
+                        return Some(std::mem::take(&mut self.output));
+                    }
                 }
+                _ => {}
             }
 
             // Display a little spinner to show we're working <3
@@ -111,48 +102,37 @@ async fn handle_file_picker(
     popups: Arc<Mutex<Vec<PopupWindow>>>,
 ) {
     // Wait for the user to pick a file
-    let file = file_dialogue.pick_file().await;
+    let files = file_dialogue.pick_files().await;
 
-    if let Some(file) = file {
-        // Read the contents of the file
-        let name = file.file_name();
-        let contents = file.read().await;
-        drop(file);
+    if let Some(files) = files {
+        for file in files {
+            // Read the contents of the file
+            let name = file.file_name();
+            println!("{name}");
+            let contents = file.read().await;
+            drop(file);
 
-        // Attempt to parse the save file showing an error popup if we fail
-        match SaveData::from_reader(Cursor::new(contents)) {
-            Ok(save) =>
-                if send.send(Some((name, save))).is_err() {
+            // Attempt to parse the save file showing an error popup if we fail
+            match SaveData::from_reader(Cursor::new(contents)) {
+                Ok(save) =>
+                    if send.send(Some((name, save))).await.is_err() {
+                        popups.lock().await.push(PopupWindow::new(
+                            ErrorSeverity::Error,
+                            "Error sending data back to main thread.\nThis is a bug, please make \
+                             a bug report on github.",
+                        ))
+                    },
+                Err(e) => {
                     popups.lock().await.push(PopupWindow::new(
                         ErrorSeverity::Error,
-                        "Error sending data back to main thread.\nThis is a bug, please make a \
-                         bug report on github.",
-                    ))
-                },
-            Err(e) => {
-                popups.lock().await.push(PopupWindow::new(
-                    ErrorSeverity::Error,
-                    format!(
-                        "Errors found when parsing save file: {e}.\nMake sure the file you \
-                         selected is actually a save file.\nIf this continues please report it as \
-                         a bug on github."
-                    ),
-                ));
-
-                if send.send(None).is_err() {
-                    popups.lock().await.push(PopupWindow::new(
-                        ErrorSeverity::Error,
-                        "Error sending data back to main thread.\nThis is a bug, please make a \
-                         bug report on github.",
+                        format!(
+                            "Errors found when parsing save file: {e}.\nMake sure the file you \
+                             selected is actually a save file.\nIf this continues please report \
+                             it as a bug on github."
+                        ),
                     ));
                 }
             }
         }
-    } else if send.send(None).is_err() {
-        popups.lock().await.push(PopupWindow::new(
-            ErrorSeverity::Error,
-            "Error sending data back to main thread.\nThis is a bug, please make a bug report on \
-             github.",
-        ));
     }
 }
