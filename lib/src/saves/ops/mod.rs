@@ -15,6 +15,7 @@ use crate::saves::{
     DashMode,
     DeathCount,
     Flags,
+    ModSaveData,
     Poem,
     SaveData,
     StrawberryCount,
@@ -200,6 +201,35 @@ impl SaveData {
         }
     }
 
+    /// Load ins a [ModSaveData], adding any entries that are not in our
+    /// [level_sets](SaveData::level_sets) or [level_set_recycle_bin](SaveData::level_set_recycle_bin) and ignoring any that are already there
+    pub fn load_in_mod_save_data(&mut self, mod_save_data: &ModSaveData) {
+        // Create HashSets of all the level sets we currently have
+        // Should make checking if we have a set faster than iterating over the Vecs
+        let set_names = self
+            .all_level_sets()
+            .iter()
+            .map(|(s, _)| &s.name)
+            .cloned()
+            .collect::<HashSet<_>>();
+
+        for set in mod_save_data.level_sets.iter() {
+            if !set_names.contains(&set.name) {
+                self.level_sets.push(set.clone());
+            }
+        }
+
+        for set in mod_save_data.level_set_recycle_bin.iter() {
+            if !set_names.contains(&set.name) {
+                self.level_set_recycle_bin.push(set.clone());
+            }
+        }
+
+        if self.last_area_safe.is_none() {
+            self.last_area_safe = mod_save_data.last_area_safe.clone();
+        }
+    }
+
     /// Merges the applicable data from another [SaveData] into this one
     ///
     /// #### Unmerged Data
@@ -358,6 +388,164 @@ pub enum AreaSource {
     Vanilla,
     LevelSets,
     LevelSetRecycleBin,
+}
+
+impl ModSaveData {
+    pub fn from_reader(reader: impl BufRead) -> Result<Self, DeError> {
+        quick_xml::de::from_reader(reader)
+    }
+
+    #[allow(clippy::should_implement_trait)]
+    pub fn from_str(str: &str) -> Result<Self, DeError> {
+        quick_xml::de::from_str(str)
+    }
+
+    pub fn to_string(&self) -> Result<String, DeError> {
+        let mut xml = XML_VERSION_HEADER.to_owned();
+        xml.push_str(&quick_xml::se::to_string(&self)?);
+        Ok(xml)
+    }
+
+    pub fn to_writer(&self, mut writer: impl Write) -> Result<(), DeError> {
+        writer.write_str(XML_VERSION_HEADER)?;
+        quick_xml::se::to_writer(writer, &self)
+    }
+
+    /// Combines all the [LevelSetStats] into one vec,
+    /// with a boolean indicating whether they are in the recycle bin or not
+    pub fn all_level_sets(&self) -> Vec<(&LevelSetStats, bool)> {
+        self.level_sets
+            .iter()
+            .map(|a| (a, false))
+            .chain(self.level_set_recycle_bin.iter().map(|a| (a, true)))
+            .collect()
+    }
+
+    /// Combines all the [LevelSetStats] into one vec,
+    /// with a boolean indicating whether they are in the recycle bin or not
+    pub fn all_level_sets_mut(&mut self) -> Vec<(&mut LevelSetStats, bool)> {
+        self.level_sets
+            .iter_mut()
+            .map(|a| (a, false))
+            .chain(self.level_set_recycle_bin.iter_mut().map(|a| (a, true)))
+            .collect()
+    }
+
+    /// Combines all the areas into one list, adding a tag that denotes what group the area is in
+    pub fn all_areas(&self) -> Vec<(&AreaStats, AreaSource)> {
+        self.level_sets
+            .iter()
+            .flat_map(|a| a.areas.iter().map(|a| (a, AreaSource::LevelSets)))
+            .chain(
+                self.level_set_recycle_bin
+                    .iter()
+                    .flat_map(|a| a.areas.iter().map(|a| (a, AreaSource::LevelSetRecycleBin))),
+            )
+            .collect()
+    }
+
+    /// Combines all the areas into one list, adding a tag that denotes what group the area is in
+    pub fn all_areas_mut(&mut self) -> Vec<(&mut AreaStats, AreaSource)> {
+        self.level_sets
+            .iter_mut()
+            .flat_map(|a| a.areas.iter_mut().map(|a| (a, AreaSource::LevelSets)))
+            .chain(self.level_set_recycle_bin.iter_mut().flat_map(|a| {
+                a.areas
+                    .iter_mut()
+                    .map(|a| (a, AreaSource::LevelSetRecycleBin))
+            }))
+            .collect()
+    }
+
+    /// Returns a reference to an [AreaStats] given the area's sid
+    ///
+    /// Returns `None` if no area with the given sid is found.
+    pub fn find_area_by_sid<'a>(&'a self, sid: &str) -> Option<&'a AreaStats> {
+        if sid.starts_with("Celeste") {
+            None
+        } else {
+            self.level_sets
+                .iter()
+                .flat_map(|l| l.areas.iter())
+                .find(|a| area_sid_matches(a, sid))
+                .or(self
+                    .level_set_recycle_bin
+                    .iter()
+                    .flat_map(|l| l.areas.iter())
+                    .find(|a| area_sid_matches(a, sid)))
+        }
+    }
+
+    /// Returns a mutable reference to an [AreaStats] given the area's sid
+    ///
+    /// Returns `None` if no area with the given sid is found.
+    pub fn find_area_by_sid_mut<'a>(&'a mut self, sid: &str) -> Option<&'a mut AreaStats> {
+        if sid.starts_with("Celeste") {
+            None
+        } else {
+            self.level_sets
+                .iter_mut()
+                .flat_map(|l| l.areas.iter_mut())
+                .find(|a| area_sid_matches(a, sid))
+                .or(self
+                    .level_set_recycle_bin
+                    .iter_mut()
+                    .flat_map(|l| l.areas.iter_mut())
+                    .find(|a| area_sid_matches(a, sid)))
+        }
+    }
+
+    /// Returns a reference to an [AreaStats] given the area's sid and [AreaSource]
+    ///
+    /// Assuming the [AreaSource] is accurate, this is more optimized than [find_area_by_sid](Self::find_area_by_sid) when searching for modded maps.<br>
+    /// There should be very little or no performance gain when searching for vanilla maps.
+    ///
+    /// Returns `None` if no area with the given sid is found in the list indicated by the source.
+    pub fn find_area_by_sid_and_source<'a>(
+        &'a self,
+        sid: &str,
+        source: AreaSource,
+    ) -> Option<&'a AreaStats> {
+        match source {
+            AreaSource::Vanilla => None,
+            AreaSource::LevelSets => self
+                .level_sets
+                .iter()
+                .flat_map(|l| l.areas.iter())
+                .find(|a| area_sid_matches(a, sid)),
+            AreaSource::LevelSetRecycleBin => self
+                .level_set_recycle_bin
+                .iter()
+                .flat_map(|l| l.areas.iter())
+                .find(|a| area_sid_matches(a, sid)),
+        }
+    }
+
+    /// Returns a mutable reference to an [AreaStats] given the area's sid and [AreaSource]
+    ///
+    /// Assuming the [AreaSource] is accurate, this is more optimized than [find_area_by_sid_mut](Self::find_area_by_sid_mut) when searching for modded maps.<br>
+    /// There should be very little or no performance gain when searching for vanilla maps.
+    ///
+    /// Returns `None` if no area with the given sid is found in the list indicated by the source.
+    pub fn find_area_by_sid_and_source_mut<'a>(
+        &'a mut self,
+        sid: &str,
+        source: AreaSource,
+    ) -> Option<&'a mut AreaStats> {
+        match source {
+            AreaSource::Vanilla => None,
+            AreaSource::LevelSets => self
+                .level_sets
+                .iter_mut()
+                .flat_map(|l| l.areas.iter_mut())
+                .find(|a| area_sid_matches(a, sid)),
+            AreaSource::LevelSetRecycleBin => self
+                .level_set_recycle_bin
+                .iter_mut()
+                .flat_map(|l| l.areas.iter_mut())
+                .find(|a| area_sid_matches(a, sid)),
+        }
+    }
 }
 
 impl ToString for DashMode {

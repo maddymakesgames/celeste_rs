@@ -146,6 +146,33 @@ pub struct SaveData {
     pub current_session_safe: Option<SavedSession>,
 }
 
+/// The `*-modsavedata.celeste` format
+///
+/// This is used to keep modded stats across starting the vanilla game
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ModSaveData {
+    #[doc(hidden)]
+    #[serde(rename(serialize = "@xmlns:xsi", deserialize = "@xmlns:xsi"))]
+    xsi_url: String,
+    #[doc(hidden)]
+    #[serde(rename(serialize = "@xmlns:xsd", deserialize = "@xmlns:xsd"))]
+    xsd_url: String,
+    /// Data about all the modded level sets that were loaded last time this save was played on
+    #[serde(rename = "LevelSets")]
+    #[serde(default)]
+    #[serde(skip_serializing_if = "LevelSets::is_inner_empty")]
+    pub level_sets: LevelSets,
+    /// Data about the all the modded level sets ever loaded on this save file
+    #[serde(rename = "LevelSetRecycleBin")]
+    #[serde(default)]
+    #[serde(skip_serializing_if = "LevelSets::is_inner_empty")]
+    pub level_set_recycle_bin: LevelSets,
+    /// A reference to the last area played, including modded levels
+    #[serde(rename = "LastArea_Safe")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub last_area_safe: Option<LastAreaRef>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Assists {
     #[serde(rename = "GameSpeed")]
