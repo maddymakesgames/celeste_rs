@@ -1,16 +1,16 @@
 [package]
 name = "celeste_rs_gui"
-version = "0.3.0+c0.2.1"
+version = "0.3.0+0.2.1"
 edition = "2021"
 repository = "https://github.com/maddymakesgames/celeste_rs"
 authors = ["Maddymakesgames (madelinemakesgames@gmail.com)"]
 description = "GUI editor for celeste save files"
 
-[package.metadata.wix]
-upgrade-guid = "9142F3DB-4ECF-4096-BC14-33F18C294E10"
-path-guid = "EFD1D9BC-C8D2-4D5D-8C52-8FBE44437BC3"
-license = false
-eula = false
+# [package.metadata.wix]
+# upgrade-guid = "9142F3DB-4ECF-4096-BC14-33F18C294E10"
+# path-guid = "EFD1D9BC-C8D2-4D5D-8C52-8FBE44437BC3"
+# license = false
+# eula = false
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

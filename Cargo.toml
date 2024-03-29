@@ -15,7 +15,7 @@ cargo-dist-version = "0.11.1"
 # CI backends to support
 ci = ["github"]
 # The installers to generate for each app
-installers = ["shell", "powershell", "msi"]
+installers = ["shell", "powershell"]
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = [
     "aarch64-apple-darwin",
