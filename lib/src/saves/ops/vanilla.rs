@@ -27,7 +27,7 @@ impl AreaDef {
     }
 }
 
-impl LastAreaRef {
+impl AreaRef {
     /// Gets a reference to an sid for the level
     pub fn sid(&self) -> &str {
         // see the comment for AreaDef::sid

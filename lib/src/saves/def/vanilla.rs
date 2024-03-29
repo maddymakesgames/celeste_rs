@@ -16,17 +16,26 @@ pub struct Areas {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct LastAreaRef {
+pub struct AreaRef {
     #[serde(rename = "@ID")]
     #[serde(deserialize_with = "serde_aux::field_attributes::deserialize_number_from_string")]
-    pub id: AreaId,
+    pub id: u16,
     #[serde(rename = "@Mode")]
-    pub mode: String,
+    pub mode: AreaModeType,
+    /// The SID of the last level played
+    ///
+    /// This is `None` in a Vanilla session, and is always Some in a modded session.<br>
+    /// Modded sessions will always be stored in [CurrentSession_Safe](crate::saves::def::SaveData::current_session_safe) and any vanilla sessions will always be stored in [CurrentSession](crate::saves::def::SaveData::current_session)
     #[serde(rename = "@SID")]
-    /// Is `None` in a non-modded save
-
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub enum AreaModeType {
+    Normal,
+    BSide,
+    CSide,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
