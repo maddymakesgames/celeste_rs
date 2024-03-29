@@ -1,8 +1,4 @@
-use std::{
-    ffi::OsString,
-    io::{BufReader, Cursor},
-    sync::Arc,
-};
+use std::{io::Cursor, sync::Arc};
 
 use celeste_rs::saves::SaveData;
 use eframe::egui::{TopBottomPanel, Ui};
@@ -76,6 +72,8 @@ impl MainMenu {
 
         #[cfg(not(target_family = "wasm"))]
         if ui.button("Load Celeste Save Folder").clicked() {
+            use std::{ffi::OsString, io::BufReader};
+
             use std::fs::{read_dir, OpenOptions};
             let file_dialogue = AsyncFileDialog::new()
                 .set_title("Celeste Save Folder")
@@ -99,7 +97,6 @@ impl MainMenu {
                                         continue 'dir_iter;
                                     }
                                 }
-
 
                                 if entry.path().extension() != Some(&OsString::from("celeste")) {
                                     continue;
