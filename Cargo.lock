@@ -730,7 +730,7 @@ dependencies = [
 
 [[package]]
 name = "celeste_rs"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "chrono",
@@ -741,7 +741,7 @@ dependencies = [
 
 [[package]]
 name = "celeste_rs_gui"
-version = "0.2.0"
+version = "0.3.0+c0.2.1"
 dependencies = [
  "celeste_rs",
  "console_error_panic_hook",
