@@ -5,7 +5,7 @@ use std::{
 };
 
 use celeste_rs::saves::SaveData;
-use eframe::egui::Ui;
+use eframe::egui::{TopBottomPanel, Ui};
 use rfd::AsyncFileDialog;
 use tokio::{
     runtime::Runtime,
@@ -142,6 +142,11 @@ impl MainMenu {
 
             self.file_listener = Some(recv);
         }
+
+        TopBottomPanel::bottom("version_number_panel")
+            .show_separator_line(false)
+            .resizable(false)
+            .show_inside(ui, |ui| ui.small(format!("v{}", env!("CARGO_PKG_VERSION"))));
 
         None
     }
