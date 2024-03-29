@@ -1,4 +1,4 @@
-# celeste_rs_gui/0.3.0+c0.2.1
+# celeste_rs_gui/0.3.0+0.2.1 - 2024-03-29
 - Change versioning scheme to include the version of `celeste_rs` used in the build
 - Add the ability to open multiple save files at once
 - [Native Only] Allow opening the entirety of the celeste save directory at once
