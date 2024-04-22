@@ -6,13 +6,16 @@
 //! [ModSession]s store arbitrary data that lasts for the current session in game.
 
 pub mod auroras_additions;
+pub mod collab_utils2;
 
 use std::{fmt::Write, io::Read};
 
 use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlEmitter, YamlLoader};
 
-use crate::saves::mods::auroras_additions::AurorasAdditionsSave;
-pub use crate::saves::ops::mods::*;
+use crate::saves::mods::{
+    auroras_additions::AurorasAdditionsSave,
+    collab_utils2::CollabsUtils2Save,
+};
 
 /// A mod related file<br>
 /// Either a `*-modsave`, `*-modsession`, or `modsettings-*`.
@@ -74,6 +77,7 @@ pub trait ModSettings: ModFile {}
 #[allow(clippy::large_enum_variant)]
 pub enum ParsedModSave {
     AurorasAdditions(AurorasAdditionsSave),
+    CollabUtils2(CollabsUtils2Save),
     Unknown(DynYamlDoc),
 }
 
