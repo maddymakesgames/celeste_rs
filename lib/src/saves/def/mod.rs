@@ -3,6 +3,7 @@
 //! While every struct and field is public, it is not always ideal to directly edit the structures
 //! as some are somewhat uninituitive.
 pub mod everest;
+pub mod mods;
 pub mod session;
 pub mod util;
 pub mod vanilla;
