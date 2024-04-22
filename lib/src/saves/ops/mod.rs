@@ -24,6 +24,7 @@ use crate::saves::{
 };
 
 pub mod everest;
+pub mod mods;
 pub mod session;
 pub mod util;
 pub mod vanilla;

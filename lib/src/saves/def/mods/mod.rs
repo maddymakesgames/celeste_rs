@@ -5,9 +5,14 @@
 //! [ModSave]s store arbitrary data that mods might need
 //! [ModSession]s store arbitrary data that lasts for the current session in game.
 
+pub mod auroras_additions;
+
 use std::{fmt::Write, io::Read};
 
 use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlEmitter, YamlLoader};
+
+use crate::saves::mods::auroras_additions::AurorasAdditionsSave;
+pub use crate::saves::ops::mods::*;
 
 /// A mod related file<br>
 /// Either a `*-modsave`, `*-modsession`, or `modsettings-*`.
@@ -68,6 +73,7 @@ pub trait ModSettings: ModFile {}
 
 #[allow(clippy::large_enum_variant)]
 pub enum ParsedModSave {
+    AurorasAdditions(AurorasAdditionsSave),
     Unknown(DynYamlDoc),
 }
 
