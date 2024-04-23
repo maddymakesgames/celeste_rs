@@ -11,6 +11,8 @@ use crate::saves::{
 
 
 impl ModFile for AurorasAdditionsSave {
+    const MOD_NAME: &'static str = "AurorasAdditions";
+
     fn parse_from_yaml(yaml: Yaml) -> Result<Self> {
         let mut sessions_per_level = HashMap::new();
 

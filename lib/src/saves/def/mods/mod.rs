@@ -26,6 +26,11 @@ use crate::saves::mods::{
 /// make the `parse_from_yaml` body `unreachable!()`
 /// and overwrite `parse_from_str` and `parse_from_reader`
 pub trait ModFile: Sized {
+    /// The unlocalized name of the mod the file is for.
+    ///
+    /// This is the third part of the file name and should be used to verify which file you're loading.
+    const MOD_NAME: &'static str;
+
     fn parse_from_yaml(yaml: Yaml) -> anyhow::Result<Self>;
 
     fn parse_from_str(str: &str) -> anyhow::Result<Self> {
@@ -74,6 +79,9 @@ pub trait ModSession: ModFile {}
 /// These store settings for each mod, and are shared among save files
 pub trait ModSettings: ModFile {}
 
+
+pub struct DynYamlDoc(pub String, pub Yaml);
+
 #[allow(clippy::large_enum_variant)]
 pub enum ParsedModSave {
     AurorasAdditions(AurorasAdditionsSave),
@@ -81,9 +89,12 @@ pub enum ParsedModSave {
     Unknown(DynYamlDoc),
 }
 
-pub struct DynYamlDoc(pub Yaml);
-
 #[allow(clippy::large_enum_variant)]
 pub enum ParsedModSession {
+    Unknown(DynYamlDoc),
+}
+
+#[allow(clippy::large_enum_variant)]
+pub enum ParsedModSetting {
     Unknown(DynYamlDoc),
 }
