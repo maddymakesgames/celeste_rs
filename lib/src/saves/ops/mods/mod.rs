@@ -24,7 +24,7 @@ fn check_yaml_file<'a>(
 
 
     if !file_name.contains(".celeste") {
-        return Err(anyhow!("Given file is not a celeste file: {file_name:?}"));
+        return Err(anyhow!("Given file is not a .celeste file: {file_name:?}"));
     }
 
     if !file_name.contains(file_type) {
