@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
-use saphyr::{Hash, Yaml};
+use saphyr::{Hash, Yaml, YamlEmitter};
 
 use crate::{
     saves::{
         mods::{auroras_additions::AurorasAdditionsSave, ModFile, ModSave},
+        ops::XML_VERSION_HEADER,
         session::{RootSavedSession, SavedSession},
     },
     utils::ResultMapIter,
@@ -42,7 +43,7 @@ impl ModFile for AurorasAdditionsSave {
 
             let session = quick_xml::de::from_str::<SavedSession>(session)?;
 
-            sessions_per_level.insert((sid.to_owned(), mode.to_owned()), session);
+            sessions_per_level.insert((sid.to_owned(), mode.trim().to_owned()), session);
         }
 
         let mut mod_sessions_per_level = HashMap::new();
@@ -61,7 +62,7 @@ impl ModFile for AurorasAdditionsSave {
                     "Aurora's Additions ModSessionsPerLevel entry has improperly formatted key"
                 ))?;
 
-            mod_sessions_per_level.insert((sid.to_owned(), mode.to_owned()), value.clone());
+            mod_sessions_per_level.insert((sid.to_owned(), mode.trim().to_owned()), value.clone());
         }
 
         let mut mod_sessions_per_level_binary = HashMap::new();
@@ -100,7 +101,8 @@ impl ModFile for AurorasAdditionsSave {
                 mod_data.insert(mod_name.to_owned(), base64.to_owned());
             }
 
-            mod_sessions_per_level_binary.insert((sid.to_owned(), mode.to_owned()), mod_data);
+            mod_sessions_per_level_binary
+                .insert((sid.to_owned(), mode.trim().to_owned()), mod_data);
         }
 
         let music_volume_memory = yaml["MusicVolumeMemory"]
@@ -124,7 +126,13 @@ impl ModFile for AurorasAdditionsSave {
             .map(|(sid_mode, session)| {
                 Ok((
                     sid_mode,
-                    quick_xml::se::to_string::<RootSavedSession>(&session.clone().into())?,
+                    format!(
+                        "{XML_VERSION_HEADER}{}",
+                        quick_xml::se::to_string_with_root::<RootSavedSession>(
+                            "Session",
+                            &session.clone().into(),
+                        )?
+                    ),
                 ))
             })
             .map_result(|((sid, mode), session)| {

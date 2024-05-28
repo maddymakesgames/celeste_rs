@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use crate::{
     saves::{
         mods::{collab_utils2::CollabsUtils2Save, ModFile, ModSave},
+        ops::XML_VERSION_HEADER,
         session::{RootSavedSession, SavedSession},
         util::FileTime,
     },
@@ -183,7 +184,13 @@ impl ModFile for CollabsUtils2Save {
             .map(|(sid, session)| {
                 Ok((
                     sid,
-                    quick_xml::se::to_string::<RootSavedSession>(&session.clone().into())?,
+                    format!(
+                        "{XML_VERSION_HEADER}{}",
+                        quick_xml::se::to_string_with_root::<RootSavedSession>(
+                            "Session",
+                            &session.clone().into()
+                        )?
+                    ),
                 ))
             })
             .map_result(|(sid, session)| (Yaml::String(sid.clone()), Yaml::String(session)))
