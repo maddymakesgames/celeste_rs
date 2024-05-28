@@ -3004,7 +3004,6 @@ name = "test_bin"
 version = "0.1.0"
 dependencies = [
  "celeste_rs",
- "celeste_rs_macros",
  "quick-xml",
  "serde",
  "serde_path_to_error",
