@@ -266,7 +266,7 @@ impl<'de, T: Deserialize<'de>> Visitor<'de> for WeirdSeqVisitor<'de, T> {
     type Value = Vec<T>;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(formatter, "OwO")
+        write!(formatter, "A list of Deserialize elements")
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
