@@ -1,7 +1,7 @@
 //! Implements operations for all of the types found in the [celeste](crate::celeste) module
 use std::{
     collections::HashSet,
-    fmt::Write,
+    fmt::{Display, Write},
     io::BufRead,
     ops::{Deref, DerefMut},
 };
@@ -232,7 +232,8 @@ impl SaveData {
         }
 
         if self.last_area_safe.is_none() {
-            self.last_area_safe = mod_save_data.last_area_safe.clone();
+            self.last_area_safe
+                .clone_from(&mod_save_data.last_area_safe);
         }
     }
 
@@ -554,13 +555,13 @@ impl ModSaveData {
     }
 }
 
-impl ToString for DashMode {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for DashMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
             DashMode::Normal => "Normal".to_owned(),
             DashMode::Two => "Two".to_owned(),
             DashMode::Infinite => "Infinite".to_owned(),
-        }
+        })
     }
 }
 
