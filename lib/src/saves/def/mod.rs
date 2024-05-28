@@ -27,7 +27,7 @@ pub type AreaId = u16;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SaveData {
     #[doc(hidden)]
-    #[serde(rename(serialize = "@xmlns:xsi", deserialize = "@xmlns:xsi"))]
+    #[serde(rename = "@xmlns:xsi")]
     xsi_url: String,
     #[doc(hidden)]
     #[serde(rename(serialize = "@xmlns:xsd", deserialize = "@xmlns:xsd"))]
