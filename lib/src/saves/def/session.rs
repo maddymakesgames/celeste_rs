@@ -1,3 +1,4 @@
+use celeste_rs_macros::root_tag;
 use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::{deserialize_bool_from_anything, deserialize_number_from_string};
 
@@ -65,6 +66,7 @@ pub struct SessionStats {
     pub hit_checkpoint: bool,
 }
 
+#[root_tag]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SavedSession {
     #[serde(flatten)]
