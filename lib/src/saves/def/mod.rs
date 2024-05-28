@@ -251,9 +251,7 @@ pub enum VanillaFlags {
 fn xsi_nil_weird_list_deserialization<'de, D, T: Deserialize<'de> + 'de>(
     deserializer: D,
 ) -> Result<Vec<T>, D::Error>
-where
-    D: Deserializer<'de>,
-{
+where D: Deserializer<'de> {
     deserializer.deserialize_seq(WeirdSeqVisitor {
         __de_lifetime: PhantomData,
     })
@@ -272,9 +270,7 @@ impl<'de, T: Deserialize<'de>> Visitor<'de> for WeirdSeqVisitor<'de, T> {
     }
 
     fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
-    where
-        A: serde::de::SeqAccess<'de>,
-    {
+    where A: serde::de::SeqAccess<'de> {
         let mut vec = Vec::new();
         loop {
             // idk if this will break stuff cause we're now ignoring any errors
