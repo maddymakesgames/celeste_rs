@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
-use saphyr::{Hash, Yaml, YamlEmitter};
+use saphyr::{Hash, Yaml};
 
 use crate::{
     saves::{
