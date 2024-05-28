@@ -8,8 +8,10 @@ pub mod session;
 pub mod util;
 pub mod vanilla;
 
+use std::marker::PhantomData;
+
 use everest::*;
-use serde::{Deserialize, Serialize};
+use serde::{de::Visitor, Deserialize, Deserializer, Serialize};
 use session::*;
 use util::*;
 use vanilla::*;
@@ -215,6 +217,7 @@ pub enum DashMode {
 pub struct Flags {
     #[serde(default)]
     #[serde(rename = "string")]
+    #[serde(deserialize_with = "xsi_nil_weird_list_deserialization")]
     pub(crate) flags: Vec<VanillaFlagsWrapper>,
 }
 
@@ -234,4 +237,56 @@ pub struct Poem {
 pub enum VanillaFlags {
     MetTheo,
     TheoKnowsName,
+}
+
+/// Handles the weird case where things like Flags is marked as xsi:nil
+///
+/// this case is horrible to actually handle so we just ignore any errors and remove them
+/// THIS COULD CAUSE ISSUES but probably won't cause this is only used on lists where the only elements are strings
+///
+/// THIS DOES REMOVE THE ERRORING ELEMENTS FROM THE LIST!!!
+///
+/// Update this comment when you add this to anything else:
+/// [Flags]
+fn xsi_nil_weird_list_deserialization<'de, D, T: Deserialize<'de> + 'de>(
+    deserializer: D,
+) -> Result<Vec<T>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    deserializer.deserialize_seq(WeirdSeqVisitor {
+        __de_lifetime: PhantomData,
+    })
+}
+
+#[derive(Default)]
+struct WeirdSeqVisitor<'de, T: Deserialize<'de>> {
+    __de_lifetime: PhantomData<&'de T>,
+}
+
+impl<'de, T: Deserialize<'de>> Visitor<'de> for WeirdSeqVisitor<'de, T> {
+    type Value = Vec<T>;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "OwO")
+    }
+
+    fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+    where
+        A: serde::de::SeqAccess<'de>,
+    {
+        let mut vec = Vec::new();
+        loop {
+            // idk if this will break stuff cause we're now ignoring any errors
+            // the only possible error *should* be the one this intended to overcome but idk /shrug
+            if let Ok(val) = seq.next_element() {
+                match val {
+                    Some(v) => vec.push(v),
+                    None => break,
+                }
+            }
+        }
+
+        Ok(vec)
+    }
 }
