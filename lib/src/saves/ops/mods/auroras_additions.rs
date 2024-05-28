@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
-use saphyr::Yaml;
+use saphyr::{Hash, Yaml};
 
 use crate::saves::{
-    mods::auroras_additions::AurorasAdditionsSave,
-    ops::mods::ModFile,
+    mods::{auroras_additions::AurorasAdditionsSave, ModFile, ModSave},
     session::SavedSession,
 };
 
+impl ModSave for AurorasAdditionsSave {}
 
 impl ModFile for AurorasAdditionsSave {
     const MOD_NAME: &'static str = "AurorasAdditions";
@@ -112,7 +112,10 @@ impl ModFile for AurorasAdditionsSave {
         })
     }
 
-    fn to_yaml(&self) -> Yaml {
-        todo!()
+    fn to_yaml(&self) -> Result<Yaml> {
+        let root = Hash::new();
+
+
+        Ok(Yaml::Hash(root))
     }
 }

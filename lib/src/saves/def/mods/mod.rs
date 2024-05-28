@@ -52,10 +52,10 @@ pub trait ModFile: Sized {
         }
     }
 
-    fn to_yaml(&self) -> Yaml;
+    fn to_yaml(&self) -> anyhow::Result<Yaml>;
 
     fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
-        let yaml = self.to_yaml();
+        let yaml = self.to_yaml()?;
 
         Ok(YamlEmitter::new(writer).dump(&yaml)?)
     }
