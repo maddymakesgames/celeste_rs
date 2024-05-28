@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+use saphyr::Yaml;
+
 use crate::saves::{session::SavedSession, util::FileTime};
 
 pub struct CollabsUtils2Save {
@@ -10,7 +12,7 @@ pub struct CollabsUtils2Save {
     /// Each session is paired with the SID of the level it is for
     ///
     /// Apparently saved in yaml format
-    pub mod_sessions_per_level: HashMap<String, String>,
+    pub mod_sessions_per_level: HashMap<String, Yaml>,
     /// Saved modded sessions for mods that support the async ser/de api
     ///
     /// Each SID has a collection of mods that saved their sessions and the saved mod sessions
@@ -26,7 +28,7 @@ pub struct CollabsUtils2Save {
     /// Collection of level SIDs adn the speed berry time for that level
     pub speed_berry_pbs: HashMap<String, FileTime>,
     /// Whether the speed berry ui notice has been shown on this save
-    pub speedberry_option_message_shown: bool,
+    pub speed_berry_option_message_shown: bool,
     /// List of warp pedestals that have completed their fill animation
     pub completed_warp_pedestal_sids: Vec<String>,
     /// Whether the map should be forcibly revealed
