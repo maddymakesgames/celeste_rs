@@ -3,9 +3,12 @@ use std::collections::HashMap;
 use anyhow::{anyhow, Result};
 use saphyr::{Hash, Yaml};
 
-use crate::saves::{
-    mods::{auroras_additions::AurorasAdditionsSave, ModFile, ModSave},
-    session::SavedSession,
+use crate::{
+    saves::{
+        mods::{auroras_additions::AurorasAdditionsSave, ModFile, ModSave},
+        session::{RootSavedSession, SavedSession},
+    },
+    utils::ResultMapIter,
 };
 
 impl ModSave for AurorasAdditionsSave {}
@@ -112,9 +115,69 @@ impl ModFile for AurorasAdditionsSave {
         })
     }
 
-    fn to_yaml(&self) -> Result<Yaml> {
-        let root = Hash::new();
+    fn to_yaml(&self) -> Result<saphyr::Yaml> {
+        let mut root = Hash::new();
 
+        let sessions_per_level = self
+            .sessions_per_level
+            .iter()
+            .map(|(sid_mode, session)| {
+                Ok((
+                    sid_mode,
+                    quick_xml::se::to_string::<RootSavedSession>(&session.clone().into())?,
+                ))
+            })
+            .map_result(|((sid, mode), session)| {
+                (
+                    Yaml::String(format!("{sid}, {mode}")),
+                    Yaml::String(session),
+                )
+            })
+            .collect::<Result<Hash>>()?;
+
+        root.insert(
+            Yaml::String("SessionsPerLevel".to_owned()),
+            Yaml::Hash(sessions_per_level),
+        );
+
+        let mod_sessions_per_level = self
+            .mod_sessions_per_level
+            .iter()
+            .map(|((sid, mode), session)| (Yaml::String(format!("{sid}, {mode}")), session.clone()))
+            .collect::<Hash>();
+
+        root.insert(
+            Yaml::String("ModSessionsPerLevel".to_owned()),
+            Yaml::Hash(mod_sessions_per_level),
+        );
+
+        let mod_sessions_per_level_binary = self
+            .mod_sessions_per_level_binary
+            .iter()
+            .map(|((sid, mode), session)| {
+                (
+                    Yaml::String(format!("{sid}, {mode}")),
+                    Yaml::Hash(
+                        session
+                            .iter()
+                            .map(|(mod_id, session)| {
+                                (Yaml::String(mod_id.clone()), Yaml::String(session.clone()))
+                            })
+                            .collect::<Hash>(),
+                    ),
+                )
+            })
+            .collect::<Hash>();
+
+        root.insert(
+            Yaml::String("ModSessionsPerLevelBinary".to_owned()),
+            Yaml::Hash(mod_sessions_per_level_binary),
+        );
+
+        root.insert(
+            Yaml::String("MusicVolumeMemory".to_owned()),
+            Yaml::Integer(self.music_volume_memory as i64),
+        );
 
         Ok(Yaml::Hash(root))
     }
