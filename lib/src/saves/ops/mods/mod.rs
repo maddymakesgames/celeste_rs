@@ -5,7 +5,11 @@ use std::{
     path::Path,
 };
 
-use crate::saves::mods::{auroras_additions::AurorasAdditionsSave, *};
+use crate::saves::mods::{
+    auroras_additions::AurorasAdditionsSave,
+    collab_utils2::CollabsUtils2Save,
+    *,
+};
 use anyhow::{anyhow, Result};
 use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlLoader};
 
@@ -65,7 +69,7 @@ impl ParsedModSave {
     pub fn get_file_name(&self, file_index: u8) -> String {
         format!("{file_index}-modsave-{}.celeste", match self {
             ParsedModSave::AurorasAdditions(_) => AurorasAdditionsSave::MOD_NAME,
-            ParsedModSave::CollabUtils2(_) => todo!(),
+            ParsedModSave::CollabUtils2(_) => CollabsUtils2Save::MOD_NAME,
             ParsedModSave::Unknown(DynYamlDoc(mod_name, _)) => mod_name,
         })
     }
@@ -79,6 +83,8 @@ impl ParsedModSave {
         Ok((file_index, match mod_name {
             AurorasAdditionsSave::MOD_NAME =>
                 Self::AurorasAdditions(AurorasAdditionsSave::parse_from_reader(file)?),
+            CollabsUtils2Save::MOD_NAME =>
+                Self::CollabUtils2(CollabsUtils2Save::parse_from_reader(file)?),
             _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(file, mod_name)?),
         }))
     }
