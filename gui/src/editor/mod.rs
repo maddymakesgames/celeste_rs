@@ -201,6 +201,7 @@ impl CelesteEditorRichTextExt for RichText {
     }
 }
 
+#[allow(dead_code)]
 trait CelesteEditorUiExt {
     fn info(&mut self, text: impl Into<String>) -> Response;
     fn info_hover(&mut self, text: impl Into<WidgetText>) -> Response;
