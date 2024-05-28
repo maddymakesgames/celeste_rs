@@ -10,6 +10,7 @@ use anyhow::{anyhow, Result};
 use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlLoader};
 
 mod auroras_additions;
+mod collab_utils2;
 
 
 fn check_yaml_file<'a>(

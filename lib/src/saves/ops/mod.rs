@@ -29,7 +29,12 @@ pub mod session;
 pub mod util;
 pub mod vanilla;
 
-const XML_VERSION_HEADER: &str = r#"<?xml version="1.0" encoding="utf-8"?>"#;
+#[doc(hidden)]
+pub const XML_VERSION_HEADER: &str = r#"<?xml version="1.0" encoding="utf-8"?>"#;
+#[doc(hidden)]
+pub const XSI_URL: &str = r#"http://www.w3.org/2001/XMLSchema-instance"#;
+#[doc(hidden)]
+pub const XSD_URL: &str = r#"http://www.w3.org/2001/XMLSchema"#;
 
 fn area_sid_matches(area: &AreaStats, sid: &str) -> bool {
     area.def.sid.as_ref().is_some_and(|a_sid| a_sid == sid)
