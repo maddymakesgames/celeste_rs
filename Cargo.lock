@@ -739,6 +739,7 @@ name = "celeste_rs"
 version = "0.2.1"
 dependencies = [
  "anyhow",
+ "celeste_rs_macros",
  "chrono",
  "quick-xml",
  "saphyr",
@@ -760,6 +761,16 @@ dependencies = [
  "tracing-wasm",
  "wasm-bindgen-futures",
  "web-sys",
+]
+
+[[package]]
+name = "celeste_rs_macros"
+version = "0.1.0"
+dependencies = [
+ "proc-macro-crate 3.1.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
 ]
 
 [[package]]
@@ -2993,6 +3004,7 @@ name = "test_bin"
 version = "0.1.0"
 dependencies = [
  "celeste_rs",
+ "celeste_rs_macros",
  "quick-xml",
  "serde",
  "serde_path_to_error",
