@@ -1,5 +1,5 @@
 [workspace]
-members = ["lib", "cli", "test_bin", "gui"]
+members = ["lib", "cli", "test_bin", "gui", "macros"]
 resolver = "2"
 package.repository = "https://github.com/maddymakesgames/celeste_rs"
 package.authors = ["Maddymakesgames (madelinemakesgames@gmail.com)"]
