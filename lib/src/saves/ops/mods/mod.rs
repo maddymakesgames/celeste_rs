@@ -1,5 +1,6 @@
 use std::{
     ffi::OsStr,
+    fmt::Write,
     fs::{File, OpenOptions},
     io::Read,
     path::Path,
@@ -11,7 +12,7 @@ use crate::saves::mods::{
     *,
 };
 use anyhow::{anyhow, Result};
-use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlLoader};
+use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlEmitter, YamlLoader};
 
 mod auroras_additions;
 mod collab_utils2;
@@ -88,6 +89,14 @@ impl ParsedModSave {
             _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(file, mod_name)?),
         }))
     }
+
+    pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+        match self {
+            ParsedModSave::AurorasAdditions(a) => a.to_writer(writer),
+            ParsedModSave::CollabUtils2(c) => c.to_writer(writer),
+            ParsedModSave::Unknown(doc) => Ok(YamlEmitter::new(writer).dump(&doc.1)?),
+        }
+    }
 }
 
 
@@ -108,6 +117,12 @@ impl ParsedModSession {
             _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(file, mod_name)?),
         }))
     }
+
+    pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+        match self {
+            ParsedModSession::Unknown(doc) => Ok(YamlEmitter::new(writer).dump(&doc.1)?),
+        }
+    }
 }
 
 impl ParsedModSetting {
@@ -126,6 +141,12 @@ impl ParsedModSetting {
         Ok(match mod_name {
             _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(file, mod_name)?),
         })
+    }
+
+    pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+        match self {
+            ParsedModSetting::Unknown(doc) => Ok(YamlEmitter::new(writer).dump(&doc.1)?),
+        }
     }
 }
 
