@@ -12,7 +12,7 @@ use crate::saves::mods::{
     *,
 };
 use anyhow::{anyhow, Result};
-use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlEmitter, YamlLoader};
+use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlLoader};
 
 mod auroras_additions;
 mod collab_utils2;
@@ -94,7 +94,7 @@ impl ParsedModSave {
         match self {
             ParsedModSave::AurorasAdditions(a) => a.to_writer(writer),
             ParsedModSave::CollabUtils2(c) => c.to_writer(writer),
-            ParsedModSave::Unknown(doc) => Ok(YamlEmitter::new(writer).dump(&doc.1)?),
+            ParsedModSave::Unknown(doc) => doc.to_writer(writer),
         }
     }
 }
@@ -120,7 +120,7 @@ impl ParsedModSession {
 
     pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
         match self {
-            ParsedModSession::Unknown(doc) => Ok(YamlEmitter::new(writer).dump(&doc.1)?),
+            ParsedModSession::Unknown(doc) => doc.to_writer(writer),
         }
     }
 }
@@ -145,7 +145,7 @@ impl ParsedModSetting {
 
     pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
         match self {
-            ParsedModSetting::Unknown(doc) => Ok(YamlEmitter::new(writer).dump(&doc.1)?),
+            ParsedModSetting::Unknown(doc) => doc.to_writer(writer),
         }
     }
 }
@@ -170,3 +170,21 @@ impl DynYamlDoc {
         }
     }
 }
+
+impl ModFile for DynYamlDoc {
+    const MOD_NAME: &'static str = "";
+
+    fn parse_from_yaml(_yaml: saphyr::Yaml) -> anyhow::Result<Self> {
+        unimplemented!(
+            "Don't call ModFile::parse_from_yaml on DynYamlDoc, use one of the DynYamlDoc methods."
+        )
+    }
+
+    fn to_yaml(&self) -> anyhow::Result<saphyr::Yaml> {
+        Ok(self.1.clone())
+    }
+}
+
+impl ModSave for DynYamlDoc {}
+impl ModSession for DynYamlDoc {}
+impl ModSettings for DynYamlDoc {}
