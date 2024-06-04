@@ -26,7 +26,7 @@ impl TabbedContentWidget {
         ui: &mut Ui,
         selected: &mut usize,
         tabs: impl AsRef<[W]>,
-        mut show_ui: impl FnMut(usize, &mut Ui) -> R,
+        show_ui: impl FnOnce(usize, &mut Ui) -> R,
     ) -> InnerResponse<R>
     where
         W: Into<WidgetText> + Clone + Hash,
