@@ -80,7 +80,9 @@ pub trait ModSession: ModFile {}
 /// These store settings for each mod, and are shared among save files
 pub trait ModSettings: ModFile {}
 
-
+/// A generic YAML document that we cannot otherwise parse into a ModFile impl
+///
+/// String is file name
 pub struct DynYamlDoc(pub String, pub Yaml);
 
 #[allow(clippy::large_enum_variant)]
