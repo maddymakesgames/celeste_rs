@@ -5,6 +5,7 @@ use saphyr::Yaml;
 use crate::saves::session::SavedSession;
 
 #[derive(Debug)]
+/// The [ModSave](crate::saves::mods::ModSave) file for [Aurora's Additions](https://gamebanana.com/mods/422271)
 pub struct AurorasAdditionsSave {
     /// A collection of [SavedSession]s related to the SID of the level they're for
     pub sessions_per_level: HashMap<(String, String), SavedSession>,

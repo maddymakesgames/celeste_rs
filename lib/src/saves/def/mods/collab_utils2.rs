@@ -4,6 +4,7 @@ use saphyr::Yaml;
 
 use crate::saves::{session::SavedSession, util::FileTime};
 
+/// The [ModSave](crate::saves::mods::ModSave) for [Collab Utils 2](https://gamebanana.com/mods/53704)
 pub struct CollabsUtils2Save {
     /// A collection of [SavedSession]s related to the SID of the level they're for
     pub sessions_per_level: HashMap<String, SavedSession>,
