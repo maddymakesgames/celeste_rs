@@ -156,7 +156,10 @@ async fn handle_file_picker(
             let name = file.file_name();
             let reader = Cursor::new(file.read().await);
 
-            parse_files_from_reader_and_type(name, reader, true, &popups, &send).await;
+            let file = parse_files_from_reader_and_type(name, reader, true, &popups).await;
+            if send.send(file).await.is_err() {
+                send_error(&popups).await;
+            }
         }
     }
 }
@@ -185,8 +188,12 @@ async fn handle_folder_picker(
                     if let Ok(file) = OpenOptions::new().read(true).open(entry.path()) {
                         let reader = BufReader::new(file);
 
-                        parse_files_from_reader_and_type(file_name, reader, false, &popups, &send)
-                            .await;
+                        let file =
+                            parse_files_from_reader_and_type(file_name, reader, false, &popups)
+                                .await;
+                        if send.send(file).await.is_err() {
+                            send_error(&popups).await;
+                        }
                     }
                 },
             Err(e) => popups.lock().await.push(PopupWindow::new(
@@ -197,13 +204,12 @@ async fn handle_folder_picker(
     }
 }
 
-async fn parse_files_from_reader_and_type(
+pub async fn parse_files_from_reader_and_type(
     file_name: String,
     reader: impl BufRead,
     warn_ignored_files: bool,
     popups: &Arc<Mutex<Vec<PopupWindow>>>,
-    send: &Sender<Option<(String, LoadableFiles)>>,
-) {
+) -> Option<(String, LoadableFiles)> {
     // File names are in the format (File number)-[modded file type]-[related mod].celeste
     // So we can determine how to treat the file by splitting on '-' and '.'
     let mut file_name_parts: std::str::Split<[char; 2]> = file_name.split(['-', '.']);
@@ -213,7 +219,7 @@ async fn parse_files_from_reader_and_type(
             ErrorSeverity::Warning,
             format!("File \"{file_name}\" is not a loadable save file."),
         ));
-        return;
+        return None;
     };
 
     // ignore settings.celeste and debug-* files
@@ -224,7 +230,7 @@ async fn parse_files_from_reader_and_type(
                 format!("We currently do not support loading \"{file_name}\"."),
             ));
         }
-        return;
+        return None;
     }
 
     // At this point we're likely to be able to handle it so its useful to open the file at this point
@@ -233,66 +239,39 @@ async fn parse_files_from_reader_and_type(
     // Attempt to parse the save file showing an error popup if we fail
     match file_type.as_deref() {
         Some("modsavedata") => match ModSaveData::from_reader(reader) {
-            Ok(modsavedata) => {
-                if send
-                    .send(Some((
-                        file_number,
-                        LoadableFiles::ModSaveData(file_name, modsavedata),
-                    )))
-                    .await
-                    .is_err()
-                {
-                    send_error(popups).await;
-                }
-            }
+            Ok(modsavedata) =>
+                return Some((
+                    file_number,
+                    LoadableFiles::ModSaveData(file_name, modsavedata),
+                )),
             Err(e) => parse_error(popups, &file_name, e).await,
         },
         Some("modsave") => match ParsedModSave::from_reader_and_path(&file_name, reader) {
-            Ok((_, save)) =>
-                if send
-                    .send(Some((file_number, LoadableFiles::ModSave(file_name, save))))
-                    .await
-                    .is_err()
-                {
-                    send_error(popups).await
-                },
+            Ok((_, save)) => return Some((file_number, LoadableFiles::ModSave(file_name, save))),
             Err(e) => parse_error(popups, &file_name, e).await,
         },
         Some("modsession") => match ParsedModSession::from_reader_and_path(&file_name, reader) {
             Ok((_, session)) =>
-                if send
-                    .send(Some((
-                        file_number,
-                        LoadableFiles::ModSession(file_name, session),
-                    )))
-                    .await
-                    .is_err()
-                {
-                    send_error(popups).await
-                },
+                return Some((file_number, LoadableFiles::ModSession(file_name, session))),
             Err(e) => parse_error(popups, &file_name, e).await,
         },
         // No second part to the file name means its just a root save file
         Some("celeste") => match SaveData::from_reader(reader) {
             Ok(save) =>
-                if send
-                    .send(Some((
-                        file_number,
-                        LoadableFiles::SaveData(file_name, Box::new(save)),
-                    )))
-                    .await
-                    .is_err()
-                {
-                    send_error(popups).await;
-                },
+                return Some((
+                    file_number,
+                    LoadableFiles::SaveData(file_name, Box::new(save)),
+                )),
             Err(e) => parse_error(popups, &file_name, e).await,
         },
         // Unsupported filetypes
         Some(_) | None => {}
     }
+
+    None
 }
 
-async fn send_error(popups: &Arc<Mutex<Vec<PopupWindow>>>) {
+pub async fn send_error(popups: &Arc<Mutex<Vec<PopupWindow>>>) {
     popups.lock().await.push(PopupWindow::new(
         ErrorSeverity::Error,
         "Error sending data back to main thread.\nThis is a bug, please make a bug report on \

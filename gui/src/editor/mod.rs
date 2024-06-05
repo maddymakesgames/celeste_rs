@@ -63,19 +63,24 @@ impl EditorScreen {
                 .to_owned(),
             files: vec![base_file],
             tab_data: EditorTabData::data_vec(),
-            global_data: GlobalEditorData { safety_off: false },
+            global_data: GlobalEditorData {
+                safety_off: false,
+                files_to_load: Vec::new(),
+            },
             selected_panel: 0,
         }
     }
 
     pub fn display(&mut self, ui: &mut Ui, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
-        ScrollArea::horizontal().show(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Loaded Files:");
-                for file in &self.files {
-                    ui.label(file.file_name());
-                }
-            });
+        ui.horizontal(|ui| {
+            ui.label("Loaded Files:");
+            ScrollArea::horizontal()
+                .id_source("loaded_files_list")
+                .show(ui, |ui| {
+                    for file in &self.files {
+                        ui.label(file.file_name());
+                    }
+                });
         });
 
         let mut selected_panel = self.selected_panel;
@@ -108,6 +113,9 @@ impl EditorScreen {
             },
         );
         self.selected_panel = selected_panel;
+
+        self.files
+            .extend(std::mem::take(&mut self.global_data.files_to_load));
     }
 }
 
@@ -210,6 +218,7 @@ impl CelesteEditorRichTextExt for RichText {
 
 pub struct GlobalEditorData {
     safety_off: bool,
+    files_to_load: Vec<LoadableFiles>,
 }
 
 enum EditorTabContainer<'a> {

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{io::Cursor, sync::Arc};
 
 use celeste_rs::saves::{
     mods::{ParsedModSave, ParsedModSession, ParsedModSetting},
@@ -17,7 +17,7 @@ use tokio::{
 use crate::{
     celeste_save_dir,
     editor::{CelesteEditorRichTextExt, CelesteEditorUiExt, EditorTab, GlobalEditorData},
-    main_menu::LoadableFiles,
+    main_menu::{parse_files_from_reader_and_type, send_error, LoadableFiles},
     spawn,
     ErrorSeverity,
     PopupWindow,
@@ -32,12 +32,14 @@ pub struct OperationsTab<'a> {
 
 pub struct OperationsData {
     merge_file_listener: Option<Receiver<Option<Vec<u8>>>>,
+    load_file_listener: Option<Receiver<Option<(String, LoadableFiles)>>>,
 }
 
 impl OperationsData {
     pub fn new() -> OperationsData {
         OperationsData {
             merge_file_listener: None,
+            load_file_listener: None,
         }
     }
 }
@@ -81,6 +83,10 @@ impl<'a> EditorTab<'a> for OperationsTab<'a> {
             ui.horizontal(|ui| {
                 if ui.button(RichText::new("Save File").info()).clicked() {
                     self.save_files(rt, popups);
+                }
+
+                if ui.button(RichText::new("Load File").info()).clicked() {
+                    self.load_file(data, rt, popups);
                 }
 
                 if self.loaded_save_data {
@@ -302,22 +308,40 @@ impl<'a> OperationsTab<'a> {
             if let Some(file) = file_dialogue.pick_file().await {
                 let contents = file.read().await;
                 if send.send(Some(contents)).is_err() {
-                    let mut popup_guard = popups.lock().await;
-                    popup_guard.push(PopupWindow::new(
-                        ErrorSeverity::Warning,
-                        "Could not send read file back to main thread.\nThis is likely a bug. \
-                         Please report this on github.",
-                    ))
+                    send_error(&popups).await;
                 }
             } else if send.send(None).is_err() {
-                let mut popup_guard = popups.lock().await;
-                popup_guard.push(PopupWindow::new(
-                    ErrorSeverity::Warning,
-                    "Could not send None back to main thread.\nThis is likely a bug. Please \
-                     report this on github.",
-                ))
+                send_error(&popups).await;
             }
         });
+    }
+
+    fn load_file(
+        &mut self,
+        data: &mut OperationsData,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) {
+        let file_dialogue = rfd::AsyncFileDialog::new()
+            .add_filter("Celeste Save File", &["celeste"])
+            .set_directory(celeste_save_dir().unwrap_or_default());
+
+        let (send, recv) = tokio::sync::oneshot::channel();
+        data.load_file_listener = Some(recv);
+        let popups = popups.clone();
+
+        spawn(rt, async move {
+            if let Some(file) = file_dialogue.pick_file().await {
+                let reader = Cursor::new(file.read().await);
+
+                let file =
+                    parse_files_from_reader_and_type(file.file_name(), reader, true, &popups).await;
+
+                if send.send(file).is_err() {
+                    send_error(&popups).await;
+                }
+            }
+        })
     }
 
     pub fn update_listeners(
@@ -359,6 +383,33 @@ impl<'a> OperationsTab<'a> {
                     }
                     data.merge_file_listener = None;
                 }
+                Err(TryRecvError::Closed) => {
+                    eprintln!("Sender closed before we got merge contents");
+                    data.merge_file_listener = None;
+                }
+                Err(TryRecvError::Empty) => {}
+            }
+        }
+
+        if let Some(recv) = &mut data.load_file_listener {
+            match recv.try_recv() {
+                Ok(Some((number, file))) =>
+                    if self.files[0].file_name().chars().next().unwrap()
+                        == number.chars().next().unwrap()
+                    {
+                        self.global_data.files_to_load.push(file);
+                    } else {
+                        let mut popup_guard = popups.blocking_lock();
+                        popup_guard.push(PopupWindow::new(
+                            ErrorSeverity::Warning,
+                            format!(
+                                "File \"{}\" was not loaded since it is related to a different \
+                                 file (\"{number}\")",
+                                file.file_name()
+                            ),
+                        ));
+                    },
+                Ok(None) => {}
                 Err(TryRecvError::Closed) => {
                     eprintln!("Sender closed before we got merge contents");
                     data.merge_file_listener = None;
