@@ -82,7 +82,7 @@ pub trait ModSettings: ModFile {}
 
 /// A generic YAML document that we cannot otherwise parse into a ModFile impl
 ///
-/// String is file name
+/// String is mod name
 pub struct DynYamlDoc(pub String, pub Yaml);
 
 #[allow(clippy::large_enum_variant)]
