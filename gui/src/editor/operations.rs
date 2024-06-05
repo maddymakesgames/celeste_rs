@@ -27,6 +27,7 @@ use crate::{
 pub struct OperationsTab<'a> {
     files: &'a mut [LoadableFiles],
     global_data: &'a mut GlobalEditorData,
+    loaded_save_data: bool,
 }
 
 pub struct OperationsData {
@@ -60,11 +61,11 @@ impl<'a> EditorTab<'a> for OperationsTab<'a> {
             }
         }
 
-        if loaded_save.is_some() {
-            Some(OperationsTab { files, global_data })
-        } else {
-            None
-        }
+        Some(OperationsTab {
+            loaded_save_data: loaded_save.is_some(),
+            files,
+            global_data,
+        })
     }
 
     fn display(
@@ -82,20 +83,23 @@ impl<'a> EditorTab<'a> for OperationsTab<'a> {
                     self.save_files(rt, popups);
                 }
 
-                if ui.button(RichText::new("Merge in file").info()).clicked() {
-                    self.merge_file(data, rt, popups);
-                }
+                if self.loaded_save_data {
+                    if ui.button(RichText::new("Merge in file").info()).clicked() {
+                        self.merge_file(data, rt, popups);
+                    }
 
-                ui.info_hover(
-                    "Merges in any applicable data from a different save file into this \
-                     one.\nWhile this has been tested, it might not merge all the data you would \
-                     want it to and there may still be bugs.\nIt is highly recommended you keep \
-                     backups of your saves before using this.\n\nHuge note: this DOES NOT really \
-                     merge in golden strawberry data. With only the save file there is no way to \
-                     tell if a strawberry is a golden or not, and so we cannot properly adjust \
-                     the counts.\nIf you have a save with a lot of goldens and want the merged \
-                     count to be accurate, you'll need to manually adjust the golden count.",
-                )
+                    ui.info_hover(
+                        "Merges in any applicable data from a different save file into this \
+                         one.\nWhile this has been tested, it might not merge all the data you \
+                         would want it to and there may still be bugs.\nIt is highly recommended \
+                         you keep backups of your saves before using this.\n\nHuge note: this \
+                         DOES NOT really merge in golden strawberry data. With only the save file \
+                         there is no way to tell if a strawberry is a golden or not, and so we \
+                         cannot properly adjust the counts.\nIf you have a save with a lot of \
+                         goldens and want the merged count to be accurate, you'll need to \
+                         manually adjust the golden count.",
+                    );
+                }
             });
 
             ui.horizontal(|ui| {
