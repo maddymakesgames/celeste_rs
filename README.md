@@ -5,7 +5,7 @@ Collection of Rust crates to work with data formats found in the game Celeste an
 # celeste_rs gui editor
 The main user-facing output of this repo is the gui editor.<br>
 You can find a web version [here](https://maddymakesgames.github.io/celeste_rs/).<br>
-Native versions will be found [here](https://github.com/maddymakesgames/celeste_rs/releases) once we start releasing them.
+Native versions will be found [here](https://github.com/maddymakesgames/celeste_rs/releases).
 
 If you would like to compile a native version yourself you will need [the rust compiler](https://www.rust-lang.org/learn/get-started).<br>
 The gui library we use, [egui](https://github.com/emilk/egui), requires that extra libraries be installed on linux. On debian based distros you can install them with this command:<br>
