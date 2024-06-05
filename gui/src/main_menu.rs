@@ -1,4 +1,8 @@
-use std::{fmt::Display, io::Cursor, sync::Arc};
+use std::{
+    fmt::Display,
+    io::{BufRead, Cursor},
+    sync::Arc,
+};
 
 use celeste_rs::saves::{
     mods::{ParsedModSave, ParsedModSession, ParsedModSetting},
@@ -150,41 +154,9 @@ async fn handle_file_picker(
         for file in files {
             // Read the contents of the file
             let name = file.file_name();
-            let contents = file.read().await;
-            drop(file);
+            let reader = Cursor::new(file.read().await);
 
-            let Some(file_number) = name.split(['-', '.']).next() else {
-                popups.lock().await.push(PopupWindow::new(
-                    ErrorSeverity::Warning,
-                    format!("File \"{name}\" is not a loadable save file."),
-                ));
-                return;
-            };
-
-            // Attempt to parse the save file showing an error popup if we fail
-            match SaveData::from_reader(Cursor::new(contents)) {
-                Ok(save) =>
-                    if send
-                        .send(Some((
-                            file_number.to_owned(),
-                            LoadableFiles::SaveData(name, Box::new(save)),
-                        )))
-                        .await
-                        .is_err()
-                    {
-                        send_error(&popups).await;
-                    },
-                Err(e) => {
-                    popups.lock().await.push(PopupWindow::new(
-                        ErrorSeverity::Error,
-                        format!(
-                            "Errors found when parsing save file: {e}.\nMake sure the file you \
-                             selected is actually a save file.\nIf this continues please report \
-                             it as a bug on github."
-                        ),
-                    ));
-                }
-            }
+            parse_files_from_reader_and_type(name, reader, true, &popups, &send).await;
         }
     }
 }
@@ -210,88 +182,11 @@ async fn handle_folder_picker(
 
                     let file_name = entry.file_name().to_string_lossy().to_string();
 
-                    // File names are in the format (File number)-[modded file type]-[related mod].celeste
-                    // So we can determine how to treat the file by splitting on '-' and '.'
-                    let mut file_name_parts = file_name.split(['-', '.']);
-
-                    let Some(file_number) = file_name_parts.next().map(ToOwned::to_owned) else {
-                        continue;
-                    };
-
-                    // ignore settings.celeste and debug-* files
-                    if file_number == "settings" || file_number == "debug" {
-                        continue;
-                    }
-
-                    // At this point we're likely to be able to handle it so its useful to open the file at this point
-
                     if let Ok(file) = OpenOptions::new().read(true).open(entry.path()) {
                         let reader = BufReader::new(file);
-                        let file_type = file_name_parts.next();
 
-                        match file_type {
-                            Some("modsavedata") => match ModSaveData::from_reader(reader) {
-                                Ok(modsavedata) => {
-                                    if send
-                                        .send(Some((
-                                            file_number,
-                                            LoadableFiles::ModSaveData(file_name, modsavedata),
-                                        )))
-                                        .await
-                                        .is_err()
-                                    {
-                                        send_error(&popups).await;
-                                    }
-                                }
-                                Err(e) => parse_error(&popups, &file_name, e).await,
-                            },
-                            Some("modsave") => match ParsedModSave::parse_from_path(entry.path()) {
-                                Ok((_, save)) =>
-                                    if send
-                                        .send(Some((
-                                            file_number,
-                                            LoadableFiles::ModSave(file_name, save),
-                                        )))
-                                        .await
-                                        .is_err()
-                                    {
-                                        send_error(&popups).await
-                                    },
-                                Err(e) => parse_error(&popups, &file_name, e).await,
-                            },
-                            Some("modsession") =>
-                                match ParsedModSession::parse_from_path(entry.path()) {
-                                    Ok((_, session)) =>
-                                        if send
-                                            .send(Some((
-                                                file_number,
-                                                LoadableFiles::ModSession(file_name, session),
-                                            )))
-                                            .await
-                                            .is_err()
-                                        {
-                                            send_error(&popups).await
-                                        },
-                                    Err(e) => parse_error(&popups, &file_name, e).await,
-                                },
-                            // No second part to the file name means its just a root save file
-                            Some("celeste") => match SaveData::from_reader(reader) {
-                                Ok(save) =>
-                                    if send
-                                        .send(Some((
-                                            file_number,
-                                            LoadableFiles::SaveData(file_name, Box::new(save)),
-                                        )))
-                                        .await
-                                        .is_err()
-                                    {
-                                        send_error(&popups).await;
-                                    },
-                                Err(e) => parse_error(&popups, &file_name, e).await,
-                            },
-                            // Unsupported filetypes
-                            Some(_) | None => {}
-                        }
+                        parse_files_from_reader_and_type(file_name, reader, false, &popups, &send)
+                            .await;
                     }
                 },
             Err(e) => popups.lock().await.push(PopupWindow::new(
@@ -299,6 +194,101 @@ async fn handle_folder_picker(
                 format!("Error opening directory: {e}"),
             )),
         }
+    }
+}
+
+async fn parse_files_from_reader_and_type(
+    file_name: String,
+    reader: impl BufRead,
+    warn_ignored_files: bool,
+    popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    send: &Sender<Option<(String, LoadableFiles)>>,
+) {
+    // File names are in the format (File number)-[modded file type]-[related mod].celeste
+    // So we can determine how to treat the file by splitting on '-' and '.'
+    let mut file_name_parts: std::str::Split<[char; 2]> = file_name.split(['-', '.']);
+
+    let Some(file_number) = file_name_parts.next().map(ToOwned::to_owned) else {
+        popups.lock().await.push(PopupWindow::new(
+            ErrorSeverity::Warning,
+            format!("File \"{file_name}\" is not a loadable save file."),
+        ));
+        return;
+    };
+
+    // ignore settings.celeste and debug-* files
+    if file_number == "settings" || file_number == "debug" {
+        if warn_ignored_files {
+            popups.lock().await.push(PopupWindow::new(
+                ErrorSeverity::Warning,
+                format!("We currently do not support loading \"{file_name}\"."),
+            ));
+        }
+        return;
+    }
+
+    // At this point we're likely to be able to handle it so its useful to open the file at this point
+    let file_type = file_name_parts.next().map(ToOwned::to_owned);
+
+    // Attempt to parse the save file showing an error popup if we fail
+    match file_type.as_deref() {
+        Some("modsavedata") => match ModSaveData::from_reader(reader) {
+            Ok(modsavedata) => {
+                if send
+                    .send(Some((
+                        file_number,
+                        LoadableFiles::ModSaveData(file_name, modsavedata),
+                    )))
+                    .await
+                    .is_err()
+                {
+                    send_error(popups).await;
+                }
+            }
+            Err(e) => parse_error(popups, &file_name, e).await,
+        },
+        Some("modsave") => match ParsedModSave::from_reader_and_path(&file_name, reader) {
+            Ok((_, save)) =>
+                if send
+                    .send(Some((file_number, LoadableFiles::ModSave(file_name, save))))
+                    .await
+                    .is_err()
+                {
+                    send_error(popups).await
+                },
+            Err(e) => parse_error(popups, &file_name, e).await,
+        },
+        Some("modsession") => match ParsedModSession::from_reader_and_path(&file_name, reader) {
+            Ok((_, session)) =>
+                if send
+                    .send(Some((
+                        file_number,
+                        LoadableFiles::ModSession(file_name, session),
+                    )))
+                    .await
+                    .is_err()
+                {
+                    send_error(popups).await
+                },
+            Err(e) => parse_error(popups, &file_name, e).await,
+        },
+        // No second part to the file name means its just a root save file
+        Some("celeste") => match SaveData::from_reader(reader) {
+            Ok(save) =>
+                if send
+                    .send(Some((
+                        file_number,
+                        LoadableFiles::SaveData(file_name, Box::new(save)),
+                    )))
+                    .await
+                    .is_err()
+                {
+                    send_error(popups).await;
+                },
+            Err(e) => parse_error(popups, &file_name, e).await,
+        },
+        // Unsupported filetypes
+        Some(_) | None => {}
     }
 }
 
