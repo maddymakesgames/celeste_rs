@@ -54,7 +54,7 @@ impl<'a> EditorTab<'a> for LevelSetsTab<'a> {
     where
         Self: Sized,
     {
-        let tab = None;
+        let mut tab = None;
 
         for file in files {
             if let LoadableFiles::SaveData(_, save) = file {
@@ -68,6 +68,20 @@ impl<'a> EditorTab<'a> for LevelSetsTab<'a> {
                     total_strawberries: Some(&mut save.total_strawberries),
                     total_deaths: Some(&mut save.total_deaths),
                     time: Some(&mut save.time),
+                });
+            }
+
+            if let LoadableFiles::ModSaveData(_, mod_data) = file {
+                tab = Some(LevelSetsTab {
+                    vanilla_areas: None,
+                    modded_sets: &mut mod_data.level_sets,
+                    modded_sets_recycle_bin: &mut mod_data.level_set_recycle_bin,
+                    has_modded_save_data: true,
+                    safety_off: global_data.safety_off,
+                    poem: None,
+                    total_strawberries: None,
+                    total_deaths: None,
+                    time: None,
                 });
             }
         }
