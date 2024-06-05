@@ -1,10 +1,4 @@
-use std::{
-    ffi::OsStr,
-    fmt::Write,
-    fs::{File, OpenOptions},
-    io::Read,
-    path::Path,
-};
+use std::{ffi::OsStr, fmt::Write, fs::OpenOptions, io::Read, path::Path};
 
 use crate::saves::mods::{
     auroras_additions::AurorasAdditionsSave,
@@ -17,12 +11,11 @@ use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlLoader};
 mod auroras_additions;
 mod collab_utils2;
 
-
 fn check_yaml_file<'a>(
     file_type: &'static str,
     global: bool,
     path: &'a Path,
-) -> Result<(File, u8, &'a str)> {
+) -> Result<(u8, &'a str)> {
     let file_name = path
         .file_name()
         .and_then(OsStr::to_str)
@@ -61,9 +54,7 @@ fn check_yaml_file<'a>(
         .next()
         .ok_or(anyhow!("Invalid {file_type} name: {file_name:?}"))?;
 
-    let file = OpenOptions::new().read(true).write(false).open(path)?;
-
-    Ok((file, file_index, mod_name))
+    Ok((file_index, mod_name))
 }
 
 impl ParsedModSave {
@@ -78,15 +69,23 @@ impl ParsedModSave {
     pub fn parse_from_path(path: impl AsRef<Path>) -> Result<(u8, Self)> {
         let path = path.as_ref();
 
-        let (file, file_index, mod_name) = check_yaml_file("modsave", false, path)?;
+        let file = OpenOptions::new().read(true).write(false).open(path)?;
 
+
+        Self::from_reader_and_path(path, file)
+    }
+
+    pub fn from_reader_and_path(path: impl AsRef<Path>, reader: impl Read) -> Result<(u8, Self)> {
+        let (file_index, mod_name) = check_yaml_file("modsave", false, path.as_ref())?;
 
         Ok((file_index, match mod_name {
             AurorasAdditionsSave::MOD_NAME =>
-                Self::AurorasAdditions(AurorasAdditionsSave::parse_from_reader(file)?),
+                Self::AurorasAdditions(AurorasAdditionsSave::parse_from_reader(reader)?),
             CollabsUtils2Save::MOD_NAME =>
-                Self::CollabUtils2(CollabsUtils2Save::parse_from_reader(file)?),
-            _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(file, mod_name)?),
+                Self::CollabUtils2(CollabsUtils2Save::parse_from_reader(reader)?),
+            _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(
+                reader, mod_name,
+            )?),
         }))
     }
 
@@ -110,11 +109,21 @@ impl ParsedModSession {
     pub fn parse_from_path(path: impl AsRef<Path>) -> Result<(u8, Self)> {
         let path = path.as_ref();
 
-        let (file, file_index, mod_name) = check_yaml_file("modsession", false, path)?;
+        let file = OpenOptions::new().read(true).write(false).open(path)?;
+
+
+        Self::from_reader_and_path(path, file)
+    }
+
+    pub fn from_reader_and_path(path: impl AsRef<Path>, reader: impl Read) -> Result<(u8, Self)> {
+        let (file_index, mod_name) = check_yaml_file("modsession", false, path.as_ref())?;
+
 
         #[allow(clippy::match_single_binding)]
         Ok((file_index, match mod_name {
-            _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(file, mod_name)?),
+            _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(
+                reader, mod_name,
+            )?),
         }))
     }
 
@@ -132,15 +141,25 @@ impl ParsedModSetting {
         })
     }
 
-    pub fn parse_from_path(path: impl AsRef<Path>) -> Result<Self> {
+    pub fn parse_from_path(path: impl AsRef<Path>) -> Result<(u8, Self)> {
         let path = path.as_ref();
 
-        let (file, _, mod_name) = check_yaml_file("modsettings", true, path)?;
+        let file = OpenOptions::new().read(true).write(false).open(path)?;
+
+
+        Self::from_reader_and_path(path, file)
+    }
+
+    pub fn from_reader_and_path(path: impl AsRef<Path>, reader: impl Read) -> Result<(u8, Self)> {
+        let (file_index, mod_name) = check_yaml_file("modsettings", true, path.as_ref())?;
+
 
         #[allow(clippy::match_single_binding)]
-        Ok(match mod_name {
-            _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(file, mod_name)?),
-        })
+        Ok((file_index, match mod_name {
+            _ => Self::Unknown(DynYamlDoc::parse_from_reader_and_mod_name(
+                reader, mod_name,
+            )?),
+        }))
     }
 
     pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
