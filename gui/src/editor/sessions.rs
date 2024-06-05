@@ -66,7 +66,6 @@ impl<'a> EditorTab<'a> for SessionsTab<'a> {
         let mut total_deaths = None;
 
         for file in files {
-            #[allow(clippy::single_match)]
             match file {
                 LoadableFiles::SaveData(_, save) => {
                     if let Some(session) = &mut save.current_session {
@@ -80,6 +79,19 @@ impl<'a> EditorTab<'a> for SessionsTab<'a> {
                     time = Some(&mut save.time);
                     total_deaths = Some(&mut save.total_deaths);
                 }
+                LoadableFiles::ModSave(_, mod_save) => match mod_save {
+                    celeste_rs::saves::mods::ParsedModSave::AurorasAdditions(aa) => {
+                        for ((sid, mode), session) in &mut aa.sessions_per_level {
+                            sessions_vec.push((format!("(AA) {sid} {mode}"), session))
+                        }
+                    }
+                    celeste_rs::saves::mods::ParsedModSave::CollabUtils2(cu2) => {
+                        for (sid, session) in &mut cu2.sessions_per_level {
+                            sessions_vec.push((format!("(CU2) {sid}"), session));
+                        }
+                    }
+                    _ => {}
+                },
                 _ => {}
             }
         }
