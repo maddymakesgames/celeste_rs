@@ -1,3 +1,10 @@
+# celeste_rs/0.3.0 - 2024-06-04
+- Add support for `modsave`, `modsession`, and `modsetting` file parsing
+- Add support for `x-AurorasAdditions-modsave` files
+- Add support for `x-CollabUtils2-modsave` files
+- Add support for generic YAML files
+- Fix deserialization issue for Flags with an `xsi:nil` attribute
+
 # celeste_rs/0.2.1 - 2024-03-28
 - Fixed serialization issue where options were being serialized when they were `None`
 - Make `SaveData::merge_data` better by merging: total strawberry count, assists, and unlocked areas. 
