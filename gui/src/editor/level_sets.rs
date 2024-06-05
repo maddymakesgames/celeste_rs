@@ -1,48 +1,87 @@
 use celeste_rs::saves::{
-    everest::LevelSetStats,
+    everest::LevelSets,
     util::FileTime,
-    vanilla::{AreaMode, Modes},
-    SaveData,
+    vanilla::{AreaMode, Areas},
+    DeathCount,
+    Poem,
+    StrawberryCount,
 };
 use eframe::egui::{
     CentralPanel,
-    CollapsingHeader,
-    CollapsingResponse,
     Color32,
     DragValue,
     FontId,
     RichText,
     ScrollArea,
+    Sense,
     SidePanel,
     TextStyle,
     TopBottomPanel,
     Ui,
+    Vec2,
 };
 
-use crate::editor::{entity_id_list_widget, file_time_widget, CelesteEditorUiExt};
+use crate::{
+    editor::{
+        entity_id_list_widget,
+        file_time_widget,
+        metadata::show_poem,
+        CelesteEditorUiExt,
+        EditorTab,
+    },
+    main_menu::LoadableFiles,
+};
 
-pub struct LevelSetsPanel {
-    level_sets_search: String,
-    pub vanilla_level_set: LevelSetStats,
-    selected_level_set: Option<usize>,
-    selected_area: Option<usize>,
-    selected_mode: Option<usize>,
-    add_strawberry_buff: String,
+pub struct LevelSetsTab<'a> {
+    vanilla_areas: Option<&'a mut Areas>,
+    modded_sets: &'a mut LevelSets,
+    modded_sets_recycle_bin: &'a mut LevelSets,
+    has_modded_save_data: bool,
+    safety_off: bool,
+    poem: Option<&'a mut Poem>,
+    total_strawberries: Option<&'a mut StrawberryCount>,
+    total_deaths: Option<&'a mut DeathCount>,
+    time: Option<&'a mut FileTime>,
 }
 
-impl LevelSetsPanel {
-    pub fn new(vanilla_level_set: LevelSetStats) -> Self {
-        LevelSetsPanel {
-            vanilla_level_set,
-            level_sets_search: String::new(),
-            selected_mode: None,
-            selected_level_set: None,
-            selected_area: None,
-            add_strawberry_buff: String::new(),
+impl<'a> EditorTab<'a> for LevelSetsTab<'a> {
+    type EditorData = LevelSetsData;
+
+    fn from_files(
+        files: &'a mut [crate::main_menu::LoadableFiles],
+        global_data: &'a mut super::GlobalEditorData,
+    ) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        let tab = None;
+
+        for file in files {
+            if let LoadableFiles::SaveData(_, save) = file {
+                return Some(LevelSetsTab {
+                    vanilla_areas: Some(&mut save.areas),
+                    modded_sets: &mut save.level_sets,
+                    modded_sets_recycle_bin: &mut save.level_set_recycle_bin,
+                    has_modded_save_data: save.has_modded_save_data,
+                    safety_off: global_data.safety_off,
+                    poem: Some(&mut save.poem),
+                    total_strawberries: Some(&mut save.total_strawberries),
+                    total_deaths: Some(&mut save.total_deaths),
+                    time: Some(&mut save.time),
+                });
+            }
         }
+
+        tab
     }
 
-    pub fn show(&mut self, ui: &mut Ui, save: &mut SaveData, safety_off: bool) {
+    fn display(
+        self,
+        ui: &mut Ui,
+        data: &mut Self::EditorData,
+        _: &tokio::runtime::Runtime,
+        _: &std::sync::Arc<tokio::sync::Mutex<Vec<crate::PopupWindow>>>,
+    ) -> eframe::egui::Response {
         TopBottomPanel::top("level_sets_info_panel").show_inside(ui, |ui| {
             ui.label(
                 RichText::new(
@@ -54,28 +93,36 @@ impl LevelSetsPanel {
             );
         });
 
-        if save.has_modded_save_data {
-            self.show_modded(ui, save, safety_off)
+        if self.has_modded_save_data {
+            self.show_modded(ui, data)
         } else {
-            self.show_vanilla(ui, save, safety_off)
+            self.show_vanilla(ui, data)
         }
-    }
 
-    pub fn show_modded(&mut self, ui: &mut Ui, save: &mut SaveData, safety_off: bool) {
+        ui.allocate_response(Vec2::new(0.0, 0.0), Sense::focusable_noninteractive())
+    }
+}
+
+impl<'a> LevelSetsTab<'a> {
+    pub fn show_modded(self, ui: &mut Ui, data: &mut LevelSetsData) {
         let row_height = ui.text_style_height(&TextStyle::Body);
+
+        let mut total_deaths_buf = 0;
+        let mut total_time_buf = FileTime::from_millis(0);
 
         SidePanel::left("level_sets_list_panel").show_inside(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Search for a levelset: ");
-                ui.text_edit_singleline(&mut self.level_sets_search);
+                ui.text_edit_singleline(&mut data.level_sets_search);
             });
 
-            let search_text = self.level_sets_search.to_ascii_lowercase();
+            let search_text = data.level_sets_search.to_ascii_lowercase();
 
-            let row_count = save
-                .all_level_sets()
+            let row_count = self
+                .modded_sets
                 .iter()
-                .filter(|(l, _)| l.name.to_ascii_lowercase().contains(&search_text))
+                .chain(self.modded_sets_recycle_bin.iter())
+                .filter(|l| l.name.to_ascii_lowercase().contains(&search_text))
                 .count();
 
             ScrollArea::both().auto_shrink(false).show_rows(
@@ -83,14 +130,14 @@ impl LevelSetsPanel {
                 row_height,
                 row_count,
                 |ui, row_range| {
-                    for (idx, (set_idx, level_set)) in save
-                        .level_sets
+                    for (idx, (set_idx, level_set)) in self
+                        .modded_sets
                         .iter()
-                        .chain(save.level_set_recycle_bin.iter())
+                        .chain(self.modded_sets_recycle_bin.iter())
                         .map(|l| &l.name)
                         .enumerate()
                         .filter(|(_, l)| l.to_ascii_lowercase().contains(&search_text))
-                        .skip(row_range.start)
+                        .skip(row_range.start + if self.vanilla_areas.is_none() { 1 } else { 0 })
                         .enumerate()
                     {
                         let adjusted_idx = idx + row_range.start;
@@ -99,50 +146,61 @@ impl LevelSetsPanel {
                         }
 
                         if ui
-                            .selectable_label(self.selected_level_set == Some(set_idx), level_set)
+                            .selectable_label(data.selected_level_set == Some(set_idx), level_set)
                             .clicked()
                         {
-                            self.selected_level_set = Some(set_idx);
-                            self.selected_area = None;
-                            self.selected_mode = None;
+                            data.selected_level_set = Some(set_idx);
+                            data.selected_area = None;
+                            data.selected_mode = None;
                         }
                     }
                 },
             );
         });
 
-        if let Some(set_idx) = self.selected_level_set {
-            let set = if set_idx == 0 {
-                &mut self.vanilla_level_set
+        if let Some(set_idx) = data.selected_level_set {
+            let (areas, poem) = if set_idx == 0 {
+                if let (Some(areas), Some(poem)) = (self.vanilla_areas.as_deref(), self.poem) {
+                    (areas, poem)
+                } else {
+                    let set = &mut self.modded_sets[0];
+                    (&set.areas, &mut set.poem)
+                }
             } else {
                 // Unwrap safe cause selected_leveL_set is always in-bounds
-                save.level_sets
+                self.modded_sets
                     .iter_mut()
-                    .chain(save.level_set_recycle_bin.iter_mut())
+                    .chain(self.modded_sets_recycle_bin.iter_mut())
                     .nth(set_idx)
+                    .map(|s| (&s.areas, &mut s.poem))
                     .unwrap()
             };
 
             SidePanel::left("area_list_panel").show_inside(ui, |ui| {
-                ScrollArea::both().show_rows(ui, row_height, set.areas.len(), |ui, row_range| {
-                    for (idx, area) in set.areas.iter().enumerate().skip(row_range.start) {
+                ScrollArea::both().show_rows(ui, row_height, areas.len(), |ui, row_range| {
+                    for (idx, area) in areas.iter().enumerate().skip(row_range.start) {
                         if idx > row_range.end {
                             break;
                         }
 
                         if ui
-                            .selectable_label(self.selected_area == Some(idx), area.def.sid())
+                            .selectable_label(data.selected_area == Some(idx), area.def.sid())
                             .clicked()
                         {
-                            self.selected_area = Some(idx);
-                            self.selected_mode = None;
+                            data.selected_area = Some(idx);
+                            data.selected_mode = None;
                         }
                     }
+                    ui.separator();
+
+                    ScrollArea::horizontal().show(ui, |ui| {
+                        show_poem(poem, ui);
+                    });
                 })
             });
 
 
-            if let Some(area_idx) = self.selected_area {
+            if let Some(area_idx) = data.selected_area {
                 let width = ui
                     .painter()
                     .layout_no_wrap(
@@ -159,19 +217,45 @@ impl LevelSetsPanel {
                     .show_inside(ui, |ui| {
                         for (idx, side) in ["A-Side", "B-Side", "C-Side"].iter().enumerate() {
                             if ui
-                                .selectable_label(self.selected_mode == Some(idx), *side)
+                                .selectable_label(data.selected_mode == Some(idx), *side)
                                 .clicked()
                             {
-                                self.selected_mode = Some(idx);
+                                data.selected_mode = Some(idx);
                             }
                         }
                     });
 
-                if let Some(mode_idx) = self.selected_mode {
+                if let Some(mode_idx) = data.selected_mode {
+                    // Unwrap safe cause selected_leveL_set is always in-bounds
+                    let set = self
+                        .modded_sets
+                        .iter_mut()
+                        .chain(self.modded_sets_recycle_bin.iter_mut())
+                        .nth(set_idx)
+                        .unwrap();
+
                     CentralPanel::default().show_inside(ui, |ui| {
                         // Unwraps safe cause indicies are always kept in-bounds
-                        let area = set.areas.get_mut(area_idx).unwrap();
+                        let (area, strawberry_count) = if set_idx == 0 {
+                            if let (Some(areas), Some(strawberries)) =
+                                (self.vanilla_areas, self.total_strawberries)
+                            {
+                                (areas.get_mut(area_idx).unwrap(), strawberries)
+                            } else {
+                                (
+                                    set.areas.get_mut(area_idx).unwrap(),
+                                    &mut set.total_strawberries,
+                                )
+                            }
+                        } else {
+                            (
+                                set.areas.get_mut(area_idx).unwrap(),
+                                &mut set.total_strawberries,
+                            )
+                        };
+
                         let mode = area.modes.get_mut(mode_idx).unwrap();
+                        let strawb_count = mode.strawberries.len();
 
                         let changed = ScrollArea::both()
                             .auto_shrink(false)
@@ -179,19 +263,21 @@ impl LevelSetsPanel {
                                 mode_widget(
                                     ui,
                                     area.def.sid(),
-                                    safety_off,
-                                    &mut save.total_deaths,
-                                    &mut save.time,
+                                    self.safety_off,
+                                    self.total_deaths.unwrap_or(&mut total_deaths_buf),
+                                    self.time.unwrap_or(&mut total_time_buf),
                                     mode,
-                                    &mut self.add_strawberry_buff,
+                                    &mut data.add_strawberry_buff,
                                 )
                             })
                             .inner;
 
-                        if changed && set_idx == 0 {
-                            save.areas = set.areas.clone();
-                            save.poem = set.poem.clone();
-                            save.total_strawberries = set.total_strawberries;
+                        if changed {
+                            match mode.strawberries.len().cmp(&strawb_count) {
+                                std::cmp::Ordering::Less => *strawberry_count -= 1,
+                                std::cmp::Ordering::Greater => *strawberry_count += 1,
+                                std::cmp::Ordering::Equal => {}
+                            }
                         }
                     });
                 }
@@ -199,22 +285,25 @@ impl LevelSetsPanel {
         }
     }
 
-    pub fn show_vanilla(&mut self, ui: &mut Ui, save: &mut SaveData, safety_off: bool) {
+    pub fn show_vanilla(self, ui: &mut Ui, data: &mut LevelSetsData) {
+        // has_moddded_data is only true when using a SaveData
+        // and SaveData *always* has vanilla area data
+        let areas = self.vanilla_areas.unwrap();
         SidePanel::left("vanilla_area_panel").show_inside(ui, |ui| {
             ScrollArea::both().auto_shrink(false).show(ui, |ui| {
-                for (idx, area_sid) in save.areas.iter().map(|a| a.def.sid()).enumerate() {
+                for (idx, area_sid) in areas.iter().map(|a| a.def.sid()).enumerate() {
                     if ui
-                        .selectable_label(self.selected_area == Some(idx), area_sid)
+                        .selectable_label(data.selected_area == Some(idx), area_sid)
                         .clicked()
                     {
-                        self.selected_area = Some(idx);
-                        self.selected_mode = None;
+                        data.selected_area = Some(idx);
+                        data.selected_mode = None;
                     }
                 }
             });
         });
 
-        if let Some(area_idx) = self.selected_area {
+        if let Some(area_idx) = data.selected_area {
             let width = ui
                 .painter()
                 .layout_no_wrap(
@@ -231,29 +320,51 @@ impl LevelSetsPanel {
                 .show_inside(ui, |ui| {
                     for (idx, side) in ["A-Side", "B-Side", "C-Side"].iter().enumerate() {
                         if ui
-                            .selectable_label(self.selected_mode == Some(idx), *side)
+                            .selectable_label(data.selected_mode == Some(idx), *side)
                             .clicked()
                         {
-                            self.selected_mode = Some(idx);
+                            data.selected_mode = Some(idx);
                         }
                     }
                 });
 
-            if let Some(mode_idx) = self.selected_mode {
+            if let Some(mode_idx) = data.selected_mode {
                 CentralPanel::default().show_inside(ui, |ui| {
-                    let area = &mut save.areas[area_idx];
+                    let area = &mut areas[area_idx];
 
                     mode_widget(
                         ui,
                         area.def.sid(),
-                        safety_off,
-                        &mut save.total_deaths,
-                        &mut save.time,
+                        self.safety_off,
+                        // Unwraps safe because we can only call show_vanilla
+                        // if we have a full SaveData
+                        self.total_deaths.unwrap(),
+                        self.time.unwrap(),
                         &mut area.modes[mode_idx],
-                        &mut self.add_strawberry_buff,
+                        &mut data.add_strawberry_buff,
                     );
                 });
             }
+        }
+    }
+}
+
+pub struct LevelSetsData {
+    level_sets_search: String,
+    selected_level_set: Option<usize>,
+    selected_area: Option<usize>,
+    selected_mode: Option<usize>,
+    add_strawberry_buff: String,
+}
+
+impl LevelSetsData {
+    pub fn new() -> Self {
+        LevelSetsData {
+            level_sets_search: String::new(),
+            selected_mode: None,
+            selected_level_set: None,
+            selected_area: None,
+            add_strawberry_buff: String::new(),
         }
     }
 }
@@ -353,43 +464,4 @@ pub fn mode_widget(
     ui.checkbox(&mut stats.heart_gem, "Heart Collected");
 
     changed
-}
-
-
-#[allow(clippy::too_many_arguments)]
-pub fn area_mode_widget(
-    ui: &mut Ui,
-    name: &str,
-    sid: &str,
-    safety_off: bool,
-    total_deaths: &mut u64,
-    total_time: &mut FileTime,
-    modes: &mut Modes,
-    add_strawberry_buff: &mut String,
-) -> CollapsingResponse<bool> {
-    let mut changed = false;
-
-    // *Pretty sure* that there can only ever be a, b, and c sides
-    // If modes can be of any length we could use .enumerated() and use the index
-    // to get the side name "{(idx + 101) as char}-Side"
-
-    ui.collapsing(sid, |ui| {
-        for (mode, side_name) in modes.iter_mut().zip(["A-Side", "B-Side", "C-Side"]) {
-            let id_name = format!("{name}/{sid}/{side_name}");
-            CollapsingHeader::new(RichText::new(side_name))
-                .id_source(id_name)
-                .show(ui, |ui| {
-                    changed |= mode_widget(
-                        ui,
-                        sid,
-                        safety_off,
-                        total_deaths,
-                        total_time,
-                        mode,
-                        add_strawberry_buff,
-                    );
-                });
-        }
-        changed
-    })
 }

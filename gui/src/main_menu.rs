@@ -1,6 +1,10 @@
-use std::{io::Cursor, sync::Arc};
+use std::{fmt::Display, io::Cursor, sync::Arc};
 
-use celeste_rs::saves::SaveData;
+use celeste_rs::saves::{
+    mods::{ParsedModSave, ParsedModSession, ParsedModSetting},
+    ModSaveData,
+    SaveData,
+};
 use eframe::egui::{TopBottomPanel, Ui};
 use rfd::AsyncFileDialog;
 use tokio::{
@@ -13,11 +17,32 @@ use tokio::{
 
 use crate::{spawn, ErrorSeverity, PopupWindow};
 
+#[allow(dead_code)]
+pub enum LoadableFiles {
+    SaveData(String, Box<SaveData>),
+    ModSaveData(String, ModSaveData),
+    ModSave(String, ParsedModSave),
+    ModSession(String, ParsedModSession),
+    ModSetting(String, ParsedModSetting),
+}
+
+impl LoadableFiles {
+    pub fn file_name(&self) -> &str {
+        match self {
+            LoadableFiles::SaveData(a, _)
+            | LoadableFiles::ModSaveData(a, _)
+            | LoadableFiles::ModSave(a, _)
+            | LoadableFiles::ModSession(a, _)
+            | LoadableFiles::ModSetting(a, _) => a,
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct MainMenu {
     #[allow(clippy::type_complexity)]
-    file_listener: Option<Receiver<Option<(String, SaveData)>>>,
-    output: Vec<(String, SaveData)>,
+    file_listener: Option<Receiver<Option<(String, LoadableFiles)>>>,
+    output: Vec<(String, LoadableFiles)>,
 }
 
 impl MainMenu {
@@ -26,7 +51,7 @@ impl MainMenu {
         ui: &mut Ui,
         rt: &Runtime,
         popups: &Arc<Mutex<Vec<PopupWindow>>>,
-    ) -> Option<Vec<(String, SaveData)>> {
+    ) -> Option<Vec<(String, LoadableFiles)>> {
         // Update the listener and return if we've recieved some data
         if let Some(inner) = self.update_listener(ui) {
             return Some(inner);
@@ -85,47 +110,107 @@ impl MainMenu {
                 if let Some(dir) = file_dialogue.await {
                     match read_dir(dir.path()) {
                         Ok(iter) =>
-                            'dir_iter: for entry in iter.flatten() {
-                                let file_name = entry.file_name().to_string_lossy().to_string();
-
-                                'char_loop: for char in file_name.chars() {
-                                    if char == '.' {
-                                        break 'char_loop;
-                                    }
-
-                                    if !char.is_ascii_digit() {
-                                        continue 'dir_iter;
-                                    }
-                                }
-
+                            for entry in iter.flatten() {
+                                // If its not a .celeste file, just skip over it
                                 if entry.path().extension() != Some(&OsString::from("celeste")) {
                                     continue;
                                 }
 
+                                let file_name = entry.file_name().to_string_lossy().to_string();
+
+                                // File names are in the format (File number)-[modded file type]-[related mod].celeste
+                                // So we can determine how to treat the file by splitting on '-' and '.'
+                                let mut file_name_parts = file_name.split(['-', '.']);
+
+                                let Some(file_number) =
+                                    file_name_parts.next().map(ToOwned::to_owned)
+                                else {
+                                    continue;
+                                };
+
+                                // ignore settings.celeste and debug-* files
+                                if file_number == "settings" || file_number == "debug" {
+                                    continue;
+                                }
+
+                                // At this point we're likely to be able to handle it so its useful to open the file at this point
 
                                 if let Ok(file) = OpenOptions::new().read(true).open(entry.path()) {
-                                    match SaveData::from_reader(BufReader::new(file)) {
-                                        Ok(save) =>
-                                            if send.send(Some((file_name, save))).await.is_err() {
-                                                popups.lock().await.push(PopupWindow::new(
-                                                    ErrorSeverity::Error,
-                                                    "Error sending data back to main \
-                                                     thread.\nThis is a bug, please make a bug \
-                                                     report on github.",
-                                                ))
+                                    let reader = BufReader::new(file);
+                                    let file_type = file_name_parts.next();
+
+                                    match file_type {
+                                        Some("modsavedata") =>
+                                            match ModSaveData::from_reader(reader) {
+                                                Ok(modsavedata) => {
+                                                    if send
+                                                        .send(Some((
+                                                            file_number,
+                                                            LoadableFiles::ModSaveData(
+                                                                file_name,
+                                                                modsavedata,
+                                                            ),
+                                                        )))
+                                                        .await
+                                                        .is_err()
+                                                    {
+                                                        send_error(&popups).await;
+                                                    }
+                                                }
+                                                Err(e) => parse_error(&popups, &file_name, e).await,
                                             },
-                                        Err(e) => {
-                                            popups.lock().await.push(PopupWindow::new(
-                                                ErrorSeverity::Error,
-                                                format!(
-                                                    "Errors found when parsing save file \
-                                                     \"{file_name}\": {e}.\nMake sure the file \
-                                                     you selected is actually a save file.\nIf \
-                                                     this continues please report it as a bug on \
-                                                     github."
-                                                ),
-                                            ));
-                                        }
+                                        Some("modsave") =>
+                                            match ParsedModSave::parse_from_path(entry.path()) {
+                                                Ok((_, save)) =>
+                                                    if send
+                                                        .send(Some((
+                                                            file_number,
+                                                            LoadableFiles::ModSave(file_name, save),
+                                                        )))
+                                                        .await
+                                                        .is_err()
+                                                    {
+                                                        send_error(&popups).await
+                                                    },
+                                                Err(e) => parse_error(&popups, &file_name, e).await,
+                                            },
+                                        Some("modsession") =>
+                                            match ParsedModSession::parse_from_path(entry.path()) {
+                                                Ok((_, session)) =>
+                                                    if send
+                                                        .send(Some((
+                                                            file_number,
+                                                            LoadableFiles::ModSession(
+                                                                file_name, session,
+                                                            ),
+                                                        )))
+                                                        .await
+                                                        .is_err()
+                                                    {
+                                                        send_error(&popups).await
+                                                    },
+                                                Err(e) => parse_error(&popups, &file_name, e).await,
+                                            },
+                                        // No second part to the file name means its just a root save file
+                                        Some("celeste") => match SaveData::from_reader(reader) {
+                                            Ok(save) =>
+                                                if send
+                                                    .send(Some((
+                                                        file_number,
+                                                        LoadableFiles::SaveData(
+                                                            file_name,
+                                                            Box::new(save),
+                                                        ),
+                                                    )))
+                                                    .await
+                                                    .is_err()
+                                                {
+                                                    send_error(&popups).await;
+                                                },
+                                            Err(e) => parse_error(&popups, &file_name, e).await,
+                                        },
+                                        // Unsupported filetypes
+                                        Some(_) | None => {}
                                     }
                                 }
                             },
@@ -148,7 +233,7 @@ impl MainMenu {
         None
     }
 
-    fn update_listener(&mut self, ui: &mut Ui) -> Option<Vec<(String, SaveData)>> {
+    fn update_listener(&mut self, ui: &mut Ui) -> Option<Vec<(String, LoadableFiles)>> {
         if let Some(recv) = &mut self.file_listener {
             // Try to recieve file data from the channel
             // We use try_recv because it will give Err(Empty) if it can't immediately read data
@@ -174,7 +259,7 @@ impl MainMenu {
 
 async fn handle_file_picker(
     file_dialogue: AsyncFileDialog,
-    send: Sender<Option<(String, SaveData)>>,
+    send: Sender<Option<(String, LoadableFiles)>>,
     popups: Arc<Mutex<Vec<PopupWindow>>>,
 ) {
     // Wait for the user to pick a file
@@ -187,15 +272,26 @@ async fn handle_file_picker(
             let contents = file.read().await;
             drop(file);
 
+            let Some(file_number) = name.split(['-', '.']).next() else {
+                popups.lock().await.push(PopupWindow::new(
+                    ErrorSeverity::Warning,
+                    format!("File \"{name}\" is not a loadable save file."),
+                ));
+                return;
+            };
+
             // Attempt to parse the save file showing an error popup if we fail
             match SaveData::from_reader(Cursor::new(contents)) {
                 Ok(save) =>
-                    if send.send(Some((name, save))).await.is_err() {
-                        popups.lock().await.push(PopupWindow::new(
-                            ErrorSeverity::Error,
-                            "Error sending data back to main thread.\nThis is a bug, please make \
-                             a bug report on github.",
-                        ))
+                    if send
+                        .send(Some((
+                            file_number.to_owned(),
+                            LoadableFiles::SaveData(name, Box::new(save)),
+                        )))
+                        .await
+                        .is_err()
+                    {
+                        send_error(&popups).await;
                     },
                 Err(e) => {
                     popups.lock().await.push(PopupWindow::new(
@@ -210,4 +306,23 @@ async fn handle_file_picker(
             }
         }
     }
+}
+
+async fn send_error(popups: &Arc<Mutex<Vec<PopupWindow>>>) {
+    popups.lock().await.push(PopupWindow::new(
+        ErrorSeverity::Error,
+        "Error sending data back to main thread.\nThis is a bug, please make a bug report on \
+         github.",
+    ))
+}
+
+async fn parse_error<T: Display>(popups: &Arc<Mutex<Vec<PopupWindow>>>, file_name: &str, err: T) {
+    popups.lock().await.push(PopupWindow::new(
+        ErrorSeverity::Error,
+        format!(
+            "Errors found when parsing save file \"{file_name}\": {err}.\nMake sure the file you \
+             selected is actually a save file.\nIf this continues please report it as a bug on \
+             github."
+        ),
+    ))
 }

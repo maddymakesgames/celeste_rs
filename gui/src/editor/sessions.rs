@@ -1,98 +1,160 @@
-use celeste_rs::saves::{session::SavedSession, util::FileTime};
-use eframe::egui::{CollapsingHeader, DragValue, RichText, TextEdit, Ui};
+use celeste_rs::saves::{session::SavedSession, util::FileTime, vanilla::Modes};
+use eframe::egui::{
+    scroll_area::ScrollBarVisibility,
+    CollapsingHeader,
+    CollapsingResponse,
+    DragValue,
+    Response,
+    RichText,
+    Sense,
+    TextEdit,
+    TextStyle,
+    Ui,
+    Vec2,
+};
 
 use crate::{
     editor::{
         entity_id_list_widget,
         file_time_widget,
-        level_sets::area_mode_widget,
+        level_sets::mode_widget,
         CelesteEditorRichTextExt,
         CelesteEditorUiExt,
-        EditorScreen,
+        EditorTab,
     },
+    main_menu::LoadableFiles,
     tabbed::TabbedContentWidget,
 };
 
-impl EditorScreen {
-    pub fn show_session(&mut self, ui: &mut Ui) {
-        #[allow(clippy::overly_complex_bool_expr)]
-        if self.save.current_session_safe.is_some() && self.save.current_session.is_some() {
-            let mut selected = self.selected_session_panel;
-            TabbedContentWidget::show(
-                ui,
-                &mut selected,
-                ["Vanilla Session", "Modded Session"],
-                |selection, ui| match selection {
-                    0 => {
-                        // TODO: check that this isn't misinformation
-                        ui.info(
-                            "Since you have a modded session this will not load when you are \
-                             running Everest. This will only be used if you boot into vanilla \
-                             Celeste.",
-                        );
-                        if let Some(session) = self.save.current_session.as_mut() {
-                            Self::show_session_impl(
-                                ui,
-                                session,
-                                self.safety_off,
-                                &mut self.save.total_deaths,
-                                &mut self.save.time,
-                                "vanilla_session",
-                                &mut self.session_add_strawb_buff,
-                                &mut self.session_add_key_buf,
-                                &mut self.session_add_dnl_buf,
-                            );
-                        }
+pub struct SessionsTab<'a> {
+    sessions: Vec<(String, &'a mut SavedSession)>,
+    total_time: Option<&'a mut FileTime>,
+    total_deaths: Option<&'a mut u64>,
+    safety_off: bool,
+}
+
+pub struct SessionsData {
+    selected_panel: usize,
+    add_strawb_buf: String,
+    add_key_buf: String,
+    add_dnl_buf: String,
+}
+
+impl SessionsData {
+    pub fn new() -> Self {
+        SessionsData {
+            selected_panel: 0,
+            add_strawb_buf: String::new(),
+            add_key_buf: String::new(),
+            add_dnl_buf: String::new(),
+        }
+    }
+}
+
+impl<'a> EditorTab<'a> for SessionsTab<'a> {
+    type EditorData = SessionsData;
+
+    fn from_files(
+        files: &'a mut [crate::main_menu::LoadableFiles],
+        global_data: &'a mut super::GlobalEditorData,
+    ) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        let mut sessions_vec = Vec::new();
+        let mut time = None;
+        let mut total_deaths = None;
+
+        for file in files {
+            #[allow(clippy::single_match)]
+            match file {
+                LoadableFiles::SaveData(_, save) => {
+                    if let Some(session) = &mut save.current_session {
+                        sessions_vec.push(("Vanilla Session".to_owned(), session));
                     }
-                    1 =>
-                        if let Some(session) = self.save.current_session_safe.as_mut() {
-                            Self::show_session_impl(
-                                ui,
-                                session,
-                                self.safety_off,
-                                &mut self.save.total_deaths,
-                                &mut self.save.time,
-                                "modded_session",
-                                &mut self.session_add_strawb_buff,
-                                &mut self.session_add_key_buf,
-                                &mut self.session_add_dnl_buf,
-                            );
-                        },
-                    _ => {
-                        ui.info("Invalid session panel selected");
+
+                    if let Some(session) = &mut save.current_session_safe {
+                        sessions_vec.push(("Modded Session".to_owned(), session));
                     }
-                },
-            );
-            self.selected_session_panel = selected;
-        } else if let Some(session) = self.save.current_session_safe.as_mut() {
-            Self::show_session_impl(
-                ui,
-                session,
-                self.safety_off,
-                &mut self.save.total_deaths,
-                &mut self.save.time,
-                "modded_session",
-                &mut self.session_add_strawb_buff,
-                &mut self.session_add_key_buf,
-                &mut self.session_add_dnl_buf,
-            );
-        } else if let Some(session) = self.save.current_session.as_mut() {
-            Self::show_session_impl(
-                ui,
-                session,
-                self.safety_off,
-                &mut self.save.total_deaths,
-                &mut self.save.time,
-                "vanilla_session",
-                &mut self.session_add_strawb_buff,
-                &mut self.session_add_key_buf,
-                &mut self.session_add_dnl_buf,
-            );
+
+                    time = Some(&mut save.time);
+                    total_deaths = Some(&mut save.total_deaths);
+                }
+                _ => {}
+            }
+        }
+
+        if !sessions_vec.is_empty() {
+            Some(SessionsTab {
+                sessions: sessions_vec,
+                safety_off: global_data.safety_off,
+                total_deaths,
+                total_time: time,
+            })
         } else {
-            ui.info("No saved session found.");
+            None
         }
     }
 
+    fn display(
+        mut self,
+        ui: &mut Ui,
+        data: &mut Self::EditorData,
+        _: &tokio::runtime::Runtime,
+        _: &std::sync::Arc<tokio::sync::Mutex<Vec<crate::PopupWindow>>>,
+    ) -> eframe::egui::Response {
+        self.sessions.sort_by_key(|(s, _)| s.clone());
+        self.sessions.reverse();
+        let mut default_deaths = 0;
+        let mut default_time = FileTime::from_millis(0);
+
+        if self.sessions.len() > 1 {
+            let tab_names = self
+                .sessions
+                .iter()
+                .map(|(s, _)| s.to_owned())
+                .collect::<Vec<_>>();
+
+            TabbedContentWidget::show(
+                ui,
+                &mut data.selected_panel,
+                tab_names,
+                ScrollBarVisibility::VisibleWhenNeeded,
+                TextStyle::Body,
+                |idx, ui| {
+                    let session_entry = &mut self.sessions[idx];
+                    Self::show_session_impl(
+                        ui,
+                        session_entry.1,
+                        self.safety_off,
+                        self.total_deaths.unwrap_or(&mut default_deaths),
+                        self.total_time.unwrap_or(&mut default_time),
+                        &session_entry.0,
+                        &mut data.add_strawb_buf,
+                        &mut data.add_key_buf,
+                        &mut data.add_dnl_buf,
+                    )
+                },
+            )
+            .response
+        } else {
+            let (name, session) = &mut self.sessions[0];
+            Self::show_session_impl(
+                ui,
+                session,
+                self.safety_off,
+                self.total_deaths.unwrap_or(&mut default_deaths),
+                self.total_time.unwrap_or(&mut default_time),
+                name,
+                &mut data.add_strawb_buf,
+                &mut data.add_key_buf,
+                &mut data.add_dnl_buf,
+            )
+        }
+    }
+}
+
+impl<'a> SessionsTab<'a> {
     #[allow(clippy::too_many_arguments)]
     fn show_session_impl(
         ui: &mut Ui,
@@ -100,11 +162,11 @@ impl EditorScreen {
         safety_off: bool,
         total_deaths: &mut u64,
         total_time: &mut FileTime,
-        id_filler: &'static str,
+        id_filler: &str,
         strawb_add_buff: &mut String,
         key_add_buf: &mut String,
         dnl_add_buf: &mut String,
-    ) {
+    ) -> Response {
         ui.horizontal(|ui| {
             ui.label("Current area sid: ");
             // Modded session levels will ALWAYS have a session id so this will always show
@@ -303,5 +365,45 @@ impl EditorScreen {
                 );
             });
         });
+
+        ui.allocate_response(Vec2::new(0.0, 0.0), Sense::focusable_noninteractive())
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn area_mode_widget(
+    ui: &mut Ui,
+    name: &str,
+    sid: &str,
+    safety_off: bool,
+    total_deaths: &mut u64,
+    total_time: &mut FileTime,
+    modes: &mut Modes,
+    add_strawberry_buff: &mut String,
+) -> CollapsingResponse<bool> {
+    let mut changed = false;
+
+    // *Pretty sure* that there can only ever be a, b, and c sides
+    // If modes can be of any length we could use .enumerated() and use the index
+    // to get the side name "{(idx + 101) as char}-Side"
+
+    ui.collapsing(sid, |ui| {
+        for (mode, side_name) in modes.iter_mut().zip(["A-Side", "B-Side", "C-Side"]) {
+            let id_name = format!("{name}/{sid}/{side_name}");
+            CollapsingHeader::new(RichText::new(side_name))
+                .id_source(id_name)
+                .show(ui, |ui| {
+                    changed |= mode_widget(
+                        ui,
+                        sid,
+                        safety_off,
+                        total_deaths,
+                        total_time,
+                        mode,
+                        add_strawberry_buff,
+                    );
+                });
+        }
+        changed
+    })
 }

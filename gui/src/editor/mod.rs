@@ -1,27 +1,25 @@
 use std::sync::Arc;
 
 use celeste_rs::saves::{
-    everest::LevelSetStats,
     util::{EntityID, FileTime},
-    SaveData,
     StrawberryCount,
 };
 use eframe::egui::{
+    scroll_area::ScrollBarVisibility,
     DragValue,
     InnerResponse,
     Response,
     RichText,
     ScrollArea,
+    Sense,
     TextStyle,
     Ui,
+    Vec2,
     Widget,
     WidgetText,
 };
 use egui_extras::{Column, TableBuilder};
-use tokio::{
-    runtime::Runtime,
-    sync::{oneshot::Receiver, Mutex},
-};
+use tokio::{runtime::Runtime, sync::Mutex};
 
 pub mod level_sets;
 pub mod metadata;
@@ -30,73 +28,82 @@ pub mod sessions;
 pub mod stats;
 
 
-use crate::{editor::level_sets::LevelSetsPanel, tabbed::TabbedContentWidget, PopupWindow};
+use crate::{
+    editor::{
+        level_sets::{LevelSetsData, LevelSetsTab},
+        metadata::{AssistsTab, MetadataTab},
+        operations::{OperationsData, OperationsTab},
+        sessions::{SessionsData, SessionsTab},
+        stats::StatsTab,
+    },
+    main_menu::LoadableFiles,
+    tabbed::TabbedContentWidget,
+    PopupWindow,
+};
 
 pub struct EditorScreen {
-    pub file_name: String,
-    save: SaveData,
-    safety_off: bool,
+    file_name: String,
+    pub files: Vec<LoadableFiles>,
+    global_data: GlobalEditorData,
+    tab_data: Vec<EditorTabData>,
     selected_panel: usize,
-    merge_file_listener: Option<Receiver<Option<Vec<u8>>>>,
-    selected_session_panel: usize,
-    level_sets_panel: LevelSetsPanel,
-    session_add_strawb_buff: String,
-    session_add_key_buf: String,
-    session_add_dnl_buf: String,
 }
 
 impl EditorScreen {
-    pub fn new(file_name: String, save: SaveData) -> EditorScreen {
-        let vanilla_level_set = LevelSetStats {
-            name: "Celeste".to_owned(),
-            areas: save.areas.clone(),
-            poem: save.poem.clone(),
-            unlocked_areas: save.unlocked_areas,
-            total_strawberries: save.total_strawberries,
-        };
+    pub fn name(&self) -> &str {
+        &self.file_name
+    }
 
+    pub fn new(file_name: String, base_file: LoadableFiles) -> EditorScreen {
         EditorScreen {
-            file_name,
-            save,
-            safety_off: false,
-            level_sets_panel: LevelSetsPanel::new(vanilla_level_set),
+            file_name: file_name
+                .split('.')
+                .next()
+                .unwrap_or("Unnamed File")
+                .to_owned(),
+            files: vec![base_file],
+            tab_data: EditorTabData::data_vec(),
+            global_data: GlobalEditorData { safety_off: false },
             selected_panel: 0,
-            selected_session_panel: 1,
-            merge_file_listener: None,
-            session_add_strawb_buff: String::new(),
-            session_add_key_buf: String::new(),
-            session_add_dnl_buf: String::new(),
         }
     }
 
     pub fn display(&mut self, ui: &mut Ui, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
-        self.update_listeners(popups);
+        ScrollArea::horizontal().show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Loaded Files:");
+                for file in &self.files {
+                    ui.label(file.file_name());
+                }
+            });
+        });
 
         let mut selected_panel = self.selected_panel;
+
+        let mut tabs = EditorTabContainer::tab_array()
+            .into_iter()
+            .filter(|t| t.is_constructable(&mut self.files, &mut self.global_data))
+            .collect::<Vec<_>>();
+
+        let tab_names = tabs
+            .iter()
+            .map(EditorTabContainer::name)
+            .collect::<Vec<_>>();
+
+
         TabbedContentWidget::show(
             ui,
             &mut selected_panel,
-            [
-                "Metadata",
-                "Stats",
-                "Assists",
-                "Level Sets",
-                "Session",
-                "Operations",
-            ],
+            tab_names,
+            ScrollBarVisibility::AlwaysHidden,
+            TextStyle::Name("header2".into()),
             |idx, ui| {
-                ScrollArea::vertical().show(ui, |ui| match idx {
-                    0 => self.show_metadata(ui),
-                    1 => self.show_stats(ui),
-                    2 => self.show_assists(ui),
-                    3 => self
-                        .level_sets_panel
-                        .show(ui, &mut self.save, self.safety_off),
-                    4 => self.show_session(ui),
-                    5 => self.show_operations(ui, rt, popups),
-                    _ => {
-                        ui.label("Trying to show an unknown panel. Whoops!");
-                    }
+                ScrollArea::vertical().show(ui, |ui| {
+                    let mut tab = tabs.remove(idx);
+                    tab.load_from_files(&mut self.files, &mut self.global_data);
+                    let data = EditorTabData::get_data(&mut self.tab_data, &tab);
+
+                    tab.display(ui, data, rt, popups)
                 })
             },
         );
@@ -199,6 +206,173 @@ impl CelesteEditorRichTextExt for RichText {
     fn heading2(self) -> RichText {
         self.text_style(TextStyle::Name("header2".into()))
     }
+}
+
+pub struct GlobalEditorData {
+    safety_off: bool,
+}
+
+enum EditorTabContainer<'a> {
+    Metadata(Option<MetadataTab<'a>>),
+    Stats(Option<StatsTab<'a>>),
+    Assists(Option<AssistsTab<'a>>),
+    LevelSets(Option<LevelSetsTab<'a>>),
+    Sessions(Option<SessionsTab<'a>>),
+    Operations(Option<OperationsTab<'a>>),
+}
+
+enum EditorTabData {
+    Metadata(()),
+    Stats(()),
+    Assists(()),
+    LevelSets(LevelSetsData),
+    Sessions(SessionsData),
+    Operations(OperationsData),
+}
+
+impl EditorTabData {
+    pub fn data_vec() -> Vec<EditorTabData> {
+        vec![
+            EditorTabData::Metadata(()),
+            EditorTabData::Stats(()),
+            EditorTabData::Assists(()),
+            EditorTabData::LevelSets(LevelSetsData::new()),
+            EditorTabData::Sessions(SessionsData::new()),
+            EditorTabData::Operations(OperationsData::new()),
+        ]
+    }
+
+    pub fn get_data<'a>(
+        data: &'a mut Vec<EditorTabData>,
+        tab: &EditorTabContainer,
+    ) -> &'a mut EditorTabData {
+        for data in data {
+            match (tab, &data) {
+                (EditorTabContainer::Metadata(_), EditorTabData::Metadata(_))
+                | (EditorTabContainer::Stats(_), EditorTabData::Stats(_))
+                | (EditorTabContainer::Assists(_), EditorTabData::Assists(_))
+                | (EditorTabContainer::LevelSets(_), EditorTabData::LevelSets(_))
+                | (EditorTabContainer::Sessions(_), EditorTabData::Sessions(_))
+                | (EditorTabContainer::Operations(_), EditorTabData::Operations(_)) => return data,
+                _ => {}
+            }
+        }
+        unreachable!("EditorTabData vec doesn't have an entry for one of the tabs")
+    }
+}
+
+
+impl<'a> EditorTabContainer<'a> {
+    pub fn tab_array() -> [Self; 6] {
+        [
+            EditorTabContainer::Metadata(None),
+            EditorTabContainer::Stats(None),
+            EditorTabContainer::Assists(None),
+            EditorTabContainer::LevelSets(None),
+            EditorTabContainer::Sessions(None),
+            EditorTabContainer::Operations(None),
+        ]
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            EditorTabContainer::Metadata(_) => "Metadata",
+            EditorTabContainer::Stats(_) => "Stats",
+            EditorTabContainer::Assists(_) => "Assists",
+            EditorTabContainer::LevelSets(_) => "Level Sets",
+            EditorTabContainer::Sessions(_) => "Sessions",
+            EditorTabContainer::Operations(_) => "Operations",
+        }
+    }
+
+    pub fn load_from_files(
+        &mut self,
+        files: &'a mut [LoadableFiles],
+        global_data: &'a mut GlobalEditorData,
+    ) {
+        match self {
+            EditorTabContainer::Metadata(m) => *m = MetadataTab::from_files(files, global_data),
+            EditorTabContainer::Stats(s) => *s = StatsTab::from_files(files, global_data),
+            EditorTabContainer::Assists(a) => *a = AssistsTab::from_files(files, global_data),
+            EditorTabContainer::LevelSets(l) => *l = LevelSetsTab::from_files(files, global_data),
+            EditorTabContainer::Sessions(s) => *s = SessionsTab::from_files(files, global_data),
+            EditorTabContainer::Operations(o) => *o = OperationsTab::from_files(files, global_data),
+        }
+    }
+
+    fn display(
+        self,
+        ui: &mut Ui,
+        data: &mut EditorTabData,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) -> Response {
+        match self {
+            EditorTabContainer::Metadata(m) =>
+                if let (Some(m), EditorTabData::Metadata(d)) = (m, data) {
+                    return m.display(ui, d, rt, popups);
+                },
+            EditorTabContainer::Stats(s) =>
+                if let (Some(s), EditorTabData::Stats(d)) = (s, data) {
+                    return s.display(ui, d, rt, popups);
+                },
+            EditorTabContainer::Assists(a) =>
+                if let (Some(a), EditorTabData::Assists(d)) = (a, data) {
+                    return a.display(ui, d, rt, popups);
+                },
+            EditorTabContainer::LevelSets(l) =>
+                if let (Some(l), EditorTabData::LevelSets(d)) = (l, data) {
+                    return l.display(ui, d, rt, popups);
+                },
+            EditorTabContainer::Sessions(s) =>
+                if let (Some(s), EditorTabData::Sessions(d)) = (s, data) {
+                    return s.display(ui, d, rt, popups);
+                },
+            EditorTabContainer::Operations(o) =>
+                if let (Some(o), EditorTabData::Operations(d)) = (o, data) {
+                    return o.display(ui, d, rt, popups);
+                },
+        }
+
+        ui.allocate_response(Vec2::new(0.0, 0.0), Sense::focusable_noninteractive())
+    }
+
+    fn is_constructable(
+        &self,
+        files: &'a mut [LoadableFiles],
+        global_data: &'a mut GlobalEditorData,
+    ) -> bool {
+        match self {
+            EditorTabContainer::Metadata(_) =>
+                MetadataTab::from_files(files, global_data).is_some(),
+            EditorTabContainer::Stats(_) => StatsTab::from_files(files, global_data).is_some(),
+            EditorTabContainer::Assists(_) => AssistsTab::from_files(files, global_data).is_some(),
+            EditorTabContainer::LevelSets(_) =>
+                LevelSetsTab::from_files(files, global_data).is_some(),
+            EditorTabContainer::Sessions(_) =>
+                SessionsTab::from_files(files, global_data).is_some(),
+            EditorTabContainer::Operations(_) =>
+                OperationsTab::from_files(files, global_data).is_some(),
+        }
+    }
+}
+
+pub trait EditorTab<'a> {
+    type EditorData;
+
+    fn from_files(
+        files: &'a mut [LoadableFiles],
+        global_data: &'a mut GlobalEditorData,
+    ) -> Option<Self>
+    where
+        Self: Sized;
+    fn display(
+        self,
+        ui: &mut Ui,
+        data: &mut Self::EditorData,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) -> Response;
 }
 
 #[allow(dead_code)]

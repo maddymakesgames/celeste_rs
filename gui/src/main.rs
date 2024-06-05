@@ -8,15 +8,15 @@ use std::{future::Future, path::PathBuf, sync::Arc};
 use editor::EditorScreen;
 use eframe::{
     egui::{
+        scroll_area::ScrollBarVisibility,
         Align2,
         CentralPanel,
         Color32,
         Context,
-        FontFamily,
-        FontFamily::Proportional,
+        FontFamily::{self, Proportional},
         FontId,
         RichText,
-        TextStyle::*,
+        TextStyle::{self, *},
         Ui,
         WidgetText,
         Window,
@@ -24,9 +24,13 @@ use eframe::{
     App,
     CreationContext,
 };
+use indexmap::IndexMap;
 use tokio::{runtime::Runtime, sync::Mutex};
 
-use crate::{main_menu::MainMenu, tabbed::TabbedContentWidget};
+use crate::{
+    main_menu::{LoadableFiles, MainMenu},
+    tabbed::TabbedContentWidget,
+};
 
 #[cfg(not(target_family = "wasm"))]
 fn main() {
@@ -70,7 +74,7 @@ fn main() {
 // Global state struct for the editor
 struct SaveEditor {
     selected_screen: usize,
-    screens: Vec<ScreenState>,
+    screens: IndexMap<String, ScreenState>,
     runtime: Runtime,
     popups: Arc<Mutex<Vec<PopupWindow>>>,
 }
@@ -106,9 +110,12 @@ impl SaveEditor {
 
         cc.egui_ctx.set_style(style);
 
+        let mut screens = IndexMap::new();
+        screens.insert("".to_owned(), ScreenState::Menu(MainMenu::default()));
+
         SaveEditor {
             selected_screen: 0,
-            screens: vec![ScreenState::Startup],
+            screens,
             runtime,
             popups: Arc::new(Mutex::new(Vec::new())),
         }
@@ -124,22 +131,35 @@ impl App for SaveEditor {
                 &mut self.selected_screen,
                 self.screens
                     .iter()
-                    .map(ScreenState::name)
+                    .map(|(_number, state)| state.name())
                     .map(str::to_owned)
                     .collect::<Vec<_>>(),
+                ScrollBarVisibility::VisibleWhenNeeded,
+                TextStyle::Name("header2".into()),
                 |selected, ui| {
                     if let Some(iter) =
                         self.screens[selected].update(ui, &self.runtime, &self.popups)
                     {
-                        self.screens.extend(iter)
+                        let mut vec = iter.collect::<Vec<_>>();
+                        vec.sort_by_key(|(_, f)| f.file_name().to_owned());
+                        for (file_num, file) in vec.into_iter() {
+                            if self.screens.contains_key(&file_num) {
+                                let screen = self.screens.get_mut(&file_num).unwrap();
+                                screen.add_file(file)
+                            } else {
+                                self.screens.insert(
+                                    file_num.clone(),
+                                    ScreenState::Editor(EditorScreen::new(
+                                        format!("{file_num}.celeste"),
+                                        file,
+                                    )),
+                                );
+                            }
+                        }
                     }
                 },
             );
         });
-
-        if matches!(self.screens.last().unwrap(), ScreenState::Editor(_)) {
-            self.screens.push(ScreenState::Startup);
-        }
 
         let mut popup_guard = self.popups.blocking_lock();
         let mut to_remove = None;
@@ -170,7 +190,6 @@ impl App for SaveEditor {
 
 #[allow(clippy::large_enum_variant)]
 enum ScreenState {
-    Startup,
     Menu(MainMenu),
     Editor(EditorScreen),
 }
@@ -181,24 +200,14 @@ impl ScreenState {
         ui: &mut Ui,
         rt: &Runtime,
         popups: &Arc<Mutex<Vec<PopupWindow>>>,
-    ) -> Option<impl Iterator<Item = ScreenState>> {
+    ) -> Option<impl Iterator<Item = (String, LoadableFiles)>> {
         match self {
-            // Startup just immediately transitions to the main menu
-            ScreenState::Startup => *self = ScreenState::Menu(MainMenu::default()),
             ScreenState::Menu(m) =>
             // The main menu displays until a file has been opened
             // In which case we transition to the editor
                 if let Some(saves) = m.display(ui, rt, popups) {
-                    let mut saves_iter = saves.into_iter();
-                    if let Some((file_name, save)) = saves_iter.next() {
-                        *self = ScreenState::Editor(EditorScreen::new(file_name, save))
-                    }
-
-                    return Some(
-                        saves_iter
-                            .map(|(a, b)| EditorScreen::new(a, b))
-                            .map(ScreenState::Editor),
-                    );
+                    let saves_iter = saves.into_iter();
+                    return Some(saves_iter);
                 },
             // The editor (current) doesn't ever transition out
             ScreenState::Editor(e) => {
@@ -210,9 +219,20 @@ impl ScreenState {
 
     fn name(&self) -> &str {
         match self {
-            ScreenState::Startup => "new tab",
             ScreenState::Menu(_) => "new tab",
-            ScreenState::Editor(e) => &e.file_name,
+            ScreenState::Editor(e) => e.name(),
+        }
+    }
+
+    fn add_file(&mut self, file: LoadableFiles) {
+        match self {
+            ScreenState::Menu(_) => {}
+            ScreenState::Editor(e) => {
+                let name = file.file_name();
+                if !e.files.iter().map(|f| f.file_name()).any(|f| f == name) {
+                    e.files.push(file)
+                }
+            }
         }
     }
 }

@@ -1,36 +1,89 @@
 use std::sync::Arc;
 
-use celeste_rs::saves::{everest::LevelSetStats, SaveData};
+use celeste_rs::saves::{
+    mods::{ParsedModSave, ParsedModSession, ParsedModSetting},
+    ModSaveData,
+    SaveData,
+};
 use eframe::egui::{RichText, Ui};
 use tokio::{
     runtime::Runtime,
-    sync::{oneshot::error::TryRecvError, Mutex},
+    sync::{
+        oneshot::{error::TryRecvError, Receiver},
+        Mutex,
+    },
 };
 
 use crate::{
     celeste_save_dir,
-    editor::{CelesteEditorRichTextExt, CelesteEditorUiExt, EditorScreen},
+    editor::{CelesteEditorRichTextExt, CelesteEditorUiExt, EditorTab, GlobalEditorData},
+    main_menu::LoadableFiles,
     spawn,
     ErrorSeverity,
     PopupWindow,
 };
 
 
-impl EditorScreen {
-    pub fn show_operations(
-        &mut self,
+pub struct OperationsTab<'a> {
+    files: &'a mut [LoadableFiles],
+    global_data: &'a mut GlobalEditorData,
+}
+
+pub struct OperationsData {
+    merge_file_listener: Option<Receiver<Option<Vec<u8>>>>,
+}
+
+impl OperationsData {
+    pub fn new() -> OperationsData {
+        OperationsData {
+            merge_file_listener: None,
+        }
+    }
+}
+
+impl<'a> EditorTab<'a> for OperationsTab<'a> {
+    type EditorData = OperationsData;
+
+    fn from_files(
+        files: &'a mut [crate::main_menu::LoadableFiles],
+        global_data: &'a mut GlobalEditorData,
+    ) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        // We loop to make sure we have a SaveData
+        // because we need that for some operations
+        let mut loaded_save = None;
+        for file in &mut *files {
+            if let LoadableFiles::SaveData(_, save) = file {
+                loaded_save = Some(save);
+            }
+        }
+
+        if loaded_save.is_some() {
+            Some(OperationsTab { files, global_data })
+        } else {
+            None
+        }
+    }
+
+    fn display(
+        mut self,
         ui: &mut Ui,
+        data: &mut Self::EditorData,
         rt: &Runtime,
         popups: &Arc<Mutex<Vec<PopupWindow>>>,
-    ) {
+    ) -> eframe::egui::Response {
+        self.update_listeners(data, popups);
+
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
                 if ui.button(RichText::new("Save File").info()).clicked() {
-                    self.save_file(rt, popups);
+                    self.save_files(rt, popups);
                 }
 
                 if ui.button(RichText::new("Merge in file").info()).clicked() {
-                    self.merge_file(rt, popups);
+                    self.merge_file(data, rt, popups);
                 }
 
                 ui.info_hover(
@@ -47,7 +100,7 @@ impl EditorScreen {
 
             ui.horizontal(|ui| {
                 ui.label("Disable Safety Checks:");
-                ui.checkbox(&mut self.safety_off, "");
+                ui.checkbox(&mut self.global_data.safety_off, "");
                 ui.info_hover(
                     "Check this to enable editing every field.\nThis is off by default as some \
                      values should not be independently edited.\nMake sure you know what you're \
@@ -56,26 +109,52 @@ impl EditorScreen {
                      all auto-editing implemented)",
                 )
             });
-        });
+        })
+        .response
+    }
+}
+
+impl<'a> OperationsTab<'a> {
+    fn save_files(&self, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
+        for file in self.files.iter() {
+            match file {
+                LoadableFiles::SaveData(file_name, save_data) =>
+                    OperationsTab::save_save_data(save_data, file_name, rt, popups),
+                LoadableFiles::ModSaveData(file_name, mod_save_data) =>
+                    OperationsTab::save_mod_save_data(mod_save_data, file_name, rt, popups),
+                LoadableFiles::ModSave(file_name, mod_save) => OperationsTab::save_yaml_file(
+                    mod_save,
+                    ParsedModSave::to_writer,
+                    file_name,
+                    rt,
+                    popups,
+                ),
+                LoadableFiles::ModSession(file_name, mod_session) => OperationsTab::save_yaml_file(
+                    mod_session,
+                    ParsedModSession::to_writer,
+                    file_name,
+                    rt,
+                    popups,
+                ),
+                LoadableFiles::ModSetting(file_name, mod_setting) => OperationsTab::save_yaml_file(
+                    mod_setting,
+                    ParsedModSetting::to_writer,
+                    file_name,
+                    rt,
+                    popups,
+                ),
+            }
+        }
     }
 
-    fn save_file(&self, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
-        let file_dialogue = rfd::AsyncFileDialog::new().set_file_name(&self.file_name);
-        let serialized = match self.save.to_string() {
-            Ok(s) => s,
-            Err(e) => {
-                let mut popup_guard = popups.blocking_lock();
-                popup_guard.push(PopupWindow::new(
-                    ErrorSeverity::Error,
-                    format!(
-                        "Error serializing save file: {e:?}.\nThis is likely a bug. Please report \
-                         it on github."
-                    ),
-                ));
-                return;
-            }
-        };
+    fn save_file(
+        data: String,
+        file_name: &str,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) {
         let popups = popups.clone();
+        let file_dialogue = rfd::AsyncFileDialog::new().set_file_name(file_name);
         spawn(rt, async move {
             if let Some(file) = file_dialogue.save_file().await {
                 #[cfg(not(target_family = "wasm"))]
@@ -102,7 +181,7 @@ impl EditorScreen {
                         }
                     };
 
-                    if let Err(e) = file.write_all(serialized.as_bytes()) {
+                    if let Err(e) = file.write_all(data.as_bytes()) {
                         let mut popup_guard = popups.lock().await;
                         popup_guard.push(PopupWindow::new(
                             ErrorSeverity::Error,
@@ -132,13 +211,88 @@ impl EditorScreen {
         });
     }
 
-    fn merge_file(&mut self, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
+    fn save_save_data(
+        save_data: &SaveData,
+        file_name: &str,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) {
+        let serialized = match save_data.to_string() {
+            Ok(s) => s,
+            Err(e) => {
+                let mut popup_guard = popups.blocking_lock();
+                popup_guard.push(PopupWindow::new(
+                    ErrorSeverity::Error,
+                    format!(
+                        "Error serializing save file: {e:?}.\nThis is likely a bug. Please report \
+                         it on github."
+                    ),
+                ));
+                return;
+            }
+        };
+
+        OperationsTab::save_file(serialized, file_name, rt, popups);
+    }
+
+    fn save_mod_save_data(
+        mod_save_data: &ModSaveData,
+        file_name: &str,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) {
+        let serialized = match mod_save_data.to_string() {
+            Ok(s) => s,
+            Err(e) => {
+                let mut popup_guard = popups.blocking_lock();
+                popup_guard.push(PopupWindow::new(
+                    ErrorSeverity::Error,
+                    format!(
+                        "Error serializing modsavedata file: {e:?}.\nThis is likely a bug. Please \
+                         report it on github."
+                    ),
+                ));
+                return;
+            }
+        };
+
+        OperationsTab::save_file(serialized, file_name, rt, popups);
+    }
+
+    fn save_yaml_file<T, E: std::fmt::Debug>(
+        file: &T,
+        to_writer_func: impl Fn(&T, &mut String) -> Result<(), E>,
+        file_name: &str,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) {
+        let mut buf = String::new();
+        if let Err(e) = to_writer_func(file, &mut buf) {
+            let mut popup_guard = popups.blocking_lock();
+            popup_guard.push(PopupWindow::new(
+                ErrorSeverity::Error,
+                format!(
+                    "Error serializing save file: {e:?}.\nThis is likely a bug. Please report it \
+                     on github."
+                ),
+            ));
+        } else {
+            OperationsTab::save_file(buf, file_name, rt, popups);
+        }
+    }
+
+    fn merge_file(
+        &mut self,
+        data: &mut OperationsData,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) {
         let file_dialogue = rfd::AsyncFileDialog::new()
             .add_filter("Celeste Save File", &["celeste"])
             .set_directory(celeste_save_dir().unwrap_or_default());
 
         let (send, recv) = tokio::sync::oneshot::channel();
-        self.merge_file_listener = Some(recv);
+        data.merge_file_listener = Some(recv);
         let popups = popups.clone();
         spawn(rt, async move {
             if let Some(file) = file_dialogue.pick_file().await {
@@ -162,8 +316,12 @@ impl EditorScreen {
         });
     }
 
-    pub fn update_listeners(&mut self, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
-        if let Some(recv) = &mut self.merge_file_listener {
+    pub fn update_listeners(
+        &mut self,
+        data: &mut OperationsData,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) {
+        if let Some(recv) = &mut data.merge_file_listener {
             match recv.try_recv() {
                 Ok(contents) => {
                     if let Some(contents) = contents {
@@ -182,21 +340,24 @@ impl EditorScreen {
                                 return;
                             }
                         };
-                        self.save.merge_data(&save);
 
-                        self.level_sets_panel.vanilla_level_set = LevelSetStats {
-                            name: "Celeste".to_owned(),
-                            areas: self.save.areas.clone(),
-                            poem: self.save.poem.clone(),
-                            unlocked_areas: self.save.unlocked_areas,
-                            total_strawberries: self.save.total_strawberries,
-                        };
+                        let mut self_save = None;
+
+                        for file in &mut *self.files {
+                            if let LoadableFiles::SaveData(_, save) = file {
+                                self_save = Some(save);
+                            }
+                        }
+
+                        if let Some(self_save) = self_save {
+                            self_save.merge_data(&save);
+                        }
                     }
-                    self.merge_file_listener = None;
+                    data.merge_file_listener = None;
                 }
                 Err(TryRecvError::Closed) => {
                     eprintln!("Sender closed before we got merge contents");
-                    self.merge_file_listener = None;
+                    data.merge_file_listener = None;
                 }
                 Err(TryRecvError::Empty) => {}
             }

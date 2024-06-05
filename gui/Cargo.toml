@@ -16,12 +16,12 @@ description = "GUI editor for celeste save files"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+celeste_rs = { path = "../lib" }
 eframe = "0.27"
 egui_extras = "0.27"
-celeste_rs = { path = "../lib" }
+indexmap = "2.2"
 rfd = "0.14"
 tokio = { version = "1", features = ["rt", "sync"] }
-
 
 # native:
 [target.'cfg(not(target_family = "wasm"))'.dependencies]

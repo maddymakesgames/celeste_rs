@@ -26,6 +26,8 @@ impl TabbedContentWidget {
         ui: &mut Ui,
         selected: &mut usize,
         tabs: impl AsRef<[W]>,
+        scroll_bar: ScrollBarVisibility,
+        text_style: TextStyle,
         show_ui: impl FnOnce(usize, &mut Ui) -> R,
     ) -> InnerResponse<R>
     where
@@ -37,7 +39,7 @@ impl TabbedContentWidget {
             ScrollArea::horizontal()
                 .id_source(tabs.as_ref())
                 .auto_shrink(true)
-                .scroll_bar_visibility(ScrollBarVisibility::AlwaysHidden)
+                .scroll_bar_visibility(scroll_bar)
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         for (idx, label) in tabs.as_ref().iter().enumerate() {
@@ -45,7 +47,7 @@ impl TabbedContentWidget {
 
                             let job = label.into_layout_job(
                                 ui.style(),
-                                FontSelection::Style(TextStyle::Name("header2".into())),
+                                FontSelection::Style(text_style.clone()),
                                 Align::Center,
                             );
 
