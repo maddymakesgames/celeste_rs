@@ -205,7 +205,7 @@ impl<'a> OperationsTab<'a> {
                 }
                 #[cfg(target_family = "wasm")]
                 {
-                    if let Err(e) = file.write(serialized.as_bytes()).await {
+                    if let Err(e) = file.write(data.as_bytes()).await {
                         let mut popup_guard = popups.lock().await;
                         popup_guard.push(PopupWindow::new(
                             ErrorSeverity::Error,
