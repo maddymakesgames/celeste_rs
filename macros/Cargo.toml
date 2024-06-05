@@ -8,6 +8,7 @@ license.workspace = true
 homepage.workspace = true
 keywords.workspace = true
 categories.workspace = true
+description = "macros for celeste_rs"
 
 [lib]
 proc-macro = true
