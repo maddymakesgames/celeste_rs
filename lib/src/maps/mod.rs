@@ -269,7 +269,7 @@ impl LookupTable {
         self.lookup_strings.binary_search_by(|a| str.cmp(a)).is_ok()
     }
 
-    pub fn add_string(&mut self, str: impl AsRef<str>) {
+    pub fn add_string(&mut self, str: impl AsRef<str>) -> ResolvableString {
         let str = str.as_ref();
         if !self.lookup_contains(str) {
             if let Some(index) = self.strings_to_add.iter().position(|s| s == str) {
@@ -281,12 +281,14 @@ impl LookupTable {
                 self.strings_to_add.push(str.to_owned());
             }
         }
+
+        ResolvableString::String(str.to_owned())
     }
 
     /// Resolves a string to it's lookup position if it exists
     ///
     /// Any indecies returned from this become invalid if [add_string](Self::add_string) is run again
-    pub fn resolve_string(&self, str: impl AsRef<str>) -> Option<LookupIndex> {
+    pub fn lookup_string(&self, str: impl AsRef<str>) -> Option<LookupIndex> {
         let str = str.as_ref();
         if self.lookup_contains(str) {
             self.lookup_strings
@@ -466,5 +468,38 @@ impl MapAttribute {
             lookup_table[self.name],
             self.value.to_string(lookup_table)
         )
+    }
+}
+
+#[derive(Debug)]
+pub enum ResolvableString {
+    LookupIndex(LookupIndex),
+    String(String),
+}
+
+impl ResolvableString {
+    pub fn to_string(&self, lookup_table: &LookupTable) -> String {
+        match &self {
+            ResolvableString::LookupIndex(i) => lookup_table[*i].clone(),
+            ResolvableString::String(s) => s.clone(),
+        }
+    }
+
+    pub fn resolve(&mut self, lookup_table: &LookupTable) {
+        match self {
+            ResolvableString::LookupIndex(i) =>
+                *self = ResolvableString::String(lookup_table[*i].clone()),
+            ResolvableString::String(_) => {}
+        }
+    }
+
+    pub fn to_index(&mut self, lookup_table: &LookupTable) {
+        match self {
+            ResolvableString::LookupIndex(_) => {}
+            ResolvableString::String(s) =>
+                if let Some(idx) = lookup_table.lookup_string(s) {
+                    *self = ResolvableString::LookupIndex(idx);
+                },
+        }
     }
 }
