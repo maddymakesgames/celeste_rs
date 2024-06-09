@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, ops::Index};
 
 pub struct MapReader {
     map_data: Vec<u8>,
@@ -137,7 +137,7 @@ impl MapReader {
         })
     }
 
-    pub fn read_lookup_table(&mut self) -> Result<Vec<String>, MapReadError> {
+    pub fn read_lookup_table(&mut self) -> Result<LookupTable, MapReadError> {
         let string_count = self.read_u16()?;
 
         let mut buf = Vec::with_capacity(string_count as usize);
@@ -146,14 +146,14 @@ impl MapReader {
             buf.push(self.read_string()?)
         }
 
-        Ok(buf)
+        Ok(LookupTable::from_vec(buf))
     }
 
     pub fn read_lookup_index(&mut self) -> Result<LookupIndex, MapReadError> {
         Ok(LookupIndex(self.read_u16()?))
     }
 
-    pub fn read_element(&mut self) -> Result<MapElement, MapReadError> {
+    pub fn read_element(&mut self) -> Result<RawMapElement, MapReadError> {
         let name = self.read_lookup_index()?;
         let attr_count = self.read_byte()?;
         let mut attributes = Vec::with_capacity(attr_count as usize);
@@ -169,7 +169,7 @@ impl MapReader {
             children.push(self.read_element()?);
         }
 
-        Ok(MapElement {
+        Ok(RawMapElement {
             name,
             attributes,
             children,
@@ -199,14 +199,14 @@ pub enum EncodedVar {
 }
 
 impl EncodedVar {
-    fn to_string(&self, lookup_table: &[String]) -> String {
+    fn to_string(&self, lookup_table: &LookupTable) -> String {
         match &self {
             EncodedVar::Bool(b) => b.to_string(),
             EncodedVar::Byte(b) => b.to_string(),
             EncodedVar::Short(s) => s.to_string(),
             EncodedVar::Int(i) => i.to_string(),
             EncodedVar::Float(f) => f.to_string(),
-            EncodedVar::LookupIndex(i) => lookup_table[i.0 as usize].clone(),
+            EncodedVar::LookupIndex(i) => lookup_table[*i].clone(),
             EncodedVar::String(s) => s.clone(),
             EncodedVar::LengthEncodedString(s) => s.clone(),
             EncodedVar::Long(l) => l.to_string(),
@@ -240,31 +240,131 @@ impl Display for MapReadError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct LookupIndex(u16);
 
+#[derive(Debug)]
+pub struct LookupTable {
+    lookup_strings: Vec<String>,
+    strings_to_add: Vec<String>,
+}
+
+impl LookupTable {
+    pub fn new() -> LookupTable {
+        LookupTable {
+            lookup_strings: Vec::new(),
+            strings_to_add: Vec::new(),
+        }
+    }
+
+    pub fn from_vec(vec: Vec<String>) -> LookupTable {
+        LookupTable {
+            lookup_strings: vec,
+            strings_to_add: Vec::new(),
+        }
+    }
+
+    pub fn lookup_contains(&self, str: impl AsRef<str>) -> bool {
+        let str = str.as_ref();
+        self.lookup_strings.binary_search_by(|a| str.cmp(a)).is_ok()
+    }
+
+    pub fn add_string(&mut self, str: impl AsRef<str>) {
+        let str = str.as_ref();
+        if !self.lookup_contains(str) {
+            if let Some(index) = self.strings_to_add.iter().position(|s| s == str) {
+                if let Err(idx) = self.lookup_strings.binary_search_by(|a| str.cmp(a)) {
+                    let str = self.strings_to_add.swap_remove(index);
+                    self.lookup_strings.insert(idx, str);
+                }
+            } else {
+                self.strings_to_add.push(str.to_owned());
+            }
+        }
+    }
+
+    /// Resolves a string to it's lookup position if it exists
+    ///
+    /// Any indecies returned from this become invalid if [add_string](Self::add_string) is run again
+    pub fn resolve_string(&self, str: impl AsRef<str>) -> Option<LookupIndex> {
+        let str = str.as_ref();
+        if self.lookup_contains(str) {
+            self.lookup_strings
+                .iter()
+                .position(|s| s == str)
+                .map(|i| LookupIndex(i as u16))
+        } else {
+            None
+        }
+    }
+
+    fn to_string(&self, depth: u8) -> String {
+        let mut buf = String::new();
+        buf.push('[');
+
+        for str in &self.lookup_strings {
+            buf.push('\n');
+            for _ in 0 .. depth + 1 {
+                buf.push('\t');
+            }
+            buf.push('"');
+            buf.push_str(str);
+            buf.push('"');
+        }
+
+        if !self.lookup_strings.is_empty() {
+            buf.push('\n');
+            for _ in 0 .. depth {
+                buf.push('\t');
+            }
+        }
+
+        buf.push(']');
+
+        buf
+    }
+
+    pub fn get(&self, index: LookupIndex) -> Option<&String> {
+        self.lookup_strings.get(index.0 as usize)
+    }
+}
+
+impl Index<LookupIndex> for LookupTable {
+    type Output = String;
+
+    fn index(&self, index: LookupIndex) -> &Self::Output {
+        &self.lookup_strings[index.0 as usize]
+    }
+}
+
+impl Default for LookupTable {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 
 #[derive(Debug)]
-pub struct MapElement {
-    name: LookupIndex,
-    attributes: Vec<MapAttribute>,
-    children: Vec<MapElement>,
+pub struct RawMapElement {
+    pub name: LookupIndex,
+    pub attributes: Vec<MapAttribute>,
+    pub children: Vec<RawMapElement>,
 }
 
 #[derive(Debug)]
 pub struct MapAttribute {
-    name: LookupIndex,
-    value: EncodedVar,
+    pub name: LookupIndex,
+    pub value: EncodedVar,
 }
 
 #[derive(Debug)]
-pub struct Map {
-    name: String,
-    lookup_table: Vec<String>,
-    root_element: MapElement,
+pub struct RawMap {
+    pub name: String,
+    pub lookup_table: LookupTable,
+    pub root_element: RawMapElement,
 }
 
-impl Map {
+impl RawMap {
     pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, MapReadError> {
         let mut reader = MapReader::new(bytes);
 
@@ -286,23 +386,23 @@ impl Map {
     }
 }
 
-impl Display for Map {
+impl Display for RawMap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} {{\n\tlookup_table: {:?}\n\troot_element: {}\n}}",
+            "{} {{\n\tlookup_table: {}\n\troot_element: {}\n}}",
             &self.name,
-            &self.lookup_table,
+            self.lookup_table.to_string(2),
             self.root_element.to_string(2, &self.lookup_table)
         )
     }
 }
 
-impl MapElement {
-    pub fn to_string(&self, depth: u8, lookup_table: &[String]) -> String {
+impl RawMapElement {
+    pub fn to_string(&self, depth: u8, lookup_table: &LookupTable) -> String {
         let mut buf = String::new();
 
-        buf.push_str(&lookup_table[self.name.0 as usize]);
+        buf.push_str(&lookup_table[self.name]);
         buf.push_str(" {\n");
 
         for _ in 0 .. depth {
@@ -360,10 +460,10 @@ impl MapElement {
 }
 
 impl MapAttribute {
-    pub fn to_string(&self, lookup_table: &[String]) -> String {
+    pub fn to_string(&self, lookup_table: &LookupTable) -> String {
         format!(
-            "{}: {:?}",
-            lookup_table[self.name.0 as usize],
+            "{}: {}",
+            lookup_table[self.name],
             self.value.to_string(lookup_table)
         )
     }
