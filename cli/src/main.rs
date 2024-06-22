@@ -46,6 +46,7 @@ fn main() {
     match command.as_str() {
         "merge" => merge_saves(arguments, verbose),
         "stats" => print_stats(arguments, verbose),
+        "clears" => print_clears(arguments, verbose),
         _ => {
             print_help();
             Some(())
@@ -184,6 +185,35 @@ ID: {}"#,
             );
         }
     }
+
+    Some(())
+}
+
+fn print_clears(args: Vec<String>, verbose: bool) -> Option<()> {
+    if args.is_empty() {
+        println!("You need to provide a path to the save file to read");
+        return None;
+    }
+
+    let save_file = load_save(&args[0], verbose)?;
+
+
+    let mut clears = 0;
+    for (area, _) in save_file
+        .all_areas()
+        .iter()
+        .filter(|(a, _)| a.modes.iter().any(|m| m.stats.completed))
+    {
+        const SIDES: [char; 3] = ['a', 'b', 'c'];
+        for (side, mode) in area.modes.iter().enumerate() {
+            if mode.stats.completed {
+                clears += 1;
+                println!("{} {}-side", area.def.sid(), SIDES[side])
+            }
+        }
+    }
+
+    println!("\n{clears} total clears!");
 
     Some(())
 }
