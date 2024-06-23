@@ -17,6 +17,11 @@ impl LookupTable {
         }
     }
 
+    fn binary_search(&self, str: &str) -> Result<usize, usize> {
+        self.lookup_strings
+            .binary_search_by(|a| str.cmp(a).reverse())
+    }
+
     pub fn from_vec(vec: Vec<String>) -> LookupTable {
         LookupTable {
             lookup_strings: vec,
@@ -26,14 +31,14 @@ impl LookupTable {
 
     pub fn lookup_contains(&self, str: impl AsRef<str>) -> bool {
         let str = str.as_ref();
-        self.lookup_strings.binary_search_by(|a| str.cmp(a)).is_ok()
+        self.binary_search(str).is_ok()
     }
 
     pub fn add_string(&mut self, str: impl AsRef<str>) -> ResolvableString {
         let str = str.as_ref();
         if !self.lookup_contains(str) {
             if let Some(index) = self.strings_to_add.iter().position(|s| s == str) {
-                if let Err(idx) = self.lookup_strings.binary_search_by(|a| str.cmp(a)) {
+                if let Err(idx) = self.binary_search(str) {
                     let str = self.strings_to_add.swap_remove(index);
                     self.lookup_strings.insert(idx, str);
                 }
@@ -47,17 +52,15 @@ impl LookupTable {
 
     pub fn index_string(&mut self, str: impl AsRef<str>) -> ResolvableString {
         let str = str.as_ref();
-        match self.lookup_strings.binary_search_by(|a| str.cmp(a)) {
-            Ok(idx) => ResolvableString::LookupIndex(LookupIndex(idx as u16)),
-            Err(idx) => {
-                if let Some(idx_to_remove) = self.strings_to_add.iter().position(|s| s == str) {
-                    self.strings_to_add.remove(idx_to_remove);
-                }
-
-                self.lookup_strings.insert(idx, str.to_owned());
-                ResolvableString::LookupIndex(LookupIndex(idx as u16))
+        if let Err(idx) = self.binary_search(str) {
+            if let Some(idx_to_remove) = self.strings_to_add.iter().position(|s| s == str) {
+                self.strings_to_add.remove(idx_to_remove);
             }
+
+            self.lookup_strings.insert(idx, str.to_owned());
         }
+
+        ResolvableString::String(str.to_owned())
     }
 
     /// Resolves a string to it's lookup position if it exists

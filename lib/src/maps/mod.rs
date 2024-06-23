@@ -71,6 +71,16 @@ impl RawMap {
             root_element,
         })
     }
+
+    fn resolve_strings(&mut self) {
+        self.root_element.resolve_strings(&self.lookup_table);
+    }
+
+    fn unresolve_strings(&mut self) {
+        self.root_element
+            .add_attr_value_strs(&mut self.lookup_table);
+        self.root_element.unresolve_strings(&mut self.lookup_table);
+    }
 }
 
 impl Display for RawMap {
@@ -144,6 +154,52 @@ impl RawMapElement {
 
         buf
     }
+
+    fn resolve_strings(&mut self, lookup_table: &LookupTable) {
+        self.name.resolve(lookup_table);
+
+        for attr in &mut self.attributes {
+            attr.name.resolve(lookup_table);
+
+            if let EncodedVar::LookupIndex(i) = attr.value {
+                attr.value = lookup_table[i].clone().into()
+            }
+        }
+
+        for child in &mut self.children {
+            child.resolve_strings(lookup_table)
+        }
+    }
+
+    fn add_attr_value_strs(&self, lookup_table: &mut LookupTable) {
+        for attr in &self.attributes {
+            if let EncodedVar::String(str) = &attr.value {
+                lookup_table.add_string(str);
+            }
+        }
+
+        for child in &self.children {
+            child.add_attr_value_strs(lookup_table);
+        }
+    }
+
+    fn unresolve_strings(&mut self, lookup_table: &mut LookupTable) {
+        self.name.to_index(lookup_table);
+
+        for attr in &mut self.attributes {
+            attr.name.to_index(lookup_table);
+
+            if let EncodedVar::String(str) = &attr.value {
+                if let Some(idx) = lookup_table.lookup_string(str) {
+                    attr.value = EncodedVar::LookupIndex(idx);
+                }
+            }
+        }
+
+        for child in &mut self.children {
+            child.unresolve_strings(lookup_table);
+        }
+    }
 }
 
 impl MapAttribute {
@@ -207,9 +263,11 @@ impl MapManager {
 
         reader.read_to_end(&mut buf)?;
 
-        let raw = RawMap::from_bytes(buf)?;
+        let mut raw = RawMap::from_bytes(buf)?;
 
         let parsers = HashMap::new();
+
+        raw.resolve_strings();
 
         Ok(MapManager { map: raw, parsers })
     }
@@ -253,6 +311,8 @@ impl MapManager {
         self.map.root_element = encoder.resolve();
         self.map.name = name.to_string();
         self.map.lookup_table = lookup;
+
+        self.map.unresolve_strings();
     }
 
     pub fn add_parser<T: MapElement>(&mut self) {

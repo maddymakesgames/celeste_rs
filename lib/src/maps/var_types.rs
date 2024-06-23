@@ -237,6 +237,12 @@ impl From<ResolvableString> for EncodedVar {
     }
 }
 
+impl From<String> for EncodedVar {
+    fn from(value: String) -> Self {
+        EncodedVar::String(value)
+    }
+}
+
 impl<'a> TryFrom<&'a EncodedVar> for String {
     type Error = EncodedVarError;
 
