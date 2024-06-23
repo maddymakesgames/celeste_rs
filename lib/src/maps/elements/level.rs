@@ -145,6 +145,12 @@ impl MapElement for Level {
         encoder.attribute("y", self.y);
         encoder.attribute("c", self.c);
         encoder.child(&self.entities);
+        encoder.child(&self.solids);
+        encoder.child(&self.triggers);
+        encoder.child(&self.fg_decals);
+        encoder.child(&self.fg_tiles);
+        encoder.child(&self.bg_decals);
+        encoder.child(&self.bg_tiles);
     }
 }
 
