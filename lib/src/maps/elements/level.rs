@@ -129,19 +129,12 @@ impl MapElement for Level {
             encoder.attribute("musicProgress", progress.clone());
         }
         encoder.optional_attribute("ambience", &self.ambience);
-        if let Some(progress) = &self.ambience_progress {
-            encoder.attribute("ambienceProgress", progress.clone());
-        }
+        encoder.optional_attribute("ambienceProgress", &self.ambience_progress);
         encoder.attribute("underwater", self.underwater);
         encoder.optional_attribute("space", &self.space);
         encoder.optional_attribute("disableDownTransition", &self.disable_down_transition);
-        if let Some(whisper) = self.whisper {
-            encoder.attribute("whisper", whisper);
-        }
-
-        if let Some(alt_music_fade) = self.delay_alt_music_fade {
-            encoder.attribute("delayAltMusicFade", alt_music_fade);
-        }
+        encoder.optional_attribute("whisper", &self.whisper);
+        encoder.optional_attribute("delayAltMusicFade", &self.delay_alt_music_fade);
         encoder.optional_attribute("enforceDashNumber", &self.enforce_dash_number);
         encoder.attribute("x", self.x);
         encoder.attribute("y", self.y);
