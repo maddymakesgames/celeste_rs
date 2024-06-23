@@ -24,19 +24,19 @@ use crate::maps::{
 
 #[derive(Debug, Clone)]
 pub struct RawMapElement {
-    pub name: LookupIndex,
+    pub name: ResolvableString,
     pub attributes: Vec<MapAttribute>,
     pub children: Vec<RawMapElement>,
 }
 
 #[derive(Debug, Clone)]
 pub struct MapAttribute {
-    pub name: LookupIndex,
+    pub name: ResolvableString,
     pub value: EncodedVar,
 }
 
 impl MapAttribute {
-    pub fn new(name: LookupIndex, value: impl Into<EncodedVar>) -> Self {
+    pub fn new(name: ResolvableString, value: impl Into<EncodedVar>) -> Self {
         MapAttribute {
             name,
             value: value.into(),
@@ -89,7 +89,7 @@ impl RawMapElement {
     pub fn to_string(&self, depth: u8, lookup_table: &LookupTable) -> String {
         let mut buf = String::new();
 
-        buf.push_str(&lookup_table[self.name]);
+        buf.push_str(self.name.to_string(lookup_table));
         buf.push_str(" {\n");
 
         for _ in 0 .. depth {
@@ -150,7 +150,7 @@ impl MapAttribute {
     pub fn to_string(&self, lookup_table: &LookupTable) -> String {
         format!(
             "{}: {}",
-            lookup_table[self.name],
+            self.name.to_string(lookup_table),
             self.value.to_string(lookup_table)
         )
     }
@@ -262,5 +262,9 @@ impl MapManager {
 
     pub fn add_entity_parser<T: Entity>(&mut self) {
         self.add_parser::<MapEntity<T>>();
+    }
+
+    pub fn map(&self) -> &RawMap {
+        &self.map
     }
 }

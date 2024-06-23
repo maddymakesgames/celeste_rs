@@ -1,6 +1,13 @@
 use std::{error::Error, fmt::Display};
 
-use crate::maps::{var_types::EncodedVar, LookupIndex, LookupTable, MapAttribute, RawMapElement};
+use crate::maps::{
+    var_types::EncodedVar,
+    LookupIndex,
+    LookupTable,
+    MapAttribute,
+    RawMapElement,
+    ResolvableString,
+};
 
 pub struct MapReader {
     map_data: Vec<u8>,
@@ -158,7 +165,7 @@ impl MapReader {
     }
 
     pub fn read_element(&mut self) -> Result<RawMapElement, MapReadError> {
-        let name = self.read_lookup_index()?;
+        let name = ResolvableString::LookupIndex(self.read_lookup_index()?);
         let attr_count = self.read_byte()?;
         let mut attributes = Vec::with_capacity(attr_count as usize);
 
@@ -181,7 +188,7 @@ impl MapReader {
     }
 
     pub fn read_attribute(&mut self) -> Result<MapAttribute, MapReadError> {
-        let name = self.read_lookup_index()?;
+        let name = ResolvableString::LookupIndex(self.read_lookup_index()?);
         let value = self.read_encoded_var()?;
 
         Ok(MapAttribute { name, value })

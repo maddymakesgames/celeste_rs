@@ -45,17 +45,17 @@ impl LookupTable {
         ResolvableString::String(str.to_owned())
     }
 
-    pub fn index_string(&mut self, str: impl AsRef<str>) -> LookupIndex {
+    pub fn index_string(&mut self, str: impl AsRef<str>) -> ResolvableString {
         let str = str.as_ref();
         match self.lookup_strings.binary_search_by(|a| str.cmp(a)) {
-            Ok(idx) => LookupIndex(idx as u16),
+            Ok(idx) => ResolvableString::LookupIndex(LookupIndex(idx as u16)),
             Err(idx) => {
                 if let Some(idx_to_remove) = self.strings_to_add.iter().position(|s| s == str) {
                     self.strings_to_add.remove(idx_to_remove);
                 }
 
                 self.lookup_strings.insert(idx, str.to_owned());
-                LookupIndex(idx as u16)
+                ResolvableString::LookupIndex(LookupIndex(idx as u16))
             }
         }
     }
@@ -128,10 +128,10 @@ pub enum ResolvableString {
 }
 
 impl ResolvableString {
-    pub fn to_string(&self, lookup_table: &LookupTable) -> String {
+    pub fn to_string<'a>(&'a self, lookup_table: &'a LookupTable) -> &'a str {
         match &self {
-            ResolvableString::LookupIndex(i) => lookup_table[*i].clone(),
-            ResolvableString::String(s) => s.clone(),
+            ResolvableString::LookupIndex(i) => &lookup_table[*i],
+            ResolvableString::String(s) => s,
         }
     }
 

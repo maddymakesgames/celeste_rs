@@ -1,15 +1,15 @@
 use crate::maps::{
     var_types::EncodedVar,
-    LookupIndex,
     LookupTable,
     MapAttribute,
     MapElement,
     RawMapElement,
+    ResolvableString,
 };
 
 pub struct MapEncoder<'a> {
     pub lookup: &'a mut LookupTable,
-    pub(crate) element_name: LookupIndex,
+    pub(crate) element_name: ResolvableString,
     pub(crate) children: Vec<RawMapElement>,
     pub(crate) attrs: Vec<MapAttribute>,
 }
@@ -61,7 +61,7 @@ impl<'a> MapEncoder<'a> {
 
     /// Forks the current encoder to create a new [RawMapElement]
     #[doc(hidden)]
-    pub fn fork(&mut self, name: LookupIndex) -> MapEncoder {
+    pub fn fork(&mut self, name: ResolvableString) -> MapEncoder {
         MapEncoder {
             lookup: self.lookup,
             element_name: name,
@@ -82,7 +82,7 @@ impl<'a> MapEncoder<'a> {
     /// Loads data from an existing [RawMapElement]
     #[doc(hidden)]
     pub fn from_raw(&mut self, raw: &RawMapElement) {
-        self.element_name = raw.name;
+        self.element_name = raw.name.clone();
         self.attrs.clone_from(&raw.attributes);
         self.children.clone_from(&raw.children);
     }

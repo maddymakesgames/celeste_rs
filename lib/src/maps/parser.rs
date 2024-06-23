@@ -26,7 +26,7 @@ impl<'a> MapParser<'a> {
             println!("{}", T::name());
         }
         for element in &self.raw.children {
-            if self.lookup[element.name] == T::name() {
+            if element.name.to_string(self.lookup) == T::name() {
                 return T::from_raw(MapParser {
                     verbose_debug: self.verbose_debug,
                     lookup: self.lookup,
@@ -38,7 +38,7 @@ impl<'a> MapParser<'a> {
 
         Err(MapElementParsingError::NoMatchingElementFound {
             expected: T::name(),
-            found: self.lookup[self.raw.name].clone(),
+            found: self.raw.name.to_string(self.lookup).to_owned(),
         })
     }
 
@@ -52,7 +52,7 @@ impl<'a> MapParser<'a> {
         self.raw
             .children
             .iter()
-            .filter(|r| self.lookup[r.name] == T::name())
+            .filter(|r| r.name.to_string(self.lookup) == T::name())
             .map(|r| {
                 T::from_raw(MapParser {
                     verbose_debug: self.verbose_debug,
@@ -73,7 +73,7 @@ impl<'a> MapParser<'a> {
 
     pub fn parse_any_element(&self) -> Result<Vec<Box<dyn MapElement>>, MapElementParsingError> {
         let parsed_elements = self.raw.children.iter().map(|raw| {
-            if let Some(parser) = self.parsers.get(self.lookup[raw.name].as_str()) {
+            if let Some(parser) = self.parsers.get(raw.name.to_string(self.lookup)) {
                 if self.verbose_debug {
                     println!("{}", parser.element_name());
                 }
@@ -122,7 +122,7 @@ impl<'a> MapParser<'a> {
             .attributes
             .iter()
             .find_map(|a| {
-                if self.lookup[a.name] == str {
+                if a.name.to_string(self.lookup) == str {
                     Some(&a.value)
                 } else {
                     None
@@ -147,7 +147,7 @@ impl<'a> MapParser<'a> {
             .attributes
             .iter()
             .find_map(|a| {
-                if self.lookup[a.name] == str {
+                if a.name.to_string(self.lookup) == str {
                     Some(&a.value)
                 } else {
                     None
