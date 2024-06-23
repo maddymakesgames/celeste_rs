@@ -56,6 +56,7 @@ pub struct Level {
     pub disable_down_transition: Option<bool>,
     pub whisper: Option<bool>,
     pub delay_alt_music_fade: Option<bool>,
+    pub enforce_dash_number: Option<Integer>,
     pub c: Integer,
     pub entities: Entities,
     pub solids: Solids,
@@ -64,6 +65,8 @@ pub struct Level {
     pub fg_decals: FGDecals,
     pub bg_tiles: BGTiles,
     pub bg_decals: BGDecals,
+    pub bg: Background,
+    pub objtiles: ObjTiles,
 }
 
 impl MapElement for Level {
@@ -94,6 +97,7 @@ impl MapElement for Level {
             disable_down_transition: parser.get_optional_attribute("disableDownTransition"),
             whisper: parser.get_optional_attribute("whisper"),
             delay_alt_music_fade: parser.get_optional_attribute("delayAltMusicFade"),
+            enforce_dash_number: parser.get_optional_attribute("enforceDashNumber"),
             c: parser.get_attribute("c")?,
             entities: parser.parse_element()?,
             solids: parser.parse_element()?,
@@ -102,6 +106,8 @@ impl MapElement for Level {
             fg_decals: parser.parse_element()?,
             bg_tiles: parser.parse_element()?,
             bg_decals: parser.parse_element()?,
+            bg: parser.parse_element()?,
+            objtiles: parser.parse_element()?,
         })
     }
 
@@ -124,7 +130,7 @@ impl MapElement for Level {
         }
         encoder.optional_attribute("ambience", &self.ambience);
         if let Some(progress) = &self.ambience_progress {
-            encoder.attribute("musicProgress", progress.clone());
+            encoder.attribute("ambienceProgress", progress.clone());
         }
         encoder.attribute("underwater", self.underwater);
         encoder.optional_attribute("space", &self.space);
@@ -136,16 +142,19 @@ impl MapElement for Level {
         if let Some(alt_music_fade) = self.delay_alt_music_fade {
             encoder.attribute("delayAltMusicFade", alt_music_fade);
         }
+        encoder.optional_attribute("enforceDashNumber", &self.enforce_dash_number);
         encoder.attribute("x", self.x);
         encoder.attribute("y", self.y);
         encoder.attribute("c", self.c);
-        encoder.child(&self.entities);
-        encoder.child(&self.solids);
         encoder.child(&self.triggers);
-        encoder.child(&self.fg_decals);
         encoder.child(&self.fg_tiles);
-        encoder.child(&self.bg_decals);
+        encoder.child(&self.fg_decals);
+        encoder.child(&self.solids);
+        encoder.child(&self.entities);
         encoder.child(&self.bg_tiles);
+        encoder.child(&self.bg_decals);
+        encoder.child(&self.bg);
+        encoder.child(&self.objtiles);
     }
 }
 
@@ -182,6 +191,7 @@ pub struct FGTiles {
     pub offset_y: Float,
     pub tileset: ResolvableString,
     pub export_mode: Integer,
+    pub inner_text: Option<String>,
 }
 
 impl MapElement for FGTiles {
@@ -194,6 +204,7 @@ impl MapElement for FGTiles {
             offset_y: parser.get_attribute("offsetY")?,
             tileset: parser.get_attribute("tileset")?,
             export_mode: parser.get_attribute("exportMode")?,
+            inner_text: parser.get_optional_attribute("innerText"),
         })
     }
 
@@ -202,6 +213,10 @@ impl MapElement for FGTiles {
         encoder.attribute("offsetY", self.offset_y);
         encoder.attribute("tileset", self.tileset.clone());
         encoder.attribute("exportMode", self.export_mode);
+        encoder.optional_attribute(
+            "innerText",
+            &self.inner_text.as_ref().map(EncodedVar::new_rle_str),
+        )
     }
 }
 
@@ -376,6 +391,7 @@ impl MapElement for ObjTiles {
         encoder.attribute("offsetX", self.offset_x);
         encoder.attribute("offsetY", self.offset_y);
         encoder.attribute("tileset", self.tileset.clone());
+        encoder.attribute("exportMode", self.export_mode);
         encoder.optional_attribute(
             "innerText",
             &self.inner_text.as_ref().map(EncodedVar::new_rle_str),

@@ -72,16 +72,16 @@ impl MapElement for Foregrounds {
     }
 
     fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.children(&self.parallax_elements);
-
         if self.snow_fg {
             encoder.child(&SnowFG);
         }
+        encoder.children(&self.parallax_elements);
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Parallax {
+    pub blend_mode: Option<ResolvableString>,
     pub texture: ResolvableString,
     pub x: Float,
     pub y: Float,
@@ -89,6 +89,10 @@ pub struct Parallax {
     pub scroll_y: Float,
     pub loopx: bool,
     pub loopy: bool,
+    pub speed_x: Option<Float>,
+    pub speed_y: Option<Float>,
+    pub color: Option<ResolvableString>,
+    pub alpha: Option<Float>,
 }
 
 impl MapElement for Parallax {
@@ -96,6 +100,7 @@ impl MapElement for Parallax {
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
         Ok(Self {
+            blend_mode: parser.get_optional_attribute("blendmode"),
             texture: parser.get_attribute("texture")?,
             x: parser.get_attribute("x")?,
             y: parser.get_attribute("y")?,
@@ -103,10 +108,15 @@ impl MapElement for Parallax {
             scroll_y: parser.get_attribute("scrolly")?,
             loopx: parser.get_attribute("loopx")?,
             loopy: parser.get_attribute("loopy")?,
+            speed_x: parser.get_optional_attribute("speedx"),
+            speed_y: parser.get_optional_attribute("speedy"),
+            color: parser.get_optional_attribute("color"),
+            alpha: parser.get_optional_attribute("alpha"),
         })
     }
 
     fn to_raw(&self, encoder: &mut MapEncoder) {
+        encoder.optional_attribute("blendmode", &self.blend_mode);
         encoder.attribute("texture", self.texture.clone());
         encoder.attribute("x", self.x);
         encoder.attribute("y", self.y);
@@ -114,6 +124,10 @@ impl MapElement for Parallax {
         encoder.attribute("scrolly", self.scroll_y);
         encoder.attribute("loopx", self.loopx);
         encoder.attribute("loopy", self.loopy);
+        encoder.optional_attribute("speedx", &self.speed_x);
+        encoder.optional_attribute("speedy", &self.speed_y);
+        encoder.optional_attribute("color", &self.color);
+        encoder.optional_attribute("alpha", &self.alpha);
     }
 }
 

@@ -213,7 +213,7 @@ macro_rules! entities {
 }
 
 entities! {
-    FallingBlock
+    FallingBlock, ZipMover, FakeWall, Spring, Refill
     (
         SpikesUp, "spikesUp",
         [kind, "type", ResolvableString]
@@ -233,11 +233,6 @@ entities! {
     (
         JumpThru, "jumpThru",
         [texture, "texture", ResolvableString]
-    ),
-    (
-        ZipMover, "zipMover",
-        []
-        (target)
     ),
     (
         Wire, "wire",
@@ -315,7 +310,6 @@ unit_entities! {
     Player, "player",
     GoldenBerry, "goldenBerry",
     CrumbleBlock, "crumbleBlock",
-    Refill, "refill",
     Checkpoint, "checkpoint",
     WingedGoldenStrawberry, "memorialTextController",
     FlutterBird, "flutterbird"
@@ -387,5 +381,51 @@ impl Entity for Spring {
 
     fn to_raw(&self, encoder: &mut MapEncoder) {
         encoder.optional_attribute("playerCanUse", &self.player_can_use);
+    }
+}
+
+#[derive(Debug)]
+pub struct ZipMover {
+    pub theme: Option<ResolvableString>,
+    pub to: Node,
+}
+
+impl Entity for ZipMover {
+    const NAME: &'static str = "zipMover";
+
+    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
+    where Self: Sized {
+        Ok(Self {
+            theme: parser.get_optional_attribute("theme"),
+            to: parser.parse_element()?,
+        })
+    }
+
+    fn to_raw(&self, encoder: &mut MapEncoder) {
+        encoder.optional_attribute("theme", &self.theme);
+        encoder.child(&self.to);
+    }
+}
+
+#[derive(Debug)]
+pub struct Refill {
+    pub two_dash: Option<bool>,
+    pub one_use: Option<bool>,
+}
+
+impl Entity for Refill {
+    const NAME: &'static str = "refill";
+
+    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
+    where Self: Sized {
+        Ok(Self {
+            two_dash: parser.get_optional_attribute("twoDash"),
+            one_use: parser.get_optional_attribute("oneUse"),
+        })
+    }
+
+    fn to_raw(&self, encoder: &mut MapEncoder) {
+        encoder.optional_attribute("twoDash", &self.two_dash);
+        encoder.optional_attribute("oneUse", &self.one_use);
     }
 }
