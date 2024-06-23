@@ -1,6 +1,6 @@
 use std::{
     error::Error,
-    fmt::Display,
+    fmt::{Debug, Display},
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
 };
 
@@ -265,11 +265,21 @@ impl<'a> TryFrom<&'a EncodedVar> for ResolvableString {
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub enum Integer {
     U8(u8),
     I16(i16),
     I32(i32),
+}
+
+impl Debug for Integer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::U8(arg0) => write!(f, "{arg0}_u8"),
+            Self::I16(arg0) => write!(f, "{arg0}_i16"),
+            Self::I32(arg0) => write!(f, "{arg0}_i32"),
+        }
+    }
 }
 
 impl From<u8> for Integer {
@@ -405,7 +415,7 @@ impl DivAssign for Integer {
 }
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub enum Float {
     U8(u8),
     I16(i16),
@@ -420,6 +430,17 @@ impl Float {
             Float::I16(s) => s as f32,
             Float::I32(i) => i as f32,
             Float::F32(f) => f,
+        }
+    }
+}
+
+impl Debug for Float {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::U8(arg0) => write!(f, "{arg0}_u8"),
+            Self::I16(arg0) => write!(f, "{arg0}_i16"),
+            Self::I32(arg0) => write!(f, "{arg0}_i32"),
+            Self::F32(arg0) => write!(f, "{arg0}_f32"),
         }
     }
 }
