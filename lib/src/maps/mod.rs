@@ -16,6 +16,7 @@ pub use lookup::*;
 
 use crate::maps::{
     encoder::MapEncoder,
+    entities::{Entity, MapEntity},
     parser::{ElementParser, ElementParserImpl, MapElementParsingError, MapParser},
     reader::{MapReadError, MapReader},
     var_types::EncodedVar,
@@ -215,6 +216,17 @@ impl MapManager {
 
     pub fn parse_map(&self) -> Result<MapRoot, MapElementParsingError> {
         let parser = MapParser {
+            verbose_debug: false,
+            lookup: &self.map.lookup_table,
+            raw: &self.map.root_element,
+            parsers: &self.parsers,
+        };
+
+        parser.parse_self::<MapRoot>()
+    }
+
+    pub fn verbose_parse(&self) -> Result<MapRoot, MapElementParsingError> {
+        let parser = MapParser {
             verbose_debug: cfg!(debug_assertions),
             lookup: &self.map.lookup_table,
             raw: &self.map.root_element,
@@ -246,5 +258,9 @@ impl MapManager {
     pub fn add_parser<T: MapElement>(&mut self) {
         self.parsers
             .insert(T::name(), Box::new(ElementParser::<T>::new()));
+    }
+
+    pub fn add_entity_parser<T: Entity>(&mut self) {
+        self.add_parser::<MapEntity<T>>();
     }
 }

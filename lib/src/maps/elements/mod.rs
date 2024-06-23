@@ -1,4 +1,5 @@
 use crate::maps::{
+    entities::add_entity_parsers,
     level::*,
     style::*,
     var_types::Integer,
@@ -9,6 +10,7 @@ use crate::maps::{
     MapParser,
 };
 
+pub mod entities;
 pub mod level;
 pub mod style;
 
@@ -35,6 +37,7 @@ impl MapManager {
         self.add_parser::<Parallax>();
         self.add_parser::<SnowBG>();
         self.add_parser::<SnowFG>();
+        add_entity_parsers(self);
     }
 }
 
