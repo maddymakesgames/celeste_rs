@@ -3,6 +3,8 @@ use std::{any::Any, collections::HashMap, error::Error, fmt::Display, marker::Ph
 use crate::maps::{
     encoder::MapEncoder,
     var_types::{EncodedVar, EncodedVarError},
+    DynMapElement,
+    ErasedMapElement,
     LookupIndex,
     LookupTable,
     MapElement,
@@ -23,10 +25,10 @@ impl<'a> MapParser<'a> {
 
     pub fn parse_element<T: MapElement>(&self) -> Result<T, MapElementParsingError> {
         if self.verbose_debug {
-            println!("{}", T::name());
+            println!("{}", T::NAME);
         }
         for element in &self.raw.children {
-            if element.name.to_string(self.lookup) == T::name() {
+            if element.name.to_string(self.lookup) == T::NAME {
                 return T::from_raw(MapParser {
                     verbose_debug: self.verbose_debug,
                     lookup: self.lookup,
@@ -37,7 +39,7 @@ impl<'a> MapParser<'a> {
         }
 
         Err(MapElementParsingError::NoMatchingElementFound {
-            expected: T::name(),
+            expected: T::NAME,
             found: self.raw.name.to_string(self.lookup).to_owned(),
         })
     }
@@ -46,13 +48,13 @@ impl<'a> MapParser<'a> {
         let len = self.raw.children.len();
 
         if self.verbose_debug {
-            println!("Vec<{}>", T::name());
+            println!("Vec<{}>", T::NAME);
         }
 
         self.raw
             .children
             .iter()
-            .filter(|r| r.name.to_string(self.lookup) == T::name())
+            .filter(|r| r.name.to_string(self.lookup) == T::NAME)
             .map(|r| {
                 T::from_raw(MapParser {
                     verbose_debug: self.verbose_debug,
@@ -71,7 +73,7 @@ impl<'a> MapParser<'a> {
             )
     }
 
-    pub fn parse_any_element(&self) -> Result<Vec<Box<dyn MapElement>>, MapElementParsingError> {
+    pub fn parse_any_element(&self) -> Result<Vec<DynMapElement>, MapElementParsingError> {
         let parsed_elements = self.raw.children.iter().map(|raw| {
             if let Some(parser) = self.parsers.get(raw.name.to_string(self.lookup)) {
                 if self.verbose_debug {
@@ -85,7 +87,7 @@ impl<'a> MapParser<'a> {
                     parsers: self.parsers,
                 })
             } else {
-                Ok(Box::new(raw.clone()) as Box<dyn MapElement>)
+                Ok(Box::new(raw.clone()) as DynMapElement)
             }
         });
 
@@ -246,11 +248,8 @@ impl From<EncodedVarError> for MapElementParsingError {
 
 pub trait ElementParserImpl: Any {
     fn element_name(&self) -> &'static str;
-    fn element_from_raw(
-        &self,
-        parser: MapParser,
-    ) -> Result<Box<dyn MapElement>, MapElementParsingError>;
-    fn element_to_raw(&self, element: &dyn MapElement, encoder: &mut MapEncoder);
+    fn element_from_raw(&self, parser: MapParser) -> Result<DynMapElement, MapElementParsingError>;
+    fn element_to_raw(&self, element: &dyn ErasedMapElement, encoder: &mut MapEncoder);
 }
 
 pub trait MapElementParser: Any {
@@ -273,26 +272,22 @@ impl<T> Default for ElementParser<T> {
 
 impl<T: MapElement> ElementParserImpl for ElementParser<T> {
     fn element_name(&self) -> &'static str {
-        T::name()
+        T::NAME
     }
 
-    fn element_from_raw(
-        &self,
-        parser: MapParser,
-    ) -> Result<Box<dyn MapElement>, MapElementParsingError> {
-        T::from_raw(parser).map(|e| Box::new(e) as Box<dyn MapElement>)
+    fn element_from_raw(&self, parser: MapParser) -> Result<DynMapElement, MapElementParsingError> {
+        T::from_raw(parser).map(|e| Box::new(e) as DynMapElement)
     }
 
-    fn element_to_raw(&self, element: &dyn MapElement, encoder: &mut MapEncoder) {
-        let element = unsafe { &*(element as *const dyn MapElement as *const T) };
+    fn element_to_raw(&self, element: &dyn ErasedMapElement, encoder: &mut MapEncoder) {
+        let element = unsafe { &*(element as *const dyn ErasedMapElement as *const T) };
         element.to_raw(encoder)
     }
 }
 
-impl MapElement for Box<dyn MapElement> {
-    fn name() -> &'static str
-    where Self: Sized {
-        ""
+impl ErasedMapElement for Box<dyn ErasedMapElement> {
+    fn name(&self) -> &'static str {
+        self.as_ref().name()
     }
 
     fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError>

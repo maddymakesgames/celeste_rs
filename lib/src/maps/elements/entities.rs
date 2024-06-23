@@ -22,10 +22,7 @@ pub struct MapEntity<T: Entity> {
 }
 
 impl<T: Entity> MapElement for MapEntity<T> {
-    fn name() -> &'static str
-    where Self: Sized {
-        T::name()
-    }
+    const NAME: &'static str = T::NAME;
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -54,8 +51,7 @@ impl<T: Entity> MapElement for MapEntity<T> {
 }
 
 pub trait Entity: Debug + Any {
-    fn name() -> &'static str
-    where Self: Sized;
+    const NAME: &'static str;
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized;
@@ -69,10 +65,7 @@ pub struct Node {
 }
 
 impl MapElement for Node {
-    fn name() -> &'static str
-    where Self: Sized {
-        "node"
-    }
+    const NAME: &'static str = "node";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -93,10 +86,7 @@ pub trait UnitEntity: Debug + Any + Copy + Default {
 }
 
 impl<T: UnitEntity> Entity for T {
-    fn name() -> &'static str
-    where Self: Sized {
-        T::NAME
-    }
+    const NAME: &'static str = T::NAME;
 
     fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -150,9 +140,7 @@ macro_rules! entities {
         }
 
         impl Entity for $struct_name {
-            fn name() -> &'static str {
-                $name
-            }
+            const NAME: &'static str = $name;
 
             fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
             where Self: Sized {
@@ -177,9 +165,7 @@ macro_rules! entities {
         }
 
         impl Entity for $struct_name {
-            fn name() -> &'static str {
-                $name
-            }
+            const NAME: &'static str = $name;
 
             fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
             where Self: Sized {
@@ -206,9 +192,7 @@ macro_rules! entities {
         }
 
         impl Entity for $struct_name {
-            fn name() -> &'static str {
-                $name
-            }
+            const NAME: &'static str = $name;
 
             fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
             where Self: Sized {
@@ -345,10 +329,7 @@ pub struct FallingBlock {
 }
 
 impl Entity for FallingBlock {
-    fn name() -> &'static str
-    where Self: Sized {
-        "fallingBlock"
-    }
+    const NAME: &'static str = "fallingBlock";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -373,10 +354,7 @@ pub struct FakeWall {
 }
 
 impl Entity for FakeWall {
-    fn name() -> &'static str
-    where Self: Sized {
-        "fakeWall"
-    }
+    const NAME: &'static str = "fakeWall";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -398,10 +376,7 @@ pub struct Spring {
 }
 
 impl Entity for Spring {
-    fn name() -> &'static str
-    where Self: Sized {
-        "spring"
-    }
+    const NAME: &'static str = "spring";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {

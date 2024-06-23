@@ -49,10 +49,7 @@ pub struct MapRoot {
 }
 
 impl MapElement for MapRoot {
-    fn name() -> &'static str
-    where Self: Sized {
-        "Map"
-    }
+    const NAME: &'static str = "Map";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
         let filler = parser.parse_element::<Filler>()?;
@@ -79,10 +76,7 @@ pub struct Filler {
 }
 
 impl MapElement for Filler {
-    fn name() -> &'static str
-    where Self: Sized {
-        "Filler"
-    }
+    const NAME: &'static str = "Filler";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -107,10 +101,7 @@ pub struct Rect {
 }
 
 impl MapElement for Rect {
-    fn name() -> &'static str
-    where Self: Sized {
-        "rect"
-    }
+    const NAME: &'static str = "rect";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
         let x = parser.get_attribute("x")?;

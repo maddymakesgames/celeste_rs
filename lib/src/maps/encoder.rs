@@ -1,8 +1,8 @@
 use crate::maps::{
     var_types::EncodedVar,
+    ErasedMapElement,
     LookupTable,
     MapAttribute,
-    MapElement,
     RawMapElement,
     ResolvableString,
 };
@@ -40,8 +40,8 @@ impl<'a> MapEncoder<'a> {
     }
 
     /// Pushes a new child [MapElement] onto the raw element
-    pub fn child<T: MapElement>(&mut self, child: &T) {
-        let child_name = self.lookup.index_string(T::name());
+    pub fn child<T: ErasedMapElement>(&mut self, child: &T) {
+        let child_name = self.lookup.index_string(child.name());
         let mut fork = self.fork(child_name);
 
         child.to_raw(&mut fork);
@@ -51,7 +51,7 @@ impl<'a> MapEncoder<'a> {
         self.children.push(child);
     }
 
-    pub fn children<T: MapElement>(&mut self, children: impl AsRef<[T]>) {
+    pub fn children<T: ErasedMapElement>(&mut self, children: impl AsRef<[T]>) {
         let children = children.as_ref();
 
         for child in children {

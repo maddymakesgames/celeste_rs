@@ -14,10 +14,7 @@ pub struct Styles {
 }
 
 impl MapElement for Styles {
-    fn name() -> &'static str
-    where Self: Sized {
-        "Style"
-    }
+    const NAME: &'static str = "Style";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -40,10 +37,7 @@ pub struct Backgrounds {
 }
 
 impl MapElement for Backgrounds {
-    fn name() -> &'static str
-    where Self: Sized {
-        "Backgrounds"
-    }
+    const NAME: &'static str = "Backgrounds";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
         Ok(Self {
@@ -68,10 +62,7 @@ pub struct Foregrounds {
 }
 
 impl MapElement for Foregrounds {
-    fn name() -> &'static str
-    where Self: Sized {
-        "Foregrounds"
-    }
+    const NAME: &'static str = "Foregrounds";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
         Ok(Self {
@@ -101,10 +92,7 @@ pub struct Parallax {
 }
 
 impl MapElement for Parallax {
-    fn name() -> &'static str
-    where Self: Sized {
-        "parallax"
-    }
+    const NAME: &'static str = "parallax";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
         Ok(Self {
@@ -133,10 +121,7 @@ impl MapElement for Parallax {
 pub struct SnowBG;
 
 impl MapElement for SnowBG {
-    fn name() -> &'static str
-    where Self: Sized {
-        "snowBg"
-    }
+    const NAME: &'static str = "snowBg";
 
     fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError> {
         Ok(Self)
@@ -149,10 +134,7 @@ impl MapElement for SnowBG {
 pub struct SnowFG;
 
 impl MapElement for SnowFG {
-    fn name() -> &'static str
-    where Self: Sized {
-        "snowFg"
-    }
+    const NAME: &'static str = "snowFg";
 
     fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError> {
         Ok(Self)

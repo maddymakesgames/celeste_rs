@@ -1,5 +1,6 @@
 use crate::maps::{
     var_types::{Float, Integer},
+    DynMapElement,
     EncodedVar,
     MapElement,
     MapElementParsingError,
@@ -14,10 +15,7 @@ pub struct Levels {
 }
 
 impl MapElement for Levels {
-    fn name() -> &'static str
-    where Self: Sized {
-        "levels"
-    }
+    const NAME: &'static str = "levels";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -69,10 +67,7 @@ pub struct Level {
 }
 
 impl MapElement for Level {
-    fn name() -> &'static str
-    where Self: Sized {
-        "level"
-    }
+    const NAME: &'static str = "level";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
         Ok(Self {
@@ -159,14 +154,11 @@ impl MapElement for Level {
 pub struct Triggers {
     pub offset_x: Float,
     pub offset_y: Float,
-    pub triggers: Vec<Box<dyn MapElement>>,
+    pub triggers: Vec<DynMapElement>,
 }
 
 impl MapElement for Triggers {
-    fn name() -> &'static str
-    where Self: Sized {
-        "triggers"
-    }
+    const NAME: &'static str = "triggers";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -193,10 +185,7 @@ pub struct FGTiles {
 }
 
 impl MapElement for FGTiles {
-    fn name() -> &'static str
-    where Self: Sized {
-        "fgtiles"
-    }
+    const NAME: &'static str = "fgtiles";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -225,10 +214,7 @@ pub struct BGTiles {
 }
 
 impl MapElement for BGTiles {
-    fn name() -> &'static str
-    where Self: Sized {
-        "bgtiles"
-    }
+    const NAME: &'static str = "bgtiles";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -256,10 +242,7 @@ pub struct BGDecals {
 }
 
 impl MapElement for BGDecals {
-    fn name() -> &'static str
-    where Self: Sized {
-        "bgdecals"
-    }
+    const NAME: &'static str = "bgdecals";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -286,10 +269,7 @@ pub struct FGDecals {
 }
 
 impl MapElement for FGDecals {
-    fn name() -> &'static str
-    where Self: Sized {
-        "fgdecals"
-    }
+    const NAME: &'static str = "fgdecals";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -319,10 +299,7 @@ pub struct Decal {
 }
 
 impl MapElement for Decal {
-    fn name() -> &'static str
-    where Self: Sized {
-        "decal"
-    }
+    const NAME: &'static str = "decal";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -354,10 +331,7 @@ pub struct Background {
 }
 
 impl MapElement for Background {
-    fn name() -> &'static str
-    where Self: Sized {
-        "bg"
-    }
+    const NAME: &'static str = "bg";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -385,10 +359,7 @@ pub struct ObjTiles {
 }
 
 impl MapElement for ObjTiles {
-    fn name() -> &'static str
-    where Self: Sized {
-        "objtiles"
-    }
+    const NAME: &'static str = "objtiles";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -420,10 +391,7 @@ pub struct Solids {
 }
 
 impl MapElement for Solids {
-    fn name() -> &'static str
-    where Self: Sized {
-        "solids"
-    }
+    const NAME: &'static str = "solids";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -445,14 +413,11 @@ impl MapElement for Solids {
 pub struct Entities {
     pub offset_x: Float,
     pub offset_y: Float,
-    pub entities: Vec<Box<dyn MapElement>>,
+    pub entities: Vec<DynMapElement>,
 }
 
 impl MapElement for Entities {
-    fn name() -> &'static str
-    where Self: Sized {
-        "entities"
-    }
+    const NAME: &'static str = "entities";
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized {
@@ -467,8 +432,6 @@ impl MapElement for Entities {
         encoder.attribute("offsetX", self.offset_x);
         encoder.attribute("offsetY", self.offset_y);
 
-        for child in &self.entities {
-            encoder.child(child);
-        }
+        encoder.children(&self.entities)
     }
 }

@@ -213,22 +213,28 @@ impl MapAttribute {
 }
 
 pub trait MapElement: Any + Debug {
-    fn name() -> &'static str
-    where Self: Sized;
+    const NAME: &'static str;
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized;
     fn to_raw(&self, encoder: &mut MapEncoder);
 }
 
-pub trait WriteableElement: Any {
+pub trait ErasedMapElement: Any + Debug {
     fn name(&self) -> &'static str;
+    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
+    where Self: Sized;
     fn to_raw(&self, encoder: &mut MapEncoder);
 }
 
-impl<T: MapElement> WriteableElement for T {
+impl<T: MapElement> ErasedMapElement for T {
     fn name(&self) -> &'static str {
-        T::name()
+        T::NAME
+    }
+
+    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
+    where Self: Sized {
+        T::from_raw(parser)
     }
 
     fn to_raw(&self, encoder: &mut MapEncoder) {
@@ -236,9 +242,10 @@ impl<T: MapElement> WriteableElement for T {
     }
 }
 
-impl MapElement for RawMapElement {
-    fn name() -> &'static str
-    where Self: Sized {
+pub type DynMapElement = Box<dyn ErasedMapElement>;
+
+impl ErasedMapElement for RawMapElement {
+    fn name(&self) -> &'static str {
         ""
     }
 
@@ -297,7 +304,7 @@ impl MapManager {
     pub fn encode_map(&mut self, name: impl ToString, root: &MapRoot) {
         let mut lookup = LookupTable::new();
 
-        let root_name = lookup.index_string(<MapRoot as MapElement>::name());
+        let root_name = lookup.index_string(MapRoot::NAME);
 
         let mut encoder = MapEncoder {
             lookup: &mut lookup,
@@ -317,7 +324,7 @@ impl MapManager {
 
     pub fn add_parser<T: MapElement>(&mut self) {
         self.parsers
-            .insert(T::name(), Box::new(ElementParser::<T>::new()));
+            .insert(T::NAME, Box::new(ElementParser::<T>::new()));
     }
 
     pub fn add_entity_parser<T: Entity>(&mut self) {
