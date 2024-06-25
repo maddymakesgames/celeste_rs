@@ -60,11 +60,11 @@ impl MapElement for Foregrounds {
     }
 
     fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.children(&self.parallax_elements);
-
         if self.snow_fg {
             encoder.child(&SnowFG);
         }
+
+        encoder.children(&self.parallax_elements);
     }
 }
 

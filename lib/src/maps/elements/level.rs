@@ -19,10 +19,6 @@ pub struct Levels {
 pub struct Level {
     #[name = "name"]
     pub name: ResolvableString,
-    #[name = "x"]
-    pub x: Float,
-    #[name = "y"]
-    pub y: Float,
     #[name = "width"]
     pub width: Integer,
     #[name = "height"]
@@ -65,18 +61,22 @@ pub struct Level {
     pub delay_alt_music_fade: Option<bool>,
     #[name = "enforceDashNumber"]
     pub enforce_dash_number: Option<Integer>,
+    #[name = "x"]
+    pub x: Float,
+    #[name = "y"]
+    pub y: Float,
     #[name = "c"]
     pub c: Integer,
-    #[child]
-    pub entities: Entities,
-    #[child]
-    pub solids: Solids,
     #[child]
     pub triggers: Triggers,
     #[child]
     pub fg_tiles: FGTiles,
     #[child]
     pub fg_decals: FGDecals,
+    #[child]
+    pub solids: Solids,
+    #[child]
+    pub entities: Entities,
     #[child]
     pub bg_tiles: BGTiles,
     #[child]
@@ -198,7 +198,7 @@ pub struct Solids {
     pub offset_x: Float,
     #[name = "offsetY"]
     pub offset_y: Float,
-    #[name = "innerTex"]
+    #[name = "innerText"]
     pub inner_text: String,
 }
 
