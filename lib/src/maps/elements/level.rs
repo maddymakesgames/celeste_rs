@@ -1,446 +1,214 @@
+use celeste_rs_macros::MapElement;
+
 use crate::maps::{
     var_types::{Float, Integer},
     DynMapElement,
-    EncodedVar,
     MapElement,
-    MapElementParsingError,
-    MapEncoder,
-    MapParser,
     ResolvableString,
 };
 
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "levels"]
 pub struct Levels {
+    #[child]
     pub levels: Vec<Level>,
 }
 
-impl MapElement for Levels {
-    const NAME: &'static str = "levels";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            levels: parser.parse_all_elements()?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        for level in &self.levels {
-            encoder.child(level)
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "level"]
 pub struct Level {
+    #[name = "name"]
     pub name: ResolvableString,
+    #[name = "x"]
     pub x: Float,
+    #[name = "y"]
     pub y: Float,
+    #[name = "width"]
     pub width: Integer,
+    #[name = "height"]
     pub height: Integer,
+    #[name = "windPattern"]
     pub wind_pattern: ResolvableString,
+    #[name = "dark"]
     pub dark: bool,
+    #[name = "cameraOffsetX"]
     pub camera_offset_x: Integer,
+    #[name = "cameraOffsetY"]
     pub camera_offset_y: Integer,
+    #[name = "alt_music"]
     pub alt_music: ResolvableString,
+    #[name = "music"]
     pub music: ResolvableString,
+    #[name = "musicLayer1"]
     pub music_layer_1: bool,
+    #[name = "musicLayer2"]
     pub music_layer_2: bool,
+    #[name = "musicLayer3"]
     pub music_layer_3: bool,
+    #[name = "musicLayer4"]
     pub music_layer_4: bool,
+    #[name = "musicProgress"]
     pub music_progress: Option<ResolvableString>,
+    #[name = "ambience"]
     pub ambience: Option<ResolvableString>,
+    #[name = "ambienceProgress"]
     pub ambience_progress: Option<ResolvableString>,
+    #[name = "underwater"]
     pub underwater: bool,
+    #[name = "space"]
     pub space: Option<bool>,
+    #[name = "disableDownTransition"]
     pub disable_down_transition: Option<bool>,
+    #[name = "whisper"]
     pub whisper: Option<bool>,
+    #[name = "delayAltMusicFade"]
     pub delay_alt_music_fade: Option<bool>,
+    #[name = "enforceDashNumber"]
     pub enforce_dash_number: Option<Integer>,
+    #[name = "c"]
     pub c: Integer,
+    #[child]
     pub entities: Entities,
+    #[child]
     pub solids: Solids,
+    #[child]
     pub triggers: Triggers,
+    #[child]
     pub fg_tiles: FGTiles,
+    #[child]
     pub fg_decals: FGDecals,
+    #[child]
     pub bg_tiles: BGTiles,
+    #[child]
     pub bg_decals: BGDecals,
+    #[child]
     pub bg: Background,
+    #[child]
     pub objtiles: ObjTiles,
 }
-
-impl MapElement for Level {
-    const NAME: &'static str = "level";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
-        Ok(Self {
-            name: parser.get_attribute("name")?,
-            x: parser.get_attribute("x")?,
-            y: parser.get_attribute("y")?,
-            width: parser.get_attribute("width")?,
-            height: parser.get_attribute("height")?,
-            wind_pattern: parser.get_attribute("windPattern")?,
-            dark: parser.get_attribute("dark")?,
-            camera_offset_x: parser.get_attribute("cameraOffsetX")?,
-            camera_offset_y: parser.get_attribute("cameraOffsetY")?,
-            alt_music: parser.get_attribute("alt_music")?,
-            music: parser.get_attribute("music")?,
-            music_layer_1: parser.get_attribute("musicLayer1")?,
-            music_layer_2: parser.get_attribute("musicLayer2")?,
-            music_layer_3: parser.get_attribute("musicLayer3")?,
-            music_layer_4: parser.get_attribute("musicLayer4")?,
-            music_progress: parser.get_optional_attribute("musicProgress"),
-            ambience: parser.get_optional_attribute("ambience"),
-            ambience_progress: parser.get_optional_attribute("ambienceProgress"),
-            underwater: parser.get_attribute("underwater")?,
-            space: parser.get_optional_attribute("space"),
-            disable_down_transition: parser.get_optional_attribute("disableDownTransition"),
-            whisper: parser.get_optional_attribute("whisper"),
-            delay_alt_music_fade: parser.get_optional_attribute("delayAltMusicFade"),
-            enforce_dash_number: parser.get_optional_attribute("enforceDashNumber"),
-            c: parser.get_attribute("c")?,
-            entities: parser.parse_element()?,
-            solids: parser.parse_element()?,
-            triggers: parser.parse_element()?,
-            fg_tiles: parser.parse_element()?,
-            fg_decals: parser.parse_element()?,
-            bg_tiles: parser.parse_element()?,
-            bg_decals: parser.parse_element()?,
-            bg: parser.parse_element()?,
-            objtiles: parser.parse_element()?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("name", self.name.clone());
-        encoder.attribute("width", self.width);
-        encoder.attribute("height", self.height);
-        encoder.attribute("windPattern", self.wind_pattern.clone());
-        encoder.attribute("dark", self.dark);
-        encoder.attribute("cameraOffsetX", self.camera_offset_x);
-        encoder.attribute("cameraOffsetY", self.camera_offset_y);
-        encoder.attribute("alt_music", self.alt_music.clone());
-        encoder.attribute("music", self.music.clone());
-        encoder.attribute("musicLayer1", self.music_layer_1);
-        encoder.attribute("musicLayer2", self.music_layer_2);
-        encoder.attribute("musicLayer3", self.music_layer_3);
-        encoder.attribute("musicLayer4", self.music_layer_4);
-        if let Some(progress) = &self.music_progress {
-            encoder.attribute("musicProgress", progress.clone());
-        }
-        encoder.optional_attribute("ambience", &self.ambience);
-        encoder.optional_attribute("ambienceProgress", &self.ambience_progress);
-        encoder.attribute("underwater", self.underwater);
-        encoder.optional_attribute("space", &self.space);
-        encoder.optional_attribute("disableDownTransition", &self.disable_down_transition);
-        encoder.optional_attribute("whisper", &self.whisper);
-        encoder.optional_attribute("delayAltMusicFade", &self.delay_alt_music_fade);
-        encoder.optional_attribute("enforceDashNumber", &self.enforce_dash_number);
-        encoder.attribute("x", self.x);
-        encoder.attribute("y", self.y);
-        encoder.attribute("c", self.c);
-        encoder.child(&self.triggers);
-        encoder.child(&self.fg_tiles);
-        encoder.child(&self.fg_decals);
-        encoder.child(&self.solids);
-        encoder.child(&self.entities);
-        encoder.child(&self.bg_tiles);
-        encoder.child(&self.bg_decals);
-        encoder.child(&self.bg);
-        encoder.child(&self.objtiles);
-    }
-}
-
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "triggers"]
 pub struct Triggers {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[dyn_child]
     pub triggers: Vec<DynMapElement>,
 }
 
-impl MapElement for Triggers {
-    const NAME: &'static str = "triggers";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            triggers: parser.parse_any_element()?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-        encoder.children(&self.triggers);
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "fgtiles"]
 pub struct FGTiles {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[name = "tileset"]
     pub tileset: ResolvableString,
+    #[name = "exportMode"]
     pub export_mode: Integer,
+    #[name = "innerText"]
     pub inner_text: Option<String>,
 }
 
-impl MapElement for FGTiles {
-    const NAME: &'static str = "fgtiles";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            tileset: parser.get_attribute("tileset")?,
-            export_mode: parser.get_attribute("exportMode")?,
-            inner_text: parser.get_optional_attribute("innerText"),
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-        encoder.attribute("tileset", self.tileset.clone());
-        encoder.attribute("exportMode", self.export_mode);
-        encoder.optional_attribute(
-            "innerText",
-            &self.inner_text.as_ref().map(EncodedVar::new_rle_str),
-        )
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "bgtiles"]
 pub struct BGTiles {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[name = "tileset"]
     pub tileset: ResolvableString,
+    #[name = "exportMode"]
     pub export_mode: Integer,
 }
 
-impl MapElement for BGTiles {
-    const NAME: &'static str = "bgtiles";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            tileset: parser.get_attribute("tileset")?,
-            export_mode: parser.get_attribute("exportMode")?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-        encoder.attribute("tileset", self.tileset.clone());
-        encoder.attribute("exportMode", self.export_mode);
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "bgdecals"]
 pub struct BGDecals {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[child]
     pub decals: Vec<Decal>,
 }
 
-impl MapElement for BGDecals {
-    const NAME: &'static str = "bgdecals";
 
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            decals: parser.parse_all_elements()?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-        encoder.children(&self.decals);
-    }
-}
-
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "fgdecals"]
 pub struct FGDecals {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[child]
     pub decals: Vec<Decal>,
 }
 
-impl MapElement for FGDecals {
-    const NAME: &'static str = "fgdecals";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            decals: parser.parse_all_elements()?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-        encoder.children(&self.decals);
-    }
-}
-
-
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, MapElement)]
+#[name = "decal"]
 pub struct Decal {
+    #[name = "x"]
     pub x: Float,
+    #[name = "y"]
     pub y: Float,
+    #[name = "scaleX"]
     pub scale_x: Float,
+    #[name = "scaleY"]
     pub scale_y: Float,
+    #[name = "rotation"]
     pub rotation: Option<Float>,
+    #[name = "texture"]
     pub texture: ResolvableString,
 }
 
-impl MapElement for Decal {
-    const NAME: &'static str = "decal";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            x: parser.get_attribute("x")?,
-            y: parser.get_attribute("y")?,
-            scale_x: parser.get_attribute("scaleX")?,
-            scale_y: parser.get_attribute("scaleY")?,
-            rotation: parser.get_optional_attribute("rotation"),
-            texture: parser.get_attribute("texture")?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("x", self.x);
-        encoder.attribute("y", self.y);
-        encoder.attribute("scaleX", self.scale_x);
-        encoder.attribute("scaleY", self.scale_y);
-        encoder.optional_attribute("rotation", &self.rotation);
-        encoder.attribute("texture", self.texture.clone());
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "bg"]
 pub struct Background {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[name = "innerText"]
     pub inner_text: String,
 }
 
-impl MapElement for Background {
-    const NAME: &'static str = "bg";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            inner_text: parser.get_attribute("innerText")?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-        encoder.attribute("innerText", EncodedVar::new_rle_str(&self.inner_text));
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "objtiles"]
 pub struct ObjTiles {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[name = "tileset"]
     pub tileset: ResolvableString,
+    #[name = "exportMode"]
     pub export_mode: Integer,
+    #[name = "innerText"]
     pub inner_text: Option<String>,
 }
 
-impl MapElement for ObjTiles {
-    const NAME: &'static str = "objtiles";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            tileset: parser.get_attribute("tileset")?,
-            export_mode: parser.get_attribute("exportMode")?,
-            inner_text: parser.get_optional_attribute("innerText"),
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-        encoder.attribute("tileset", self.tileset.clone());
-        encoder.attribute("exportMode", self.export_mode);
-        encoder.optional_attribute(
-            "innerText",
-            &self.inner_text.as_ref().map(EncodedVar::new_rle_str),
-        );
-    }
-}
-
-#[derive(Clone, Debug)]
+#[derive(Debug, MapElement)]
+#[name = "solids"]
 pub struct Solids {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[name = "innerTex"]
     pub inner_text: String,
 }
 
-impl MapElement for Solids {
-    const NAME: &'static str = "solids";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            inner_text: parser.get_attribute("innerText")?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-        encoder.attribute("innerText", EncodedVar::new_rle_str(&self.inner_text));
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "entities"]
 pub struct Entities {
+    #[name = "offsetX"]
     pub offset_x: Float,
+    #[name = "offsetY"]
     pub offset_y: Float,
+    #[dyn_child]
     pub entities: Vec<DynMapElement>,
-}
-
-impl MapElement for Entities {
-    const NAME: &'static str = "entities";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            offset_x: parser.get_attribute("offsetX")?,
-            offset_y: parser.get_attribute("offsetY")?,
-            entities: parser.parse_any_element()?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("offsetX", self.offset_x);
-        encoder.attribute("offsetY", self.offset_y);
-
-        encoder.children(&self.entities)
-    }
 }

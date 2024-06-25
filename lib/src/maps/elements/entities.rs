@@ -1,3 +1,5 @@
+use celeste_rs_macros::MapElement;
+
 use crate::maps::{
     encoder::MapEncoder,
     parser::{MapElementParsingError, MapParser},
@@ -58,27 +60,13 @@ pub trait Entity: Debug + Any {
     fn to_raw(&self, encoder: &mut MapEncoder);
 }
 
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "node"]
 pub struct Node {
+    #[name = "x"]
     x: Float,
+    #[name = "y"]
     y: Float,
-}
-
-impl MapElement for Node {
-    const NAME: &'static str = "node";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            x: parser.get_attribute("x")?,
-            y: parser.get_attribute("y")?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("x", self.x);
-        encoder.attribute("y", self.y);
-    }
 }
 
 pub trait UnitEntity: Debug + Any + Copy + Default {

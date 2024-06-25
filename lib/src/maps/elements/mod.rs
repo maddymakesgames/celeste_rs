@@ -1,13 +1,12 @@
+use celeste_rs_macros::MapElement;
+
 use crate::maps::{
     entities::add_entity_parsers,
     level::*,
     style::*,
     var_types::Integer,
     MapElement,
-    MapElementParsingError,
-    MapEncoder,
     MapManager,
-    MapParser,
 };
 
 pub mod entities;
@@ -41,81 +40,33 @@ impl MapManager {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, MapElement)]
+#[name = "Map"]
 pub struct MapRoot {
+    #[child]
     pub filler: Filler,
+    #[child]
     pub levels: Levels,
+    #[child]
     pub style: Styles,
 }
 
-impl MapElement for MapRoot {
-    const NAME: &'static str = "Map";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
-        let filler = parser.parse_element::<Filler>()?;
-        let levels = parser.parse_element::<Levels>()?;
-        let style = parser.parse_element::<Styles>()?;
-
-        Ok(MapRoot {
-            filler,
-            levels,
-            style,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.child(&self.filler);
-        encoder.child(&self.levels);
-        encoder.child(&self.style);
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, MapElement)]
+#[name = "Filler"]
 pub struct Filler {
+    #[child]
     pub filler: Vec<Rect>,
 }
 
-impl MapElement for Filler {
-    const NAME: &'static str = "Filler";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            filler: parser.parse_all_elements()?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        for filler in &self.filler {
-            encoder.child(filler)
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, MapElement)]
+#[name = "rect"]
 pub struct Rect {
+    #[name = "x"]
     pub x: Integer,
+    #[name = "y"]
     pub y: Integer,
+    #[name = "w"]
     pub w: Integer,
+    #[name = "h"]
     pub h: Integer,
-}
-
-impl MapElement for Rect {
-    const NAME: &'static str = "rect";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError> {
-        let x = parser.get_attribute("x")?;
-        let y = parser.get_attribute("y")?;
-        let w = parser.get_attribute("w")?;
-        let h = parser.get_attribute("h")?;
-
-        Ok(Rect { x, y, w, h })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("x", self.x);
-        encoder.attribute("y", self.y);
-        encoder.attribute("w", self.w);
-        encoder.attribute("h", self.h);
-    }
 }
