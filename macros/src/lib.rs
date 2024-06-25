@@ -1,3 +1,5 @@
+mod map_element;
+
 use proc_macro2::{Span, TokenStream};
 use proc_macro_crate::{crate_name, FoundCrate};
 use quote::{format_ident, quote, ToTokens};
@@ -6,6 +8,7 @@ use syn::{
     punctuated::Punctuated,
     token::{Bracket, Colon, Crate, Paren, PathSep, Pound, Pub},
     Attribute,
+    DeriveInput,
     Error,
     Field,
     FieldMutability,
@@ -22,7 +25,7 @@ use syn::{
     Visibility,
 };
 
-fn celeste_rs() -> TokenStream {
+pub(crate) fn celeste_rs() -> TokenStream {
     match crate_name("celeste_rs").expect("Using celeste_rs_macros without celeste_rs :(((((") {
         FoundCrate::Itself => Crate(Span::call_site()).to_token_stream(),
         FoundCrate::Name(named) => Ident::new(&named, Span::call_site()).to_token_stream(),
@@ -169,6 +172,22 @@ pub fn root_tag(
                 }
             }
         }
+    }
+    .into()
+}
+
+#[proc_macro_derive(MapElement, attributes(child, name, dyn_child))]
+pub fn map_element_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    if matches!(input.data, syn::Data::Enum(_) | syn::Data::Union(_)) {
+        Error::new(
+            input.ident.span(),
+            "MapElement can currently only be implemented for structs",
+        )
+        .into_compile_error()
+    } else {
+        map_element::map_element_derive(input).unwrap_or_else(Error::into_compile_error)
     }
     .into()
 }
