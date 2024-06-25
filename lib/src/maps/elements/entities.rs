@@ -1,4 +1,4 @@
-use celeste_rs_macros::MapElement;
+use celeste_rs_macros::{Entity, MapElement};
 
 use crate::maps::{
     encoder::MapEncoder,
@@ -69,21 +69,6 @@ pub struct Node {
     y: Float,
 }
 
-pub trait UnitEntity: Debug + Any + Copy + Default {
-    const NAME: &'static str;
-}
-
-impl<T: UnitEntity> Entity for T {
-    const NAME: &'static str = T::NAME;
-
-    fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(T::default())
-    }
-
-    fn to_raw(&self, _encoder: &mut MapEncoder) {}
-}
-
 
 macro_rules! unit_entities {
     ($($struct_name: ident, $name: literal),*) => {
@@ -97,201 +82,212 @@ macro_rules! unit_entities {
             #[derive(Debug, Clone, Copy, Default)]
             pub struct $struct_name;
 
-            impl UnitEntity for $struct_name {
+            impl Entity for $struct_name {
                 const NAME: &'static str = $name;
+
+                fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError>
+                where Self: Sized {
+                    Ok(Self::default())
+                }
+
+                fn to_raw(&self, _encoder: &mut MapEncoder) {}
             }
         )*
     };
 }
 
-macro_rules! entities {
-    ($($premade_structs: ident),*$(($struct_name: ident, $name: literal, $field_data: tt $($node_data: tt)?)),*) => {
-        pub fn add_entity_parsers(mm: &mut MapManager) {
-            $(
-                mm.add_entity_parser::<$struct_name>();
-            )*
-            $(
-                mm.add_entity_parser::<$premade_structs>();
-            )*
-            add_unit_entity_parsers(mm);
-        }
-
-        $(
-            entities!{p $struct_name, $name, $field_data $($node_data)?}
-        )*
-    };
-
-    (p $struct_name: ident, $name: literal, [$($field_name: ident, $field_bin_name: literal, $field_type: ty),*]) => {
-        #[derive(Debug)]
-        pub struct $struct_name {
-            $(pub $field_name: $field_type),*
-        }
-
-        impl Entity for $struct_name {
-            const NAME: &'static str = $name;
-
-            fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-            where Self: Sized {
-                Ok(Self {
-                    $($field_name: parser.get_attribute($field_bin_name)?),*
-                })
-            }
-
-            fn to_raw(&self, encoder: &mut MapEncoder) {
-                $(
-                    encoder.attribute($field_bin_name, self.$field_name.clone());
-                )*
-            }
-        }
-    };
-
-    (p $struct_name: ident, $name: literal, [$($field_name: ident, $field_bin_name: literal, $field_type: ty),*] ($node_name: ident)) => {
-        #[derive(Debug)]
-        pub struct $struct_name {
-            $(pub $field_name: $field_type,)*
-            $node_name: Node
-        }
-
-        impl Entity for $struct_name {
-            const NAME: &'static str = $name;
-
-            fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-            where Self: Sized {
-                Ok(Self {
-                    $node_name: parser.parse_element()?,
-                    $($field_name: parser.get_attribute($field_bin_name)?),*
-                })
-            }
-
-            fn to_raw(&self, encoder: &mut MapEncoder) {
-                $(
-                    encoder.attribute($field_bin_name, self.$field_name.clone());
-                )*
-                encoder.child(&self.$node_name);
-            }
-        }
-    };
-
-    (p $struct_name: ident, $name: literal, [$($field_name: ident, $field_bin_name: literal, $field_type: ty),*] [$node_name: ident]) => {
-        #[derive(Debug)]
-        pub struct $struct_name {
-            $(pub $field_name: $field_type),*
-            $node_name: Vec<Node>
-        }
-
-        impl Entity for $struct_name {
-            const NAME: &'static str = $name;
-
-            fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-            where Self: Sized {
-                Ok(Self {
-                    $node_name: parser.parse_all_elements()?,
-                    $($field_name: parser.get_attribute($field_bin_name)?),*
-                })
-            }
-
-            fn to_raw(&self, encoder: &mut MapEncoder) {
-                $(
-                    encoder.attribute($field_bin_name, self.$field_name.clone());
-                )*
-                encoder.children(&self.$node_name);
-            }
-        }
-    };
+pub fn add_entity_parsers(mm: &mut MapManager) {
+    mm.add_entity_parser::<SpikesUp>();
+    mm.add_entity_parser::<SpikesDown>();
+    mm.add_entity_parser::<SpikesLeft>();
+    mm.add_entity_parser::<SpikesRight>();
+    mm.add_entity_parser::<JumpThru>();
+    mm.add_entity_parser::<Wire>();
+    mm.add_entity_parser::<Strawberry>();
+    mm.add_entity_parser::<Lightbeam>();
+    mm.add_entity_parser::<Cassette>();
+    mm.add_entity_parser::<CassetteBlock>();
+    mm.add_entity_parser::<DashBlock>();
+    mm.add_entity_parser::<Bonfire>();
+    mm.add_entity_parser::<NPC>();
+    mm.add_entity_parser::<CoverupWall>();
+    mm.add_entity_parser::<Memorial>();
+    mm.add_entity_parser::<BirdForsakenCityGem>();
+    mm.add_entity_parser::<FallingBlock>();
+    mm.add_entity_parser::<ZipMover>();
+    mm.add_entity_parser::<FakeWall>();
+    mm.add_entity_parser::<Spring>();
+    mm.add_entity_parser::<Refill>();
+    add_unit_entity_parsers(mm);
+}
+#[derive(Debug, Entity)]
+#[name = "spikesUp"]
+pub struct SpikesUp {
+    #[name = "type"]
+    pub kind: ResolvableString,
+}
+#[derive(Debug, Entity)]
+#[name = "spikesDown"]
+pub struct SpikesDown {
+    #[name = "type"]
+    pub kind: ResolvableString,
 }
 
-entities! {
-    FallingBlock, ZipMover, FakeWall, Spring, Refill
-    (
-        SpikesUp, "spikesUp",
-        [kind, "type", ResolvableString]
-    ),
-    (
-        SpikesDown, "spikesDown",
-        [kind, "type", ResolvableString]
-    ),
-    (
-        SpikesLeft, "spikesLeft",
-        [kind, "type", ResolvableString]
-    ),
-    (
-        SpikesRight, "spikesRight",
-        [kind, "type", ResolvableString]
-    ),
-    (
-        JumpThru, "jumpThru",
-        [texture, "texture", ResolvableString]
-    ),
-    (
-        Wire, "wire",
-        [above, "above", bool]
-        (to)
-    ),
-    (
-        Strawberry, "strawberry",
-        [
-            winged, "winged", bool,
-            checkpoint_id, "checkpointID", Integer,
-            order, "order", Integer
-        ]
-    ),
-    (
-        Lightbeam, "lightbeam",
-        [
-            rotation, "rotation", Integer,
-            flag, "flag", ResolvableString
-        ]
-    ),
-    (
-        Cassette, "cassette",
-        []
-        [bubble_points]
-    ),
-    (
-        CassetteBlock, "cassetteBlock",
-        [
-            index, "index", Integer,
-            finished_state, "finishedState", bool
-        ]
-    ),
-    (
-        DashBlock, "dashBlock",
-        [
-            permanent, "permanent", bool,
-            tile_type, "tiletype", Integer,
-            blend_in, "blendin", bool,
-            can_dash, "canDash", bool
-        ]
-    ),
-    (
-        Bonfire, "bonfire",
-        [
-            mode, "mode", ResolvableString
-        ]
-    ),
-    (
-        NPC, "npc",
-        [
-            npc, "npc", ResolvableString
-        ]
-    ),
-    (
-        CoverupWall, "coverupWall",
-        [
-            tile_type, "tiletype", Integer
-        ]
-    ),
-    (
-        Memorial, "memorial",
-        [
-            dreaming, "dreaming", bool
-        ]
-    ),
-    (
-        BirdForsakenCityGem, "birdForsakenCityGem",
-        []
-        [nodes]
-    )
+#[derive(Debug, Entity)]
+#[name = "spikesLeft"]
+pub struct SpikesLeft {
+    #[name = "type"]
+    pub kind: ResolvableString,
+}
+
+#[derive(Debug, Entity)]
+#[name = "spikesRight"]
+pub struct SpikesRight {
+    #[name = "type"]
+    pub kind: ResolvableString,
+}
+
+
+#[derive(Debug, Entity)]
+#[name = "jumpThru"]
+pub struct JumpThru {
+    #[name = "texture"]
+    pub texture: ResolvableString,
+}
+
+#[derive(Debug, Entity)]
+#[name = "wire"]
+pub struct Wire {
+    #[name = "above"]
+    pub above: bool,
+    pub to: Node,
+}
+
+#[derive(Debug, Entity)]
+#[name = "strawberry"]
+pub struct Strawberry {
+    #[name = "winged"]
+    pub winged: bool,
+    #[name = "checkpointID"]
+    pub checkpoint_id: Integer,
+    #[name = "order"]
+    pub order: Integer,
+}
+
+#[derive(Debug, Entity)]
+#[name = "lightbeam"]
+pub struct Lightbeam {
+    #[name = "rotation"]
+    pub rotation: Integer,
+    #[name = "flag"]
+    pub flag: ResolvableString,
+}
+
+#[derive(Debug, Entity)]
+#[name = "cassette"]
+pub struct Cassette {
+    #[node]
+    bubble_points: Vec<Node>,
+}
+
+#[derive(Debug, Entity)]
+#[name = "cassetteBlock"]
+pub struct CassetteBlock {
+    #[name = "index"]
+    pub index: Integer,
+    #[name = "finishedState"]
+    pub finished_state: bool,
+}
+
+#[derive(Debug, Entity)]
+#[name = "dashBlock"]
+pub struct DashBlock {
+    #[name = "permanent"]
+    pub permanent: bool,
+    #[name = "tiletype"]
+    pub tile_type: Integer,
+    #[name = "blendin"]
+    pub blend_in: bool,
+    #[name = "canDash"]
+    pub can_dash: bool,
+}
+#[derive(Debug, Entity)]
+#[name = "bonfire"]
+pub struct Bonfire {
+    #[name = "mode"]
+    pub mode: ResolvableString,
+}
+
+#[derive(Debug, Entity)]
+#[name = "npc"]
+pub struct NPC {
+    #[name = "npc"]
+    pub npc: ResolvableString,
+}
+
+#[derive(Debug, Entity)]
+#[name = "coverupWall"]
+pub struct CoverupWall {
+    #[name = "tiletype"]
+    pub tile_type: Integer,
+}
+
+#[derive(Debug, Entity)]
+#[name = "memorial"]
+pub struct Memorial {
+    #[name = "dreaming"]
+    pub dreaming: bool,
+}
+
+#[derive(Debug, Entity)]
+#[name = "birdForsakenCityGem"]
+pub struct BirdForsakenCityGem {
+    #[node]
+    nodes: Vec<Node>,
+}
+
+#[derive(Debug, Entity)]
+#[name = "fallingBlock"]
+pub struct FallingBlock {
+    #[name = "tiletype"]
+    pub tile_type: Integer,
+    #[name = "behind"]
+    pub behind: bool,
+    #[name = "climbFall"]
+    pub climb_fall: Option<bool>,
+}
+
+#[derive(Debug, Entity)]
+#[name = "fakeWall"]
+pub struct FakeWall {
+    #[name = "tiletype"]
+    pub tile_type: Integer,
+    #[name = "playTransitionReveal"]
+    pub play_transition_reveal: Option<bool>,
+}
+
+#[derive(Debug, Entity)]
+#[name = "spring"]
+pub struct Spring {
+    #[name = "playerCanUse"]
+    pub player_can_use: Option<bool>,
+}
+
+#[derive(Debug, Entity)]
+#[name = "zipMover"]
+pub struct ZipMover {
+    #[name = "theme"]
+    pub theme: Option<ResolvableString>,
+    pub to: Node,
+}
+
+#[derive(Debug, Entity)]
+#[name = "refill"]
+pub struct Refill {
+    #[name = "twoDash"]
+    pub two_dash: Option<bool>,
+    #[name = "oneUse"]
+    pub one_use: Option<bool>,
 }
 
 unit_entities! {
@@ -301,119 +297,4 @@ unit_entities! {
     Checkpoint, "checkpoint",
     WingedGoldenStrawberry, "memorialTextController",
     FlutterBird, "flutterbird"
-}
-
-#[derive(Debug)]
-pub struct FallingBlock {
-    pub tile_type: Integer,
-    pub behind: bool,
-    pub climb_fall: Option<bool>,
-}
-
-impl Entity for FallingBlock {
-    const NAME: &'static str = "fallingBlock";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            tile_type: parser.get_attribute("tiletype")?,
-            behind: parser.get_attribute("behind")?,
-            climb_fall: parser.get_optional_attribute("climbFall"),
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("tiletype", self.tile_type);
-        encoder.attribute("behind", self.behind);
-        encoder.optional_attribute("climbFall", &self.climb_fall);
-    }
-}
-
-#[derive(Debug)]
-pub struct FakeWall {
-    pub tile_type: Integer,
-    pub play_transition_reveal: Option<bool>,
-}
-
-impl Entity for FakeWall {
-    const NAME: &'static str = "fakeWall";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            tile_type: parser.get_attribute("tiletype")?,
-            play_transition_reveal: parser.get_optional_attribute("playTransitionReveal"),
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("tiletype", self.tile_type);
-        encoder.optional_attribute("playTransitionReveal", &self.play_transition_reveal);
-    }
-}
-
-#[derive(Debug)]
-pub struct Spring {
-    pub player_can_use: Option<bool>,
-}
-
-impl Entity for Spring {
-    const NAME: &'static str = "spring";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            player_can_use: parser.get_optional_attribute("playerCanUse"),
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.optional_attribute("playerCanUse", &self.player_can_use);
-    }
-}
-
-#[derive(Debug)]
-pub struct ZipMover {
-    pub theme: Option<ResolvableString>,
-    pub to: Node,
-}
-
-impl Entity for ZipMover {
-    const NAME: &'static str = "zipMover";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            theme: parser.get_optional_attribute("theme"),
-            to: parser.parse_element()?,
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.optional_attribute("theme", &self.theme);
-        encoder.child(&self.to);
-    }
-}
-
-#[derive(Debug)]
-pub struct Refill {
-    pub two_dash: Option<bool>,
-    pub one_use: Option<bool>,
-}
-
-impl Entity for Refill {
-    const NAME: &'static str = "refill";
-
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(Self {
-            two_dash: parser.get_optional_attribute("twoDash"),
-            one_use: parser.get_optional_attribute("oneUse"),
-        })
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.optional_attribute("twoDash", &self.two_dash);
-        encoder.optional_attribute("oneUse", &self.one_use);
-    }
 }
