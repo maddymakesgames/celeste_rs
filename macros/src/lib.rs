@@ -1,3 +1,4 @@
+mod entity;
 mod map_element;
 
 use proc_macro2::{Span, TokenStream};
@@ -188,6 +189,22 @@ pub fn map_element_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
         .into_compile_error()
     } else {
         map_element::map_element_derive(input).unwrap_or_else(Error::into_compile_error)
+    }
+    .into()
+}
+
+#[proc_macro_derive(Entity, attributes(node, name))]
+pub fn entity_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    if matches!(input.data, syn::Data::Enum(_) | syn::Data::Union(_)) {
+        Error::new(
+            input.ident.span(),
+            "Entity can currently only be implemented for structs",
+        )
+        .into_compile_error()
+    } else {
+        entity::entity_derive(input).unwrap_or_else(Error::into_compile_error)
     }
     .into()
 }
