@@ -5,7 +5,7 @@ use celeste_rs::saves::{
     ModSaveData,
     SaveData,
 };
-use eframe::egui::{RichText, Ui};
+use eframe::egui::{ComboBox, RichText, Ui};
 use tokio::{
     runtime::Runtime,
     sync::{
@@ -33,6 +33,7 @@ pub struct OperationsTab<'a> {
 pub struct OperationsData {
     merge_file_listener: Option<Receiver<Option<Vec<u8>>>>,
     load_file_listener: Option<Receiver<Option<(String, LoadableFiles)>>>,
+    selected_file_to_save: usize,
 }
 
 impl OperationsData {
@@ -40,6 +41,7 @@ impl OperationsData {
         OperationsData {
             merge_file_listener: None,
             load_file_listener: None,
+            selected_file_to_save: 0,
         }
     }
 }
@@ -81,10 +83,19 @@ impl<'a> EditorTab<'a> for OperationsTab<'a> {
 
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
+                ui.label("File to save: ");
+                ComboBox::new("operations_save_file_combo", "").show_index(
+                    ui,
+                    &mut data.selected_file_to_save,
+                    self.files.len(),
+                    |i| self.files[i].file_name(),
+                );
                 if ui.button(RichText::new("Save File").info()).clicked() {
-                    self.save_files(rt, popups);
+                    self.save_file(data, rt, popups);
                 }
+            });
 
+            ui.horizontal(|ui| {
                 if ui.button(RichText::new("Load File").info()).clicked() {
                     self.load_file(data, rt, popups);
                 }
@@ -125,6 +136,44 @@ impl<'a> EditorTab<'a> for OperationsTab<'a> {
 }
 
 impl<'a> OperationsTab<'a> {
+    fn save_file(
+        &self,
+        data: &mut OperationsData,
+        rt: &Runtime,
+        popups: &Arc<Mutex<Vec<PopupWindow>>>,
+    ) {
+        let file = &self.files[data.selected_file_to_save];
+
+        match file {
+            LoadableFiles::SaveData(file_name, save_data) =>
+                OperationsTab::save_save_data(save_data, file_name, rt, popups),
+            LoadableFiles::ModSaveData(file_name, mod_save_data) =>
+                OperationsTab::save_mod_save_data(mod_save_data, file_name, rt, popups),
+            LoadableFiles::ModSave(file_name, mod_save) => OperationsTab::save_yaml_file(
+                mod_save,
+                ParsedModSave::to_writer,
+                file_name,
+                rt,
+                popups,
+            ),
+            LoadableFiles::ModSession(file_name, mod_session) => OperationsTab::save_yaml_file(
+                mod_session,
+                ParsedModSession::to_writer,
+                file_name,
+                rt,
+                popups,
+            ),
+            LoadableFiles::ModSetting(file_name, mod_setting) => OperationsTab::save_yaml_file(
+                mod_setting,
+                ParsedModSetting::to_writer,
+                file_name,
+                rt,
+                popups,
+            ),
+        }
+    }
+
+    #[allow(dead_code)]
     fn save_files(&self, rt: &Runtime, popups: &Arc<Mutex<Vec<PopupWindow>>>) {
         for file in self.files.iter() {
             match file {
@@ -157,7 +206,7 @@ impl<'a> OperationsTab<'a> {
         }
     }
 
-    fn save_file(
+    fn save_file_impl(
         data: String,
         file_name: &str,
         rt: &Runtime,
@@ -242,7 +291,7 @@ impl<'a> OperationsTab<'a> {
             }
         };
 
-        OperationsTab::save_file(serialized, file_name, rt, popups);
+        OperationsTab::save_file_impl(serialized, file_name, rt, popups);
     }
 
     fn save_mod_save_data(
@@ -266,7 +315,7 @@ impl<'a> OperationsTab<'a> {
             }
         };
 
-        OperationsTab::save_file(serialized, file_name, rt, popups);
+        OperationsTab::save_file_impl(serialized, file_name, rt, popups);
     }
 
     fn save_yaml_file<T, E: std::fmt::Debug>(
@@ -287,7 +336,7 @@ impl<'a> OperationsTab<'a> {
                 ),
             ));
         } else {
-            OperationsTab::save_file(buf, file_name, rt, popups);
+            OperationsTab::save_file_impl(buf, file_name, rt, popups);
         }
     }
 
