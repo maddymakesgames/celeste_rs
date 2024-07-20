@@ -168,7 +168,11 @@ pub struct Audio {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AmbienceVolume {
     #[serde(rename(serialize = "@xsi:nil", deserialize = "@nil"))]
-    pub val: bool,
+    #[serde(default)]
+    pub nil: bool,
+    #[serde(rename = "$text")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub val: Option<f32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
