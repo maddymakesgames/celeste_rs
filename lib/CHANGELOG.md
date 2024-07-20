@@ -1,3 +1,6 @@
+# celeste_rs/0.4.0 - 2024-07-20
+- Fix bug where `AmbienceVolume` can be non-null
+
 # celeste_rs/0.3.0 - 2024-06-04
 - Add support for `modsave`, `modsession`, and `modsetting` file parsing
 - Add support for `x-AurorasAdditions-modsave` files
