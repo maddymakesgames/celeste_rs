@@ -1,5 +1,11 @@
 # celeste_rs/0.4.0 - 2024-07-20
 - Fix bug where `AmbienceVolume` can be non-null
+- Start adding support for reading & writing maps
+    - Map parsing and encoding can be accesssed through the `MapManager` struct
+    - Any unrecognized elements found will be left as a `RawMapElement`
+    - Any heterogenous arrays will store `DynMapElement`s which can be downcast into actual structs by checking against the element name.
+    - You can add support for new elements by implementing `MapElement` for a struct and then using `MapManager::add_parser`
+    - We also provide a derive macro for `MapElement` and `Entity`. Look at the implementations in `maps/elements` to see how to use them. 
 
 # celeste_rs/0.3.0 - 2024-06-04
 - Add support for `modsave`, `modsession`, and `modsetting` file parsing
