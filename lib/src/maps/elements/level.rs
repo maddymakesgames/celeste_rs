@@ -28,21 +28,21 @@ pub struct Level {
     #[name = "dark"]
     pub dark: bool,
     #[name = "cameraOffsetX"]
-    pub camera_offset_x: Integer,
+    pub camera_offset_x: Float,
     #[name = "cameraOffsetY"]
-    pub camera_offset_y: Integer,
+    pub camera_offset_y: Float,
     #[name = "alt_music"]
-    pub alt_music: ResolvableString,
+    pub alt_music: Option<ResolvableString>,
     #[name = "music"]
     pub music: ResolvableString,
     #[name = "musicLayer1"]
-    pub music_layer_1: bool,
+    pub music_layer_1: Option<bool>,
     #[name = "musicLayer2"]
-    pub music_layer_2: bool,
+    pub music_layer_2: Option<bool>,
     #[name = "musicLayer3"]
-    pub music_layer_3: bool,
+    pub music_layer_3: Option<bool>,
     #[name = "musicLayer4"]
-    pub music_layer_4: bool,
+    pub music_layer_4: Option<bool>,
     #[name = "musicProgress"]
     pub music_progress: Option<ResolvableString>,
     #[name = "ambience"]
@@ -50,7 +50,7 @@ pub struct Level {
     #[name = "ambienceProgress"]
     pub ambience_progress: Option<ResolvableString>,
     #[name = "underwater"]
-    pub underwater: bool,
+    pub underwater: Option<bool>,
     #[name = "space"]
     pub space: Option<bool>,
     #[name = "disableDownTransition"]
@@ -173,7 +173,7 @@ pub struct Background {
     #[name = "offsetY"]
     pub offset_y: Float,
     #[name = "innerText"]
-    pub inner_text: String,
+    pub inner_text: Option<String>,
 }
 
 #[derive(Debug, MapElement)]

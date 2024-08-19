@@ -13,7 +13,7 @@ use std::{any::Any, fmt::Debug};
 
 #[derive(Debug)]
 pub struct MapEntity<T: Entity> {
-    id: Integer,
+    id: ResolvableString,
     x: Float,
     y: Float,
     width: Option<Integer>,
@@ -41,7 +41,7 @@ impl<T: Entity> MapElement for MapEntity<T> {
     }
 
     fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("id", self.id);
+        encoder.attribute("id", self.id.clone());
         encoder.attribute("x", self.x);
         encoder.attribute("y", self.y);
         encoder.optional_attribute("width", &self.width);
@@ -124,27 +124,27 @@ pub fn add_entity_parsers(mm: &mut MapManager) {
 #[name = "spikesUp"]
 pub struct SpikesUp {
     #[name = "type"]
-    pub kind: ResolvableString,
+    pub kind: Option<ResolvableString>,
 }
 #[derive(Debug, Entity)]
 #[name = "spikesDown"]
 pub struct SpikesDown {
     #[name = "type"]
-    pub kind: ResolvableString,
+    pub kind: Option<ResolvableString>,
 }
 
 #[derive(Debug, Entity)]
 #[name = "spikesLeft"]
 pub struct SpikesLeft {
     #[name = "type"]
-    pub kind: ResolvableString,
+    pub kind: Option<ResolvableString>,
 }
 
 #[derive(Debug, Entity)]
 #[name = "spikesRight"]
 pub struct SpikesRight {
     #[name = "type"]
-    pub kind: ResolvableString,
+    pub kind: Option<ResolvableString>,
 }
 
 
@@ -152,7 +152,7 @@ pub struct SpikesRight {
 #[name = "jumpThru"]
 pub struct JumpThru {
     #[name = "texture"]
-    pub texture: ResolvableString,
+    pub texture: Option<ResolvableString>,
 }
 
 #[derive(Debug, Entity)]
@@ -171,7 +171,7 @@ pub struct Strawberry {
     #[name = "checkpointID"]
     pub checkpoint_id: Integer,
     #[name = "order"]
-    pub order: Integer,
+    pub order: Option<Integer>,
 }
 
 #[derive(Debug, Entity)]
@@ -196,7 +196,7 @@ pub struct CassetteBlock {
     #[name = "index"]
     pub index: Integer,
     #[name = "finishedState"]
-    pub finished_state: bool,
+    pub finished_state: Option<bool>,
 }
 
 #[derive(Debug, Entity)]
@@ -261,7 +261,7 @@ pub struct FallingBlock {
 #[name = "fakeWall"]
 pub struct FakeWall {
     #[name = "tiletype"]
-    pub tile_type: Integer,
+    pub tile_type: ResolvableString,
     #[name = "playTransitionReveal"]
     pub play_transition_reveal: Option<bool>,
 }

@@ -76,17 +76,17 @@ pub struct Parallax {
     #[name = "texture"]
     pub texture: ResolvableString,
     #[name = "x"]
-    pub x: Float,
+    pub x: Option<Float>,
     #[name = "y"]
-    pub y: Float,
+    pub y: Option<Float>,
     #[name = "scrollx"]
     pub scroll_x: Float,
     #[name = "scrolly"]
     pub scroll_y: Float,
     #[name = "loopx"]
-    pub loopx: bool,
+    pub loopx: Option<bool>,
     #[name = "loopy"]
-    pub loopy: bool,
+    pub loopy: Option<bool>,
     #[name = "speedx"]
     pub speed_x: Option<Float>,
     #[name = "speedy"]
