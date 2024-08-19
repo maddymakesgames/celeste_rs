@@ -1,6 +1,6 @@
 use std::ops::Index;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LookupIndex(pub(crate) u16);
 
 #[derive(Debug)]
@@ -124,7 +124,7 @@ impl Default for LookupTable {
 }
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ResolvableString {
     LookupIndex(LookupIndex),
     String(String),
