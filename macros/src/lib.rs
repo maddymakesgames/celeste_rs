@@ -1,5 +1,6 @@
 mod entity;
 mod map_element;
+mod trigger;
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_crate::{crate_name, FoundCrate};
@@ -205,6 +206,22 @@ pub fn entity_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
         .into_compile_error()
     } else {
         entity::entity_derive(input).unwrap_or_else(Error::into_compile_error)
+    }
+    .into()
+}
+
+#[proc_macro_derive(Trigger, attributes(node, name))]
+pub fn trigger_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    if matches!(input.data, syn::Data::Enum(_) | syn::Data::Union(_)) {
+        Error::new(
+            input.ident.span(),
+            "Trigger can currently only be implemented for structs",
+        )
+        .into_compile_error()
+    } else {
+        trigger::trigger_derive(input).unwrap_or_else(Error::into_compile_error)
     }
     .into()
 }
