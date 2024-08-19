@@ -131,6 +131,13 @@ pub enum ResolvableString {
 }
 
 impl ResolvableString {
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            ResolvableString::LookupIndex(_) => None,
+            ResolvableString::String(s) => Some(s),
+        }
+    }
+
     pub fn to_string<'a>(&'a self, lookup_table: &'a LookupTable) -> &'a str {
         match &self {
             ResolvableString::LookupIndex(i) => &lookup_table[*i],
