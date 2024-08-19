@@ -128,6 +128,15 @@ impl EncodedVar {
         })
     }
 
+    pub fn char(&self) -> Result<Character, EncodedVarError> {
+        Ok(match self {
+            EncodedVar::Byte(b) => Character::Byte(*b),
+            EncodedVar::String(s) => Character::String(ResolvableString::String(s.clone())),
+            EncodedVar::LookupIndex(i) => Character::String(ResolvableString::LookupIndex(*i)),
+            _ => return Err(EncodedVarError::new("character", self.kind())),
+        })
+    }
+
     pub fn new_rle_str(str: impl AsRef<str>) -> EncodedVar {
         EncodedVar::LengthEncodedString(str.as_ref().to_owned())
     }
@@ -720,5 +729,132 @@ impl Div<Float> for Integer {
 impl DivAssign<Integer> for Float {
     fn div_assign(&mut self, rhs: Integer) {
         *self = *self / rhs;
+    }
+}
+
+#[derive(Clone)]
+pub enum Character {
+    String(ResolvableString),
+    Byte(u8),
+}
+
+impl Character {
+    /// Returns whether or not the [Character] is valid as a [char]
+    pub fn verify(&self, lookup_table: &LookupTable) -> bool {
+        match self {
+            Character::String(s) => s.to_string(&lookup_table).len() == 1,
+            Character::Byte(_) => true,
+        }
+    }
+
+    /// Returns whether or not the [Character] is valid as a [char] before resolution
+    fn static_verify(&self) -> bool {
+        match self {
+            Character::String(s) => match s {
+                ResolvableString::LookupIndex(_) => false,
+                ResolvableString::String(s) => s.len() == 1,
+            },
+            Character::Byte(_) => true,
+        }
+    }
+
+    /// Resolves the [ResolvableString] if the [Character] is [Character::String]
+    pub fn resolve(&mut self, lookup_table: &LookupTable) {
+        if let Character::String(str) = self {
+            str.resolve(lookup_table)
+        }
+    }
+
+    /// Unresolves the [ResolvableString] if the [Character] is [Character::String]
+    pub fn unresolve(&mut self, lookup_table: &LookupTable) {
+        if let Character::String(str) = self {
+            str.to_index(lookup_table)
+        }
+    }
+
+    /// Converts the [Character] to a [char] if it would be valid before resolution.
+    ///
+    /// If you have already called [Character::resolve] this is okay to use
+    ///
+    /// When compiling in debug mode, will return `None` if the string is more than one character long
+    pub fn static_as_char(&self) -> Option<char> {
+        match self {
+            Character::String(s) => {
+                #[cfg(debug_assertions)]
+                if !self.static_verify() {
+                    return None;
+                }
+
+
+                s.as_str().map(|str| str.chars().next()).flatten()
+            }
+            Character::Byte(b) => Some(*b as char),
+        }
+    }
+
+    /// Converts the [Character] to a [char] if it would be valid.
+    ///
+    /// In release mode, this only returns `None` if the string is empty.
+    ///
+    /// When compiling in debug mode, will return `None` if the string is more than one character long
+
+    pub fn as_char(&self, lookup_table: &LookupTable) -> Option<char> {
+        match self {
+            Character::String(s) => {
+                let str = s.to_string(lookup_table);
+
+                #[cfg(debug_assertions)]
+                if str.len() != 1 {
+                    return None;
+                }
+
+                str.chars().next()
+            }
+            Character::Byte(b) => Some(*b as char),
+        }
+    }
+}
+
+impl Debug for Character {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::String(arg0) => Debug::fmt(arg0, f),
+            Self::Byte(arg0) => write!(f, "{arg0}_u8"),
+        }
+    }
+}
+
+impl From<u8> for Character {
+    fn from(value: u8) -> Self {
+        Self::Byte(value)
+    }
+}
+
+impl From<LookupIndex> for Character {
+    fn from(value: LookupIndex) -> Self {
+        Self::String(ResolvableString::LookupIndex(value))
+    }
+}
+
+impl From<String> for Character {
+    fn from(value: String) -> Self {
+        Self::String(ResolvableString::String(value))
+    }
+}
+
+impl<'a> TryFrom<&'a EncodedVar> for Character {
+    type Error = EncodedVarError;
+
+    fn try_from(value: &'a EncodedVar) -> Result<Self, Self::Error> {
+        value.char()
+    }
+}
+
+impl From<Character> for EncodedVar {
+    fn from(value: Character) -> Self {
+        match value {
+            Character::String(s) => EncodedVar::from(s),
+            Character::Byte(b) => EncodedVar::Byte(b),
+        }
     }
 }
