@@ -742,7 +742,7 @@ impl Character {
     /// Returns whether or not the [Character] is valid as a [char]
     pub fn verify(&self, lookup_table: &LookupTable) -> bool {
         match self {
-            Character::String(s) => s.to_string(&lookup_table).len() == 1,
+            Character::String(s) => s.to_string(lookup_table).len() == 1,
             Character::Byte(_) => true,
         }
     }
@@ -786,7 +786,7 @@ impl Character {
                 }
 
 
-                s.as_str().map(|str| str.chars().next()).flatten()
+                s.as_str().and_then(|str| str.chars().next())
             }
             Character::Byte(b) => Some(*b as char),
         }
