@@ -4,3 +4,4 @@ target
 dist/
 /*.celeste
 .vscode/
+/*.txt
