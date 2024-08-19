@@ -105,7 +105,7 @@ pub(super) fn entity_derive(input: DeriveInput) -> Result<TokenStream, Error> {
         if !found_attr {
             return Err(Error::new(
                 field.span(),
-                "Field in a MapElement is missing a name or child attribute",
+                "Field in a Entity is missing a name or child attribute",
             ));
         }
     }
