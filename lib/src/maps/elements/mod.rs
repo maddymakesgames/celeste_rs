@@ -4,7 +4,7 @@ use crate::maps::{
     entities::add_entity_parsers,
     level::*,
     style::*,
-    var_types::Integer,
+    var_types::{Float, Integer},
     MapElement,
     MapManager,
 };
@@ -12,6 +12,7 @@ use crate::maps::{
 pub mod entities;
 pub mod level;
 pub mod style;
+pub mod triggers;
 
 impl MapManager {
     pub fn default_parsers(&mut self) {
@@ -69,4 +70,13 @@ pub struct Rect {
     pub w: Integer,
     #[name = "h"]
     pub h: Integer,
+}
+
+#[derive(Debug, MapElement)]
+#[name = "node"]
+pub struct Node {
+    #[name = "x"]
+    x: Float,
+    #[name = "y"]
+    y: Float,
 }

@@ -1,6 +1,7 @@
-use celeste_rs_macros::{Entity, MapElement};
+use celeste_rs_macros::Entity;
 
 use crate::maps::{
+    elements::Node,
     encoder::MapEncoder,
     parser::{MapElementParsingError, MapParser},
     var_types::{Float, Integer},
@@ -58,15 +59,6 @@ pub trait Entity: Debug + Any {
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized;
     fn to_raw(&self, encoder: &mut MapEncoder);
-}
-
-#[derive(Debug, MapElement)]
-#[name = "node"]
-pub struct Node {
-    #[name = "x"]
-    x: Float,
-    #[name = "y"]
-    y: Float,
 }
 
 
