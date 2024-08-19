@@ -736,12 +736,12 @@ dependencies = [
 
 [[package]]
 name = "celeste_rs"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "celeste_rs_macros",
  "chrono",
- "quick-xml",
+ "quick-xml 0.36.1",
  "saphyr",
  "serde",
  "serde-aux",
@@ -749,7 +749,7 @@ dependencies = [
 
 [[package]]
 name = "celeste_rs_gui"
-version = "0.4.0+0.3.0"
+version = "0.4.1+0.4.0"
 dependencies = [
  "celeste_rs",
  "console_error_panic_hook",
@@ -2526,6 +2526,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "quick-xml"
+version = "0.36.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96a05e2e8efddfa51a84ca47cec303fac86c8541b686d37cac5efc0e094417bc"
+dependencies = [
+ "memchr",
+ "serde",
+]
+
+[[package]]
 name = "quote"
 version = "1.0.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3005,7 +3015,7 @@ name = "test_bin"
 version = "0.1.0"
 dependencies = [
  "celeste_rs",
- "quick-xml",
+ "quick-xml 0.31.0",
  "serde",
  "serde_path_to_error",
 ]
@@ -3478,7 +3488,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63b3a62929287001986fb58c789dce9b67604a397c15c611ad9f747300b6c283"
 dependencies = [
  "proc-macro2",
- "quick-xml",
+ "quick-xml 0.31.0",
  "quote",
 ]
 
