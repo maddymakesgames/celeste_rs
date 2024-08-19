@@ -43,6 +43,8 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
     let struct_name = struct_name.unwrap();
 
     let mut fields = Vec::new();
+    let mut found_child = false;
+    let mut found_dyn_child = false;
 
     for field in &struct_data.fields {
         let mut found_attr = false;
@@ -50,7 +52,15 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
             match &attr.meta {
                 Meta::Path(path) =>
                     if path.is_ident("child") {
+                        if found_dyn_child {
+                            return Err(Error::new(
+                                path.span(),
+                                "dyn_child field must be the only child field",
+                            ));
+                        }
+
                         found_attr = true;
+                        found_child = true;
 
                         let is_vec = if let Type::Path(p) = &field.ty {
                             p.path.segments.first().is_some_and(|p| p.ident == "Vec")
@@ -63,7 +73,15 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
                             FieldType::Child(is_vec, false),
                         ));
                     } else if path.is_ident("dyn_child") {
+                        if found_child {
+                            return Err(Error::new(
+                                path.span(),
+                                "dyn_child field must be the only child field",
+                            ));
+                        }
                         found_attr = true;
+                        found_child = true;
+                        found_dyn_child = true;
                         fields.push((field.ident.clone().unwrap(), FieldType::Child(true, true)));
                     },
                 Meta::NameValue(name_value) =>
@@ -91,7 +109,7 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
         if !found_attr {
             return Err(Error::new(
                 field.span(),
-                "Field in a MapElement is missing a name or child attribute",
+                "Field in a MapElement is missing a name, child, or dyn_child attribute",
             ));
         }
     }
