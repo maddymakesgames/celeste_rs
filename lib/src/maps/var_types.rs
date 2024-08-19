@@ -32,7 +32,7 @@ impl EncodedVar {
         }
     }
 
-    fn kind(&self) -> &'static str {
+    pub fn kind(&self) -> &'static str {
         match &self {
             EncodedVar::Bool(_) => "bool",
             EncodedVar::Byte(_) => "byte",
