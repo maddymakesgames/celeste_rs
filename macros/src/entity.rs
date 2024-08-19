@@ -127,7 +127,7 @@ pub(super) fn entity_derive(input: DeriveInput) -> Result<TokenStream, Error> {
     let celeste_rs = super::celeste_rs();
 
     Ok(quote! {
-        impl Entity for #struct_ident {
+        impl #celeste_rs::maps::elements::entities::Entity for #struct_ident {
             const NAME: &'static str = #struct_name;
 
             fn from_raw(parser: #celeste_rs::maps::parser::MapParser) -> Result<Self, #celeste_rs::maps::parser::MapElementParsingError> {
