@@ -5,7 +5,7 @@ use syn::{spanned::Spanned, Data, DeriveInput, Error, Expr, Meta, Type};
 enum FieldType {
     Normal(Expr),
     Optional(Expr),
-    Child(bool, bool),
+    Child(bool, bool, bool),
 }
 
 pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Error> {
@@ -68,9 +68,15 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
                             false
                         };
 
+                        let is_optional = if let Type::Path(p) = &field.ty {
+                            p.path.segments.first().is_some_and(|p| p.ident == "Option")
+                        } else {
+                            false
+                        };
+
                         fields.push((
                             field.ident.clone().unwrap(),
-                            FieldType::Child(is_vec, false),
+                            FieldType::Child(is_vec, is_optional, false),
                         ));
                     } else if path.is_ident("dyn_child") {
                         if found_child {
@@ -82,7 +88,10 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
                         found_attr = true;
                         found_child = true;
                         found_dyn_child = true;
-                        fields.push((field.ident.clone().unwrap(), FieldType::Child(true, true)));
+                        fields.push((
+                            field.ident.clone().unwrap(),
+                            FieldType::Child(true, false, true),
+                        ));
                     },
                 Meta::NameValue(name_value) =>
                     if name_value.path.is_ident("name") {
@@ -117,16 +126,17 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
     let parsers = fields.iter().map(|(name, field_type)| match field_type {
         FieldType::Normal(expr) => quote! {#name: parser.get_attribute(#expr)?,},
         FieldType::Optional(expr) => quote! {#name: parser.get_optional_attribute(#expr),},
-        FieldType::Child(false, _) => quote! {#name: parser.parse_element()?,},
-        FieldType::Child(true, false) => quote! {#name: parser.parse_all_elements()?, },
-        FieldType::Child(true, true) => quote! {#name: parser.parse_any_element()?, },
+        FieldType::Child(false, true, _) => quote! {#name: parser.parse_element().ok(),},
+        FieldType::Child(false, false, _) => quote! {#name: parser.parse_element()?,},
+        FieldType::Child(true, _, false) => quote! {#name: parser.parse_all_elements()?, },
+        FieldType::Child(true, _, true) => quote! {#name: parser.parse_any_element()?, },
     });
 
     let encoders = fields.iter().map(|(name, field_type)| match field_type {
         FieldType::Normal(expr) => quote! {encoder.attribute(#expr, self.#name.clone())},
         FieldType::Optional(expr) => quote! {encoder.optional_attribute(#expr, &self.#name)},
-        FieldType::Child(false, _) => quote! {encoder.child(&self.#name)},
-        FieldType::Child(true, _) => quote! {encoder.children(&self.#name)},
+        FieldType::Child(false, ..) => quote! {encoder.child(&self.#name)},
+        FieldType::Child(true, ..) => quote! {encoder.children(&self.#name)},
     });
 
     let celeste_rs = super::celeste_rs();
