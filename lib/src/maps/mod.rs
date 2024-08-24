@@ -221,7 +221,7 @@ pub trait MapElement: Any + Debug {
 }
 
 pub trait ErasedMapElement: Any + Debug {
-    fn name(&self) -> &'static str;
+    fn name(&self) -> &str;
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
     where Self: Sized;
     fn to_raw(&self, encoder: &mut MapEncoder);
@@ -242,11 +242,31 @@ impl<T: MapElement> ErasedMapElement for T {
     }
 }
 
+// This allows us to parse optional children when using MapParser::child
+// BUT add_parser shouldn't be called with Option
+// It'll probably be fine because of monomorphization
+// so Option<u8> and Option<u16> are different
+// BUT still doesn't make sense to allow this when parsing dyn elements
+impl<T: MapElement> MapElement for Option<T> {
+    const NAME: &'static str = T::NAME;
+
+    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
+    where Self: Sized {
+        Ok(parser.parse_element::<T>().ok())
+    }
+
+    fn to_raw(&self, encoder: &mut MapEncoder) {
+        if let Some(t) = self {
+            t.to_raw(encoder)
+        }
+    }
+}
+
 pub type DynMapElement = Box<dyn ErasedMapElement>;
 
 impl ErasedMapElement for RawMapElement {
-    fn name(&self) -> &'static str {
-        ""
+    fn name(&self) -> &str {
+        self.name.as_str().unwrap_or("UNRESOLVED STRING")
     }
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
@@ -322,11 +342,24 @@ impl MapManager {
         self.map.unresolve_strings();
     }
 
+    /// Allows the `MapManager` to parse a new type of [MapElement].
+    ///
+    /// All [MapElement] implementations in this crate can be added via [MapManager::default_parsers].
+    ///
+    /// This is used exclusively for parsing [DynMapElement]s
+    /// during calls to [MapParser::parse_any_element] any calls to [MapParser::parse_element] or [MapParser::parse_all_elements] will work even if a parser is never registered.
+    ///
+    /// This generally should not be called with any `Option<T>`, as that will conflict with the parser for `T`.
+    /// There is no place in the vanilla elements where having a [DynMapElement] be optional makes sense and so
+    /// no `Option<T>` impls are registered by default.
     pub fn add_parser<T: MapElement>(&mut self) {
         self.parsers
             .insert(T::NAME, Box::new(ElementParser::<T>::new()));
     }
 
+    /// Allows the `MapManager` to parse a new type of [Entity]
+    ///
+    /// Acts the same as (add_parser)[MapManager::add_parser]
     pub fn add_entity_parser<T: Entity>(&mut self) {
         self.add_parser::<MapEntity<T>>();
     }
