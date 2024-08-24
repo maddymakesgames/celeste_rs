@@ -24,17 +24,17 @@ pub struct Level {
     #[name = "height"]
     pub height: Integer,
     #[name = "windPattern"]
-    pub wind_pattern: ResolvableString,
+    pub wind_pattern: Option<ResolvableString>,
     #[name = "dark"]
-    pub dark: bool,
+    pub dark: Option<bool>,
     #[name = "cameraOffsetX"]
-    pub camera_offset_x: Float,
+    pub camera_offset_x: Option<Float>,
     #[name = "cameraOffsetY"]
-    pub camera_offset_y: Float,
+    pub camera_offset_y: Option<Float>,
     #[name = "alt_music"]
     pub alt_music: Option<ResolvableString>,
     #[name = "music"]
-    pub music: ResolvableString,
+    pub music: Option<ResolvableString>,
     #[name = "musicLayer1"]
     pub music_layer_1: Option<bool>,
     #[name = "musicLayer2"]
@@ -72,7 +72,7 @@ pub struct Level {
     #[child]
     pub fg_tiles: FGTiles,
     #[child]
-    pub fg_decals: FGDecals,
+    pub fg_decals: Option<FGDecals>,
     #[child]
     pub solids: Solids,
     #[child]
@@ -80,11 +80,11 @@ pub struct Level {
     #[child]
     pub bg_tiles: BGTiles,
     #[child]
-    pub bg_decals: BGDecals,
+    pub bg_decals: Option<BGDecals>,
     #[child]
     pub bg: Background,
     #[child]
-    pub objtiles: ObjTiles,
+    pub objtiles: Option<ObjTiles>,
 }
 #[derive(Debug, MapElement)]
 #[name = "triggers"]
@@ -199,7 +199,7 @@ pub struct Solids {
     #[name = "offsetY"]
     pub offset_y: Float,
     #[name = "innerText"]
-    pub inner_text: String,
+    pub inner_text: Option<String>,
 }
 
 #[derive(Debug, MapElement)]

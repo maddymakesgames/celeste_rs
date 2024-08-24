@@ -4,7 +4,7 @@ use crate::maps::{
     elements::Node,
     encoder::MapEncoder,
     parser::{MapElementParsingError, MapParser},
-    var_types::{Float, Integer},
+    var_types::{Character, Float, Integer},
     MapElement,
     MapManager,
     ResolvableString,
@@ -14,7 +14,7 @@ use std::{any::Any, fmt::Debug};
 
 #[derive(Debug)]
 pub struct MapEntity<T: Entity> {
-    id: ResolvableString,
+    id: Integer,
     x: Float,
     y: Float,
     width: Option<Integer>,
@@ -42,7 +42,7 @@ impl<T: Entity> MapElement for MapEntity<T> {
     }
 
     fn to_raw(&self, encoder: &mut MapEncoder) {
-        encoder.attribute("id", self.id.clone());
+        encoder.attribute("id", self.id);
         encoder.attribute("x", self.x);
         encoder.attribute("y", self.y);
         encoder.optional_attribute("width", &self.width);
@@ -197,7 +197,7 @@ pub struct DashBlock {
     #[name = "permanent"]
     pub permanent: bool,
     #[name = "tiletype"]
-    pub tile_type: Integer,
+    pub tile_type: Character,
     #[name = "blendin"]
     pub blend_in: bool,
     #[name = "canDash"]
@@ -221,7 +221,7 @@ pub struct NPC {
 #[name = "coverupWall"]
 pub struct CoverupWall {
     #[name = "tiletype"]
-    pub tile_type: Integer,
+    pub tile_type: Character,
 }
 
 #[derive(Debug, Entity)]
@@ -242,9 +242,9 @@ pub struct BirdForsakenCityGem {
 #[name = "fallingBlock"]
 pub struct FallingBlock {
     #[name = "tiletype"]
-    pub tile_type: Integer,
+    pub tile_type: Character,
     #[name = "behind"]
-    pub behind: bool,
+    pub behind: Option<bool>,
     #[name = "climbFall"]
     pub climb_fall: Option<bool>,
 }
@@ -253,7 +253,7 @@ pub struct FallingBlock {
 #[name = "fakeWall"]
 pub struct FakeWall {
     #[name = "tiletype"]
-    pub tile_type: ResolvableString,
+    pub tile_type: Character,
     #[name = "playTransitionReveal"]
     pub play_transition_reveal: Option<bool>,
 }
