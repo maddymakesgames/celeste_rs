@@ -80,12 +80,14 @@ impl<'a> MapParser<'a> {
                     println!("{}", parser.element_name());
                 }
 
-                parser.element_from_raw(MapParser {
-                    verbose_debug: self.verbose_debug,
-                    lookup: self.lookup,
-                    raw,
-                    parsers: self.parsers,
-                })
+                parser
+                    .element_from_raw(MapParser {
+                        verbose_debug: self.verbose_debug,
+                        lookup: self.lookup,
+                        raw,
+                        parsers: self.parsers,
+                    })
+                    .map_err(|e| (parser.element_name().to_owned(), e))
             } else {
                 Ok(Box::new(raw.clone()) as DynMapElement)
             }
@@ -182,7 +184,7 @@ pub enum MapElementParsingError {
     },
     EncodedVarError(EncodedVarError),
     MultiError {
-        errors: Vec<MapElementParsingError>,
+        errors: Vec<(String, MapElementParsingError)>,
     },
     Custom(Box<dyn Error>),
 }
@@ -227,8 +229,8 @@ impl Display for MapElementParsingError {
             MapElementParsingError::MultiError { errors } => {
                 writeln!(f, "Found multiple errors parsing map elements:")?;
 
-                for error in errors {
-                    writeln!(f, "\t{error}")?;
+                for (name, error) in errors {
+                    writeln!(f, "\t{name}: {error}")?;
                 }
 
                 Ok(())
@@ -286,7 +288,7 @@ impl<T: MapElement> ElementParserImpl for ElementParser<T> {
 }
 
 impl ErasedMapElement for Box<dyn ErasedMapElement> {
-    fn name(&self) -> &'static str {
+    fn name(&self) -> &str {
         self.as_ref().name()
     }
 
