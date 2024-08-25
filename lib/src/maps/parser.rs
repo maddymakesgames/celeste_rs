@@ -11,6 +11,7 @@ use crate::maps::{
     RawMapElement,
 };
 
+/// Helper to parse [MapElement] implementors from [RawMapElement]s
 pub struct MapParser<'a> {
     pub(crate) verbose_debug: bool,
     pub(crate) lookup: &'a LookupTable,
@@ -19,10 +20,12 @@ pub struct MapParser<'a> {
 }
 
 impl<'a> MapParser<'a> {
+    /// Parses `T` without forking, needed to parse the map root properly
     pub(crate) fn parse_self<T: MapElement>(self) -> Result<T, MapElementParsingError> {
         T::from_raw(self)
     }
 
+    /// Attempts to parse a child element `T` from the current element
     pub fn parse_element<T: MapElement>(&self) -> Result<T, MapElementParsingError> {
         if self.verbose_debug {
             println!("{}", T::NAME);
@@ -44,6 +47,8 @@ impl<'a> MapParser<'a> {
         })
     }
 
+    /// Attempts to parse as many child elements of type `T` as possible
+    // TODO: make this return multierror instead of just ignoring all errors
     pub fn parse_all_elements<T: MapElement>(&self) -> Result<Vec<T>, MapElementParsingError> {
         let len = self.raw.children.len();
 
@@ -73,6 +78,9 @@ impl<'a> MapParser<'a> {
             )
     }
 
+    /// Parses all the children of the current element as [DynMapElement]s
+    ///
+    /// Any elements found that don't have registered parsers will be kept as [RawMapElement]
     pub fn parse_any_element(&self) -> Result<Vec<DynMapElement>, MapElementParsingError> {
         let parsed_elements = self.raw.children.iter().map(|raw| {
             if let Some(parser) = self.parsers.get(raw.name.to_string(self.lookup)) {
@@ -113,6 +121,9 @@ impl<'a> MapParser<'a> {
         }
     }
 
+    /// Get an attribute of type `T` with name `str`.
+    ///
+    /// If you want to accept any attribute type, use [get_attribute_raw](Self::get_attribute_raw) instead.
     pub fn get_attribute<'b, T: TryFrom<&'b EncodedVar, Error = EncodedVarError>>(
         &'b self,
         str: &'static str,
@@ -139,6 +150,7 @@ impl<'a> MapParser<'a> {
         }
     }
 
+    /// Gets the [EncodedVar] of an attribute with name `str` on the current element.
     pub fn get_attribute_raw(
         &self,
         str: &'static str,
@@ -160,6 +172,8 @@ impl<'a> MapParser<'a> {
             .ok_or(MapElementParsingError::attribute_missing(str))
     }
 
+    /// Returns the value attached to the attribute with name `str` if it is there, otherwise returns `None`
+    // TODO: this should probably only ignore missing errors, not parsing errors
     pub fn get_optional_attribute<'b, T: TryFrom<&'b EncodedVar, Error = EncodedVarError>>(
         &'b self,
         str: &'static str,
@@ -227,7 +241,7 @@ impl Display for MapElementParsingError {
             MapElementParsingError::AttributeMissing { name } =>
                 write!(f, "Missing attribute \"{name}\""),
             MapElementParsingError::MultiError { errors } => {
-                writeln!(f, "Found multiple errors parsing map elements:")?;
+                writeln!(f, "Found errors parsing dynamic map elements:")?;
 
                 for (name, error) in errors {
                     writeln!(f, "\t{name}: {error}")?;
@@ -247,17 +261,17 @@ impl From<EncodedVarError> for MapElementParsingError {
     }
 }
 
-
+/// Represents something that can parse elements.
+///
+/// This shouldn't really be implemented by users, the only real use for this is
+/// in [MapManager](super::MapManager) with [ElementParser]s.
 pub trait ElementParserImpl: Any {
     fn element_name(&self) -> &'static str;
     fn element_from_raw(&self, parser: MapParser) -> Result<DynMapElement, MapElementParsingError>;
     fn element_to_raw(&self, element: &dyn ErasedMapElement, encoder: &mut MapEncoder);
 }
 
-pub trait MapElementParser: Any {
-    type Element: MapElement;
-}
-
+/// A parser of [MapElement]s
 pub struct ElementParser<T>(PhantomData<T>);
 
 impl<T> ElementParser<T> {
@@ -284,22 +298,5 @@ impl<T: MapElement> ElementParserImpl for ElementParser<T> {
     fn element_to_raw(&self, element: &dyn ErasedMapElement, encoder: &mut MapEncoder) {
         let element = unsafe { &*(element as *const dyn ErasedMapElement as *const T) };
         element.to_raw(encoder)
-    }
-}
-
-impl ErasedMapElement for Box<dyn ErasedMapElement> {
-    fn name(&self) -> &str {
-        self.as_ref().name()
-    }
-
-    fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Err(MapElementParsingError::custom(
-            "can't use trait object for from_raw",
-        ))
-    }
-
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        (**self).to_raw(encoder)
     }
 }

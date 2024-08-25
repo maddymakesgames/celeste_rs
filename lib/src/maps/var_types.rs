@@ -733,6 +733,12 @@ impl DivAssign<Integer> for Float {
 }
 
 #[derive(Clone)]
+/// A character
+///
+/// Implementation wise it is possible for the `String` variant to not be length one.
+/// Running [verify](Self::verify) will verify that the string is valid to be used as a byte.<br>
+/// Realistically these should always be characters as long as the map was made correctly but
+/// we wanted to offer a way to verify that the character was valid.
 pub enum Character {
     String(ResolvableString),
     Byte(u8),
@@ -758,14 +764,14 @@ impl Character {
         }
     }
 
-    /// Resolves the [ResolvableString] if the [Character] is [Character::String]
+    /// Resolves the [ResolvableString] if the [Character] is a [String](Character::String)
     pub fn resolve(&mut self, lookup_table: &LookupTable) {
         if let Character::String(str) = self {
             str.resolve(lookup_table)
         }
     }
 
-    /// Unresolves the [ResolvableString] if the [Character] is [Character::String]
+    /// Unresolves the [ResolvableString] if the [Character] is a [String](Character::String)
     pub fn unresolve(&mut self, lookup_table: &LookupTable) {
         if let Character::String(str) = self {
             str.to_index(lookup_table)
@@ -776,7 +782,8 @@ impl Character {
     ///
     /// If you have already called [Character::resolve] this is okay to use
     ///
-    /// When compiling in debug mode, will return `None` if the string is more than one character long
+    /// When compiling in debug mode, this will return `None`
+    /// if the string is more than one character long
     pub fn static_as_char(&self) -> Option<char> {
         match self {
             Character::String(s) => {
@@ -796,8 +803,8 @@ impl Character {
     ///
     /// In release mode, this only returns `None` if the string is empty.
     ///
-    /// When compiling in debug mode, will return `None` if the string is more than one character long
-
+    /// When compiling in debug mode, this will also return `None`
+    /// if the string is more than one character long
     pub fn as_char(&self, lookup_table: &LookupTable) -> Option<char> {
         match self {
             Character::String(s) => {

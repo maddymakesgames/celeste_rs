@@ -29,6 +29,7 @@ impl<'a> MapEncoder<'a> {
             .push(MapAttribute::new(self.lookup.index_string(name), value))
     }
 
+    /// Pushes a new [MapAttribute] onto the raw element if the option value is `Some`
     pub fn optional_attribute<'c, T: Into<EncodedVar> + Clone + 'c>(
         &mut self,
         name: impl AsRef<str>,
@@ -51,6 +52,7 @@ impl<'a> MapEncoder<'a> {
         self.children.push(child);
     }
 
+    /// Pushes all the [MapElement](crate::maps::MapElement)s in the list as children on the raw elements
     pub fn children<T: ErasedMapElement>(&mut self, children: impl AsRef<[T]>) {
         let children = children.as_ref();
 

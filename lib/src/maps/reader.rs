@@ -9,6 +9,7 @@ use crate::maps::{
     ResolvableString,
 };
 
+/// Helper to read data from map files
 pub struct MapReader {
     map_data: Vec<u8>,
     cursor: usize,
@@ -58,6 +59,9 @@ impl MapReader {
         ]))
     }
 
+    /// Reads a `bool` from the map data.
+    ///
+    /// Only 0 or 1 are valid bools, anything else returns an error
     pub fn read_bool(&mut self) -> Result<bool, MapReadError> {
         let byte = self.read_byte()?;
 
@@ -80,6 +84,7 @@ impl MapReader {
         Ok(self.read_byte()? as char)
     }
 
+    /// Reads a variable sized integer, maxing out at a `u32``
     pub fn read_varint(&mut self) -> Result<u32, MapReadError> {
         let mut result = 0;
 
@@ -101,6 +106,7 @@ impl MapReader {
         }
     }
 
+    /// Reads a string, reading a varint to indicate length
     pub fn read_string(&mut self) -> Result<String, MapReadError> {
         let length = self.read_varint()?;
 
@@ -113,6 +119,7 @@ impl MapReader {
         Ok(buf)
     }
 
+    /// Reads a [run length encoded](https://en.wikipedia.org/wiki/Run-length_encoding) string, with a i16 indicating length
     pub fn read_length_encoded_string(&mut self) -> Result<String, MapReadError> {
         let bytes = self.read_short()?;
 

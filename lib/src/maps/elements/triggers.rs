@@ -13,6 +13,7 @@ use crate::maps::{
 };
 
 #[derive(Debug)]
+/// The metadata related to all triggers
 pub struct MapTrigger<T: Trigger> {
     id: Integer,
     x: Float,
@@ -93,259 +94,266 @@ pub fn add_trigger_parsers(mm: &mut MapManager) {
     mm.add_trigger_parser::<InteractTrigger>();
 }
 
+use vanilla_triggers::*;
 
-#[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
-#[name = "lookoutBlocker"]
-pub struct LookoutBlocker;
+#[allow(missing_docs)]
+pub mod vanilla_triggers {
 
-#[derive(Debug, Trigger)]
-#[name = "musicTrigger"]
-pub struct MusicTrigger {
-    #[name = "track"]
-    track: ResolvableString,
-    #[name = "resetFade"]
-    resetfade: bool,
-    #[name = "setInSession"]
-    setinsession: bool,
-    #[name = "resetOnLeave"]
-    resetonleave: bool,
-    #[name = "progress"]
-    progress: u8,
-}
-#[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
-#[name = "birdPathTrigger"]
-pub struct BirdPathTrigger;
+    use super::*;
 
-#[derive(Debug, Trigger)]
-#[name = "blackholeStrength"]
-pub struct BlackholeStrength {
-    #[name = "strength"]
-    strength: ResolvableString,
-}
+    #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
+    #[name = "lookoutBlocker"]
+    pub struct LookoutBlocker;
 
-#[derive(Debug, Trigger)]
-#[name = "cameraOffsetTrigger"]
-pub struct CameraOffsetTrigger {
-    #[name = "cameraX"]
-    camerax: Float,
-    #[name = "cameraY"]
-    cameray: Float,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "musicTrigger"]
+    pub struct MusicTrigger {
+        #[name = "track"]
+        track: ResolvableString,
+        #[name = "resetFade"]
+        resetfade: bool,
+        #[name = "setInSession"]
+        setinsession: bool,
+        #[name = "resetOnLeave"]
+        resetonleave: bool,
+        #[name = "progress"]
+        progress: u8,
+    }
+    #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
+    #[name = "birdPathTrigger"]
+    pub struct BirdPathTrigger;
 
-#[derive(Debug, Trigger)]
-#[name = "changeRespawnTrigger"]
-pub struct ChangeRespawnTrigger {
-    #[node]
-    node: Option<Node>,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "blackholeStrength"]
+    pub struct BlackholeStrength {
+        #[name = "strength"]
+        strength: ResolvableString,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "minitextboxTrigger"]
-pub struct MiniTextboxTrigger {
-    #[name = "mode"]
-    mode: ResolvableString,
-    #[name = "dialog_id"]
-    dialog_id: ResolvableString,
-    #[name = "only_once"]
-    only_once: bool,
-    #[name = "death_count"]
-    death_count: Integer,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "cameraOffsetTrigger"]
+    pub struct CameraOffsetTrigger {
+        #[name = "cameraX"]
+        camerax: Float,
+        #[name = "cameraY"]
+        cameray: Float,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "respawnTargetTrigger"]
-pub struct RespawnTargetTrigger {
-    #[node]
-    node: Node,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "changeRespawnTrigger"]
+    pub struct ChangeRespawnTrigger {
+        #[node]
+        node: Option<Node>,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "noRefillTrigger"]
-pub struct NoRefillTrigger {
-    #[name = "state"]
-    state: bool,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "minitextboxTrigger"]
+    pub struct MiniTextboxTrigger {
+        #[name = "mode"]
+        mode: ResolvableString,
+        #[name = "dialog_id"]
+        dialog_id: ResolvableString,
+        #[name = "only_once"]
+        only_once: bool,
+        #[name = "death_count"]
+        death_count: Integer,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "bloomFadeTrigger"]
-pub struct BloomFadeTrigger {
-    #[name = "bloomAddFrom"]
-    bloomaddfrom: Float,
-    #[name = "bloomAddTo"]
-    bloomaddto: Float,
-    #[name = "positionMode"]
-    positionmode: ResolvableString,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "respawnTargetTrigger"]
+    pub struct RespawnTargetTrigger {
+        #[node]
+        node: Node,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "cameraTargetTrigger"]
-pub struct CameraTargetTrigger {
-    #[name = "lerpStrength"]
-    lerpstrength: Float,
-    #[name = "positionMode"]
-    positionmode: ResolvableString,
-    #[name = "xOnly"]
-    xonly: bool,
-    #[name = "yOnly"]
-    yonly: bool,
-    #[name = "deleteFlag"]
-    deleteflag: Option<Character>,
-    #[node]
-    node: Node,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "noRefillTrigger"]
+    pub struct NoRefillTrigger {
+        #[name = "state"]
+        state: bool,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "musicFadeTrigger"]
-pub struct MusicFadeTrigger {
-    #[name = "direction"]
-    direction: ResolvableString,
-    #[name = "fadeA"]
-    fadea: u8,
-    #[name = "fadeB"]
-    fadeb: u8,
-    #[name = "parameter"]
-    parameter: Option<ResolvableString>,
-}
-#[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
-#[name = "goldenBerryCollectTrigger"]
-pub struct GoldenBerryCollectTrigger;
+    #[derive(Debug, Trigger)]
+    #[name = "bloomFadeTrigger"]
+    pub struct BloomFadeTrigger {
+        #[name = "bloomAddFrom"]
+        bloomaddfrom: Float,
+        #[name = "bloomAddTo"]
+        bloomaddto: Float,
+        #[name = "positionMode"]
+        positionmode: ResolvableString,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "cameraAdvanceTargetTrigger"]
-pub struct CameraAdvanceTargetTrigger {
-    #[name = "lerpStrengthX"]
-    lerpstrengthx: u8,
-    #[name = "lerpStrengthY"]
-    lerpstrengthy: u8,
-    #[name = "positionModeX"]
-    positionmodex: ResolvableString,
-    #[name = "positionModeY"]
-    positionmodey: ResolvableString,
-    #[name = "xOnly"]
-    xonly: bool,
-    #[name = "yOnly"]
-    yonly: bool,
-    #[node]
-    node: Node,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "cameraTargetTrigger"]
+    pub struct CameraTargetTrigger {
+        #[name = "lerpStrength"]
+        lerpstrength: Float,
+        #[name = "positionMode"]
+        positionmode: ResolvableString,
+        #[name = "xOnly"]
+        xonly: bool,
+        #[name = "yOnly"]
+        yonly: bool,
+        #[name = "deleteFlag"]
+        deleteflag: Option<Character>,
+        #[node]
+        node: Node,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "lightFadeTrigger"]
-pub struct LightFadeTrigger {
-    #[name = "lightAddFrom"]
-    lightaddfrom: Float,
-    #[name = "lightAddTo"]
-    lightaddto: Float,
-    #[name = "positionMode"]
-    positionmode: ResolvableString,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "musicFadeTrigger"]
+    pub struct MusicFadeTrigger {
+        #[name = "direction"]
+        direction: ResolvableString,
+        #[name = "fadeA"]
+        fadea: u8,
+        #[name = "fadeB"]
+        fadeb: u8,
+        #[name = "parameter"]
+        parameter: Option<ResolvableString>,
+    }
+    #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
+    #[name = "goldenBerryCollectTrigger"]
+    pub struct GoldenBerryCollectTrigger;
 
-#[derive(Debug, Trigger)]
-#[name = "spawnFacingTrigger"]
-pub struct SpawnFacingTrigger {
-    #[name = "facing"]
-    facing: ResolvableString,
-}
-#[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
-#[name = "windAttackTrigger"]
-pub struct WindAttackTrigger;
+    #[derive(Debug, Trigger)]
+    #[name = "cameraAdvanceTargetTrigger"]
+    pub struct CameraAdvanceTargetTrigger {
+        #[name = "lerpStrengthX"]
+        lerpstrengthx: u8,
+        #[name = "lerpStrengthY"]
+        lerpstrengthy: u8,
+        #[name = "positionModeX"]
+        positionmodex: ResolvableString,
+        #[name = "positionModeY"]
+        positionmodey: ResolvableString,
+        #[name = "xOnly"]
+        xonly: bool,
+        #[name = "yOnly"]
+        yonly: bool,
+        #[node]
+        node: Node,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "ambienceParamTrigger"]
-pub struct AmbienceParamTrigger {
-    #[name = "direction"]
-    direction: ResolvableString,
-    #[name = "parameter"]
-    parameter: ResolvableString,
-    #[name = "from"]
-    from: Float,
-    #[name = "to"]
-    to: Float,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "lightFadeTrigger"]
+    pub struct LightFadeTrigger {
+        #[name = "lightAddFrom"]
+        lightaddfrom: Float,
+        #[name = "lightAddTo"]
+        lightaddto: Float,
+        #[name = "positionMode"]
+        positionmode: ResolvableString,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "eventTrigger"]
-pub struct EventTrigger {
-    #[name = "event"]
-    event: ResolvableString,
-    #[name = "onSpawn"]
-    onspawn: Option<bool>,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "spawnFacingTrigger"]
+    pub struct SpawnFacingTrigger {
+        #[name = "facing"]
+        facing: ResolvableString,
+    }
+    #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
+    #[name = "windAttackTrigger"]
+    pub struct WindAttackTrigger;
 
-#[derive(Debug, Trigger)]
-#[name = "detachFollowersTrigger"]
-pub struct DetachFollowersTrigger {
-    #[name = "global"]
-    global: bool,
-    #[node]
-    node: Node,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "ambienceParamTrigger"]
+    pub struct AmbienceParamTrigger {
+        #[name = "direction"]
+        direction: ResolvableString,
+        #[name = "parameter"]
+        parameter: ResolvableString,
+        #[name = "from"]
+        from: Float,
+        #[name = "to"]
+        to: Float,
+    }
 
-#[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
-#[name = "checkpointBlockerTrigger"]
-pub struct CheckpointBlockerTrigger;
+    #[derive(Debug, Trigger)]
+    #[name = "eventTrigger"]
+    pub struct EventTrigger {
+        #[name = "event"]
+        event: ResolvableString,
+        #[name = "onSpawn"]
+        onspawn: Option<bool>,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "altMusicTrigger"]
-pub struct AltMusicTrigger {
-    #[name = "track"]
-    track: ResolvableString,
-    #[name = "resetOnLeave"]
-    resetonleave: bool,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "detachFollowersTrigger"]
+    pub struct DetachFollowersTrigger {
+        #[name = "global"]
+        global: bool,
+        #[node]
+        node: Node,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "windTrigger"]
-pub struct WindTrigger {
-    #[name = "pattern"]
-    pattern: ResolvableString,
-}
+    #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
+    #[name = "checkpointBlockerTrigger"]
+    pub struct CheckpointBlockerTrigger;
 
-#[derive(Debug, Trigger)]
-#[name = "creditsTrigger"]
-pub struct CreditsTrigger {
-    #[name = "event"]
-    event: ResolvableString,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "altMusicTrigger"]
+    pub struct AltMusicTrigger {
+        #[name = "track"]
+        track: ResolvableString,
+        #[name = "resetOnLeave"]
+        resetonleave: bool,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "rumbleTrigger"]
-pub struct RumbleTrigger {
-    #[name = "manualTrigger"]
-    manualtrigger: bool,
-    #[name = "persistent"]
-    persistent: bool,
-    #[node]
-    node: Node,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "windTrigger"]
+    pub struct WindTrigger {
+        #[name = "pattern"]
+        pattern: ResolvableString,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "oshiroTrigger"]
-pub struct OshiroTrigger {
-    #[name = "state"]
-    state: bool,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "creditsTrigger"]
+    pub struct CreditsTrigger {
+        #[name = "event"]
+        event: ResolvableString,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "moonGlitchBackgroundTrigger"]
-pub struct MoonGlitchBackgroundTrigger {
-    #[name = "duration"]
-    duration: ResolvableString,
-    #[name = "stay"]
-    stay: bool,
-    #[name = "glitch"]
-    glitch: bool,
-}
+    #[derive(Debug, Trigger)]
+    #[name = "rumbleTrigger"]
+    pub struct RumbleTrigger {
+        #[name = "manualTrigger"]
+        manualtrigger: bool,
+        #[name = "persistent"]
+        persistent: bool,
+        #[node]
+        node: Node,
+    }
 
-#[derive(Debug, Trigger)]
-#[name = "interactTrigger"]
-pub struct InteractTrigger {
-    #[name = "event"]
-    event: ResolvableString,
-    #[name = "event_2"]
-    event_2: ResolvableString,
-    #[name = "event_3"]
-    event_3: ResolvableString,
-    #[node]
-    node: Option<Node>,
+    #[derive(Debug, Trigger)]
+    #[name = "oshiroTrigger"]
+    pub struct OshiroTrigger {
+        #[name = "state"]
+        state: bool,
+    }
+
+    #[derive(Debug, Trigger)]
+    #[name = "moonGlitchBackgroundTrigger"]
+    pub struct MoonGlitchBackgroundTrigger {
+        #[name = "duration"]
+        duration: ResolvableString,
+        #[name = "stay"]
+        stay: bool,
+        #[name = "glitch"]
+        glitch: bool,
+    }
+
+    #[derive(Debug, Trigger)]
+    #[name = "interactTrigger"]
+    pub struct InteractTrigger {
+        #[name = "event"]
+        event: ResolvableString,
+        #[name = "event_2"]
+        event_2: ResolvableString,
+        #[name = "event_3"]
+        event_3: ResolvableString,
+        #[node]
+        node: Option<Node>,
+    }
 }

@@ -1,3 +1,5 @@
+//! Implements reading and writing of Celeste's map format
+//! along with providing helper structs for all the map elements seen in the vanilla game
 use std::{
     any::Any,
     collections::HashMap,
@@ -24,6 +26,9 @@ use crate::maps::{
 };
 
 #[derive(Debug, Clone)]
+/// The raw structure of an element in the map binary
+///
+/// All elements get parsed to this before being parsed into proper structs.
 pub struct RawMapElement {
     pub name: ResolvableString,
     pub attributes: Vec<MapAttribute>,
@@ -31,6 +36,7 @@ pub struct RawMapElement {
 }
 
 #[derive(Debug, Clone)]
+/// An attribute attached to a map element
 pub struct MapAttribute {
     pub name: ResolvableString,
     pub value: EncodedVar,
@@ -46,6 +52,7 @@ impl MapAttribute {
 }
 
 #[derive(Debug)]
+/// The raw format of the map binary, is parsed into a [MapRoot]
 pub struct RawMap {
     pub name: String,
     pub lookup_table: LookupTable,
@@ -53,7 +60,7 @@ pub struct RawMap {
 }
 
 impl RawMap {
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, MapReadError> {
+    fn from_bytes(bytes: Vec<u8>) -> Result<Self, MapReadError> {
         let mut reader = MapReader::new(bytes);
 
         let check_string = reader.read_string()?;
@@ -73,11 +80,19 @@ impl RawMap {
         })
     }
 
-    fn resolve_strings(&mut self) {
+    /// Resolve all the [ResolvableString]s stored in the map
+    ///
+    /// This should be called directly after reading in the map file,
+    /// as modifications can change the lookup table without updating the indicies
+    pub fn resolve_strings(&mut self) {
         self.root_element.resolve_strings(&self.lookup_table);
     }
 
-    fn unresolve_strings(&mut self) {
+    /// Converts all the [ResolvableString]s to indicies in the lookup table.
+    ///
+    /// This should be done only right before you serialize.
+    /// The indicies change on pretty much any change to the map data.
+    pub fn unresolve_strings(&mut self) {
         self.root_element
             .add_attr_value_strs(&mut self.lookup_table);
         self.root_element.unresolve_strings(&mut self.lookup_table);
@@ -97,7 +112,7 @@ impl Display for RawMap {
 }
 
 impl RawMapElement {
-    pub fn to_string(&self, depth: u8, lookup_table: &LookupTable) -> String {
+    fn to_string(&self, depth: u8, lookup_table: &LookupTable) -> String {
         let mut buf = String::new();
 
         buf.push_str(self.name.to_string(lookup_table));
@@ -204,7 +219,7 @@ impl RawMapElement {
 }
 
 impl MapAttribute {
-    pub fn to_string(&self, lookup_table: &LookupTable) -> String {
+    fn to_string(&self, lookup_table: &LookupTable) -> String {
         format!(
             "{}: {}",
             self.name.to_string(lookup_table),
@@ -213,7 +228,9 @@ impl MapAttribute {
     }
 }
 
+/// A trait to represent an element of a map.
 pub trait MapElement: Any + Debug {
+    /// The name of the element in the map binary
     const NAME: &'static str;
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
@@ -221,6 +238,7 @@ pub trait MapElement: Any + Debug {
     fn to_raw(&self, encoder: &mut MapEncoder);
 }
 
+/// An object-safe version of [MapElement]
 pub trait ErasedMapElement: Any + Debug {
     fn name(&self) -> &str;
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
@@ -263,6 +281,9 @@ impl<T: MapElement> MapElement for Option<T> {
     }
 }
 
+/// A dynamic element, if a parser for the element was registered it will be parsed into that struct, otherwise it is a [RawMapElement]
+///
+/// You can check what the element is with [ErasedMapElement::name], and check if the element is parsed using [Any::type_id]
 pub type DynMapElement = Box<dyn ErasedMapElement>;
 
 impl ErasedMapElement for RawMapElement {
@@ -280,12 +301,32 @@ impl ErasedMapElement for RawMapElement {
     }
 }
 
+
+impl ErasedMapElement for Box<dyn ErasedMapElement> {
+    fn name(&self) -> &str {
+        self.as_ref().name()
+    }
+
+    fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError>
+    where Self: Sized {
+        Err(MapElementParsingError::custom(
+            "can't use trait object for from_raw",
+        ))
+    }
+
+    fn to_raw(&self, encoder: &mut MapEncoder) {
+        (**self).to_raw(encoder)
+    }
+}
+
+/// A manager struct that can read and write celeste maps.
 pub struct MapManager {
     map: RawMap,
     parsers: HashMap<&'static str, Box<dyn ElementParserImpl>>,
 }
 
 impl MapManager {
+    /// Creates a new `MapManager` reading in a celeste map from the passed reader
     pub fn new(mut reader: impl Read) -> Result<Self, MapReadError> {
         let mut buf = Vec::new();
 
@@ -300,6 +341,7 @@ impl MapManager {
         Ok(MapManager { map: raw, parsers })
     }
 
+    /// Parse the map passed in the constructor using any registered parsers when needed
     pub fn parse_map(&self) -> Result<MapRoot, MapElementParsingError> {
         let parser = MapParser {
             verbose_debug: false,
@@ -311,6 +353,8 @@ impl MapManager {
         parser.parse_self::<MapRoot>()
     }
 
+    /// Same as [parse_map](Self::parse_map) but when compiled with `debug_assertions` will
+    /// print debug information about the parser
     pub fn verbose_parse(&self) -> Result<MapRoot, MapElementParsingError> {
         let parser = MapParser {
             verbose_debug: cfg!(debug_assertions),
@@ -322,6 +366,7 @@ impl MapManager {
         parser.parse_self::<MapRoot>()
     }
 
+    /// Encode the map data back into a [RawMap]. The raw map is stored in the manager itself.
     pub fn encode_map(&mut self, name: impl ToString, root: &MapRoot) {
         let mut lookup = LookupTable::new();
 
@@ -365,6 +410,9 @@ impl MapManager {
         self.add_parser::<MapEntity<T>>();
     }
 
+    /// Gets a reference to the [RawMap] stored in the manager.
+    ///
+    /// This is initialized either from the constructor or from [encode_map](Self::encode_map)
     pub fn map(&self) -> &RawMap {
         &self.map
     }
