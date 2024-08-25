@@ -1,4 +1,4 @@
-//! Implements operations for all of the types found in the [celeste](crate::celeste) module
+//! Implements operations for all of the types found in the [saves::def](crate::saves::def) module
 use std::{
     collections::HashSet,
     fmt::{Display, Write},

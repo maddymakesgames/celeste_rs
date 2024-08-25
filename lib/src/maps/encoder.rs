@@ -18,7 +18,7 @@ impl<'a> MapEncoder<'a> {
     /// Sets the name of the raw element
     ///
     /// This is already done when creating the [MapEncoder] so this
-    /// is only needed when [MapElement::name] is incorrect
+    /// is only needed when [MapElement::NAME](crate::maps::MapElement::NAME) is incorrect
     pub fn name(&mut self, name: impl AsRef<str>) {
         self.element_name = self.lookup.index_string(name);
     }
@@ -39,7 +39,7 @@ impl<'a> MapEncoder<'a> {
         }
     }
 
-    /// Pushes a new child [MapElement] onto the raw element
+    /// Pushes a new child [MapElement](crate::maps::MapElement) onto the raw element
     pub fn child<T: ErasedMapElement>(&mut self, child: &T) {
         let child_name = self.lookup.index_string(child.name());
         let mut fork = self.fork(child_name);
