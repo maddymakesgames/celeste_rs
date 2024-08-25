@@ -1,3 +1,5 @@
+use std::{error::Error, fmt::Display};
+
 use crate::maps::{
     var_types::EncodedVar,
     LookupIndex,
@@ -166,7 +168,7 @@ impl MapWriter {
         if let ResolvableString::LookupIndex(idx) = &element.name {
             self.write_lookup_index(*idx);
         } else {
-            return Err(MapWriteError::UnresolvedString);
+            return Err(MapWriteError::ResolvedString);
         }
 
         self.write_byte(element.attributes.len() as u8);
@@ -188,7 +190,7 @@ impl MapWriter {
         if let ResolvableString::LookupIndex(idx) = &attr.name {
             self.write_lookup_index(*idx);
         } else {
-            return Err(MapWriteError::UnresolvedString);
+            return Err(MapWriteError::ResolvedString);
         }
 
         self.write_encoded_var(&attr.value);
@@ -200,6 +202,26 @@ impl MapWriter {
     }
 }
 
+#[derive(Debug)]
 pub enum MapWriteError {
-    UnresolvedString,
+    ResolvedString,
+}
+
+impl Display for MapWriteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MapWriteError::ResolvedString => write!(
+                f,
+                "Tried to write map data with lookup strings still resolved"
+            ),
+        }
+    }
+}
+
+impl Error for MapWriteError {}
+
+impl From<MapWriteError> for std::io::Error {
+    fn from(val: MapWriteError) -> std::io::Error {
+        std::io::Error::new(std::io::ErrorKind::Other, Box::new(val))
+    }
 }
