@@ -19,6 +19,7 @@ use crate::maps::{
     entities::{Entity, MapEntity},
     parser::{ElementParser, ElementParserImpl, MapElementParsingError, MapParser},
     reader::{MapReadError, MapReader},
+    triggers::{MapTrigger, Trigger},
     var_types::EncodedVar,
 };
 
@@ -359,12 +360,19 @@ impl MapManager {
 
     /// Allows the `MapManager` to parse a new type of [Entity]
     ///
-    /// Acts the same as (add_parser)[MapManager::add_parser]
+    /// Acts the same as (add_parser)[MapManager::add_parser] but for entities
     pub fn add_entity_parser<T: Entity>(&mut self) {
         self.add_parser::<MapEntity<T>>();
     }
 
     pub fn map(&self) -> &RawMap {
         &self.map
+    }
+
+    /// Allows the `MapManager` to parse a new type of [Trigger]
+    ///
+    /// Acts the same as (add_parser)[MapManager::add_parser] but for triggers
+    pub fn add_trigger_parser<T: Trigger>(&mut self) {
+        self.add_parser::<MapTrigger<T>>();
     }
 }
