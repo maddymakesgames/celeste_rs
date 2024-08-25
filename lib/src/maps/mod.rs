@@ -4,7 +4,7 @@ use std::{
     any::Any,
     collections::HashMap,
     fmt::{Debug, Display},
-    io::Read,
+    io::{Read, Write},
 };
 
 pub mod elements;
@@ -24,6 +24,7 @@ use crate::maps::{
     reader::{MapReadError, MapReader},
     triggers::{MapTrigger, Trigger},
     var_types::EncodedVar,
+    writer::{MapWriteError, MapWriter},
 };
 
 #[derive(Debug, Clone)]
@@ -79,6 +80,18 @@ impl RawMap {
             lookup_table,
             root_element,
         })
+    }
+
+    fn to_bytes(&self) -> Result<Vec<u8>, MapWriteError> {
+        let mut writer = MapWriter::new();
+
+        writer.write_string("CELESTE MAP");
+
+        writer.write_string(&self.name);
+        writer.write_lookup_table(&self.lookup_table);
+        writer.write_element(&self.root_element)?;
+
+        Ok(writer.bytes())
     }
 
     /// Resolve all the [ResolvableString]s stored in the map
@@ -417,7 +430,7 @@ impl MapManager {
 
     /// Gets a reference to the [RawMap] stored in the manager.
     ///
-    /// This is initialized either from the constructor or from [encode_map](Self::encode_map)
+    /// This is initialized in the constructor and modified in [encode_map](Self::encode_map)
     pub fn map(&self) -> &RawMap {
         &self.map
     }
@@ -427,5 +440,16 @@ impl MapManager {
     /// Acts the same as (add_parser)[MapManager::add_parser] but for triggers
     pub fn add_trigger_parser<T: Trigger>(&mut self) {
         self.add_parser::<MapTrigger<T>>();
+    }
+
+    /// Writes the stored map data as binary into the provided writer
+    ///
+    /// This makes [ResolvableString]s unresolved so you should run [RawMap::resolve_strings]
+    /// if you intend to further edit the `RawMap` directly.
+    pub fn write_map(&mut self, writer: &mut impl Write) -> std::io::Result<()> {
+        // unresolve strings, just in case people are editing the RawMap directly
+        self.map.unresolve_strings();
+
+        writer.write_all(&self.map.to_bytes()?)
     }
 }
