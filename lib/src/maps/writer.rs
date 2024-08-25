@@ -11,12 +11,16 @@ use crate::maps::{
 // modified a writer directly instead of writing to a vec
 //
 // Leaving that for later though since it'll be somewhat hard
-
+#[derive(Default)]
 pub struct MapWriter {
     buf: Vec<u8>,
 }
 
 impl MapWriter {
+    pub fn new() -> Self {
+        MapWriter::default()
+    }
+
     pub fn write_byte(&mut self, byte: u8) {
         self.buf.push(byte);
     }
@@ -191,8 +195,8 @@ impl MapWriter {
         Ok(())
     }
 
-    pub fn bytes(&self) -> &[u8] {
-        &self.buf
+    pub fn bytes(self) -> Vec<u8> {
+        self.buf
     }
 }
 
