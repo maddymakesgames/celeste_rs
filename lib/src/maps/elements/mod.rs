@@ -4,6 +4,7 @@ use crate::maps::{
     entities::add_entity_parsers,
     level::*,
     style::*,
+    triggers::add_trigger_parsers,
     var_types::{Float, Integer},
     MapElement,
     MapManager,
@@ -38,6 +39,7 @@ impl MapManager {
         self.add_parser::<SnowBG>();
         self.add_parser::<SnowFG>();
         add_entity_parsers(self);
+        add_trigger_parsers(self);
     }
 }
 
