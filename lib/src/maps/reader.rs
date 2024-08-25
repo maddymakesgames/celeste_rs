@@ -86,24 +86,19 @@ impl MapReader {
 
     /// Reads a variable sized integer, maxing out at a `u32``
     pub fn read_varint(&mut self) -> Result<u32, MapReadError> {
-        let mut result = 0;
+        let mut result = 0u32;
+        let mut by = 0;
 
-        for shift in (0 .. 28).step_by(7) {
-            let byte = self.read_byte()?;
-            result |= ((byte as u32) & 0x7F) << shift;
+        for i in 0 .. 5 {
+            by = self.read_byte()?;
+            result |= ((by & 0x7F) as u32) << (7 * i);
 
-            if byte <= 0x7F {
+            if (by & 0x80) == 0 {
                 return Ok(result);
             }
         }
 
-        let byte = self.read_byte()?;
-        if byte > 0b1111 {
-            Err(MapReadError::InvalidVarint(result, byte))
-        } else {
-            result |= (byte as u32) << 28;
-            Ok(result)
-        }
+        Err(MapReadError::InvalidVarint(result, by))
     }
 
     /// Reads a string, reading a varint to indicate length
