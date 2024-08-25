@@ -5,7 +5,7 @@ use syn::{spanned::Spanned, Data, DeriveInput, Error, Expr, Meta, Type};
 enum FieldType {
     Normal(Expr),
     Optional(Expr),
-    Node(bool),
+    Node(bool, bool),
 }
 
 pub(super) fn trigger_derive(input: DeriveInput) -> Result<TokenStream, Error> {
@@ -68,7 +68,16 @@ pub(super) fn trigger_derive(input: DeriveInput) -> Result<TokenStream, Error> {
                             false
                         };
 
-                        fields.push((field.ident.clone().unwrap(), FieldType::Node(is_vec)));
+                        let is_option = if let Type::Path(p) = &field.ty {
+                            p.path.segments.first().is_some_and(|p| p.ident == "Option")
+                        } else {
+                            false
+                        };
+
+                        fields.push((
+                            field.ident.clone().unwrap(),
+                            FieldType::Node(is_option, is_vec),
+                        ));
                     },
                 Meta::NameValue(name_value) =>
                     if name_value.path.is_ident("name") {
@@ -97,7 +106,7 @@ pub(super) fn trigger_derive(input: DeriveInput) -> Result<TokenStream, Error> {
                 if p.path.segments.last().is_some_and(|p| p.ident == "Node") {
                     found_attr = true;
                     found_node = true;
-                    fields.push((field.ident.clone().unwrap(), FieldType::Node(false)));
+                    fields.push((field.ident.clone().unwrap(), FieldType::Node(false, false)));
                 }
             }
         }
@@ -105,7 +114,7 @@ pub(super) fn trigger_derive(input: DeriveInput) -> Result<TokenStream, Error> {
         if !found_attr {
             return Err(Error::new(
                 field.span(),
-                "Field in a Trigger is missing a name or child attribute",
+                "Field in a Entity is missing a name or child attribute",
             ));
         }
     }
@@ -113,15 +122,17 @@ pub(super) fn trigger_derive(input: DeriveInput) -> Result<TokenStream, Error> {
     let parsers = fields.iter().map(|(name, field_type)| match field_type {
         FieldType::Normal(expr) => quote! {#name: parser.get_attribute(#expr)?,},
         FieldType::Optional(expr) => quote! {#name: parser.get_optional_attribute(#expr),},
-        FieldType::Node(false) => quote! {#name: parser.parse_element()?,},
-        FieldType::Node(true) => quote! {#name: parser.parse_all_elements()?, },
+        FieldType::Node(true, false) => quote! {#name: parser.parse_element().ok(),},
+        FieldType::Node(false, false) => quote! {#name: parser.parse_element()?,},
+        FieldType::Node(_, true) => quote! {#name: parser.parse_all_elements()?, },
     });
 
     let encoders = fields.iter().map(|(name, field_type)| match field_type {
         FieldType::Normal(expr) => quote! {encoder.attribute(#expr, self.#name.clone())},
         FieldType::Optional(expr) => quote! {encoder.optional_attribute(#expr, &self.#name)},
-        FieldType::Node(false) => quote! {encoder.child(&self.#name)},
-        FieldType::Node(true) => quote! {encoder.children(&self.#name)},
+        FieldType::Node(true, false) => quote! {encoder.child(&self.#name)},
+        FieldType::Node(false, false) => quote! {encoder.child(&self.#name)},
+        FieldType::Node(_, true) => quote! {encoder.children(&self.#name)},
     });
 
     let celeste_rs = super::celeste_rs();
