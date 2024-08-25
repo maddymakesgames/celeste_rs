@@ -83,7 +83,9 @@ impl RawMap {
     /// Resolve all the [ResolvableString]s stored in the map
     ///
     /// This should be called directly after reading in the map file,
-    /// as modifications can change the lookup table without updating the indicies
+    /// as modifications can change the lookup table without updating the indicies.
+    ///
+    /// Note: not needed if using a [MapManager]
     pub fn resolve_strings(&mut self) {
         self.root_element.resolve_strings(&self.lookup_table);
     }
@@ -92,6 +94,8 @@ impl RawMap {
     ///
     /// This should be done only right before you serialize.
     /// The indicies change on pretty much any change to the map data.
+    ///
+    /// Note: not needed if using a [MapManager]
     pub fn unresolve_strings(&mut self) {
         self.root_element
             .add_attr_value_strs(&mut self.lookup_table);
