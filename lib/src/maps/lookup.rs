@@ -7,7 +7,7 @@ pub struct LookupIndex(pub(crate) u16);
 #[derive(Debug)]
 /// A lookup table holding all the strings for [ResolvableString]s
 pub struct LookupTable {
-    lookup_strings: Vec<String>,
+    pub(super) lookup_strings: Vec<String>,
     strings_to_add: Vec<String>,
 }
 

@@ -13,6 +13,7 @@ pub mod lookup;
 pub mod parser;
 pub mod reader;
 pub mod var_types;
+pub mod writer;
 use elements::*;
 pub use lookup::*;
 
