@@ -173,6 +173,7 @@ pub struct Background {
     #[name = "offsetY"]
     pub offset_y: Float,
     #[name = "innerText"]
+    #[rle]
     pub inner_text: Option<String>,
 }
 
@@ -199,6 +200,7 @@ pub struct Solids {
     #[name = "offsetY"]
     pub offset_y: Float,
     #[name = "innerText"]
+    #[rle]
     pub inner_text: Option<String>,
 }
 

@@ -130,7 +130,7 @@ pub(super) fn entity_derive(input: DeriveInput) -> Result<TokenStream, Error> {
     let encoders = fields.iter().map(|(name, field_type)| match field_type {
         FieldType::Normal(expr) => quote! {encoder.attribute(#expr, self.#name.clone())},
         FieldType::Optional(expr) => quote! {encoder.optional_attribute(#expr, &self.#name)},
-        FieldType::Node(true, false) => quote! {encoder.child(&self.#name)},
+        FieldType::Node(true, false) => quote! {if let Some(v) = &self.#name { encoder.child(v) }},
         FieldType::Node(false, false) => quote! {encoder.child(&self.#name)},
         FieldType::Node(_, true) => quote! {encoder.children(&self.#name)},
     });

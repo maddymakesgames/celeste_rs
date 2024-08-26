@@ -99,10 +99,10 @@ impl MapWriter {
         let mut cur_char = char_iter.next().unwrap();
         let mut cur_char_count = 1;
 
-        for c in str.chars() {
+        for c in char_iter {
             if c != cur_char || cur_char_count == 255 {
                 buf.push(cur_char_count);
-                buf.push(c as u8);
+                buf.push(cur_char as u8);
 
                 cur_char = c;
                 cur_char_count = 1;
@@ -110,6 +110,9 @@ impl MapWriter {
                 cur_char_count += 1;
             }
         }
+
+        buf.push(cur_char_count);
+        buf.push(cur_char as u8);
 
         self.write_short(buf.len() as i16);
         self.buf.extend(&buf);

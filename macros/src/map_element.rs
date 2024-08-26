@@ -3,8 +3,8 @@ use quote::quote;
 use syn::{spanned::Spanned, Data, DeriveInput, Error, Expr, Meta, Type};
 
 enum FieldType {
-    Normal(Expr),
-    Optional(Expr),
+    Normal(Expr, bool),
+    Optional(Expr, bool),
     Child(bool, bool, bool),
 }
 
@@ -47,7 +47,18 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
     let mut found_dyn_child = false;
 
     for field in &struct_data.fields {
+        let mut found_rle = false;
         let mut found_attr = false;
+
+        for attr in &field.attrs {
+            if let Meta::Path(path) = &attr.meta {
+                if path.is_ident("rle") {
+                    found_attr = true;
+                    found_rle = true;
+                }
+            }
+        }
+
         for attr in &field.attrs {
             match &attr.meta {
                 Meta::Path(path) =>
@@ -56,6 +67,13 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
                             return Err(Error::new(
                                 path.span(),
                                 "dyn_child field must be the only child field",
+                            ));
+                        }
+
+                        if found_rle {
+                            return Err(Error::new(
+                                path.span(),
+                                "Can't have both rle and child on a field",
                             ));
                         }
 
@@ -85,9 +103,18 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
                                 "dyn_child field must be the only child field",
                             ));
                         }
+
+                        if found_rle {
+                            return Err(Error::new(
+                                path.span(),
+                                "Can't have both rle and child on a field",
+                            ));
+                        }
+
                         found_attr = true;
                         found_child = true;
                         found_dyn_child = true;
+
                         fields.push((
                             field.ident.clone().unwrap(),
                             FieldType::Child(true, false, true),
@@ -101,12 +128,12 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
                             if p.path.segments.first().is_some_and(|p| p.ident == "Option") {
                                 fields.push((
                                     field.ident.clone().unwrap(),
-                                    FieldType::Optional(name_value.value.clone()),
+                                    FieldType::Optional(name_value.value.clone(), found_rle),
                                 ))
                             } else {
                                 fields.push((
                                     field.ident.clone().unwrap(),
-                                    FieldType::Normal(name_value.value.clone()),
+                                    FieldType::Normal(name_value.value.clone(), found_rle),
                                 ))
                             }
                         }
@@ -123,9 +150,11 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
         }
     }
 
+    let celeste_rs = super::celeste_rs();
+
     let parsers = fields.iter().map(|(name, field_type)| match field_type {
-        FieldType::Normal(expr) => quote! {#name: parser.get_attribute(#expr)?,},
-        FieldType::Optional(expr) => quote! {#name: parser.get_optional_attribute(#expr),},
+        FieldType::Normal(expr, _) => quote! {#name: parser.get_attribute(#expr)?,},
+        FieldType::Optional(expr, _) => quote! {#name: parser.get_optional_attribute(#expr),},
         FieldType::Child(false, true, _) => quote! {#name: parser.parse_element().ok(),},
         FieldType::Child(false, false, _) => quote! {#name: parser.parse_element()?,},
         FieldType::Child(true, _, false) => quote! {#name: parser.parse_all_elements()?, },
@@ -133,13 +162,14 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
     });
 
     let encoders = fields.iter().map(|(name, field_type)| match field_type {
-        FieldType::Normal(expr) => quote! {encoder.attribute(#expr, self.#name.clone())},
-        FieldType::Optional(expr) => quote! {encoder.optional_attribute(#expr, &self.#name)},
-        FieldType::Child(false, ..) => quote! {encoder.child(&self.#name)},
+        FieldType::Normal(expr, false) => quote! {encoder.attribute(#expr, self.#name.clone())},
+        FieldType::Normal(expr, true) => quote! {encoder.attribute(#expr, #celeste_rs::maps::EncodedVar::new_rle_str(&self.#name))},
+        FieldType::Optional(expr, false) => quote! {encoder.optional_attribute(#expr, &self.#name)},
+        FieldType::Optional(expr, true) => quote! {encoder.optional_attribute(#expr, &self.#name.as_ref().map(#celeste_rs::maps::EncodedVar::new_rle_str))},
+        FieldType::Child(false, false, _) => quote! {encoder.child(&self.#name)},
+        FieldType::Child(false, true, _) => quote! {if let Some(v) = &self.#name {encoder.child(v);}},
         FieldType::Child(true, ..) => quote! {encoder.children(&self.#name)},
     });
-
-    let celeste_rs = super::celeste_rs();
 
     Ok(quote! {
         impl MapElement for #struct_ident {

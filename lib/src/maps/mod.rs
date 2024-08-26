@@ -62,7 +62,7 @@ pub struct RawMap {
 }
 
 impl RawMap {
-    fn from_bytes(bytes: Vec<u8>) -> Result<Self, MapReadError> {
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, MapReadError> {
         let mut reader = MapReader::new(bytes);
 
         let check_string = reader.read_string()?;
@@ -284,20 +284,20 @@ impl<T: MapElement> ErasedMapElement for T {
 // It'll probably be fine because of monomorphization
 // so Option<u8> and Option<u16> are different
 // BUT still doesn't make sense to allow this when parsing dyn elements
-impl<T: MapElement> MapElement for Option<T> {
-    const NAME: &'static str = T::NAME;
+// impl<T: MapElement> MapElement for Option<T> {
+//     const NAME: &'static str = T::NAME;
 
-    fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-    where Self: Sized {
-        Ok(parser.parse_element::<T>().ok())
-    }
+//     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
+//     where Self: Sized {
+//         Ok(parser.parse_element::<T>().ok())
+//     }
 
-    fn to_raw(&self, encoder: &mut MapEncoder) {
-        if let Some(t) = self {
-            t.to_raw(encoder)
-        }
-    }
-}
+//     fn to_raw(&self, encoder: &mut MapEncoder) {
+//         if let Some(t) = self {
+//             t.to_raw(encoder)
+//         }
+//     }
+// }
 
 /// A dynamic element, if a parser for the element was registered it will be parsed into that struct, otherwise it is a [RawMapElement]
 ///
@@ -443,13 +443,7 @@ impl MapManager {
     }
 
     /// Writes the stored map data as binary into the provided writer
-    ///
-    /// This makes [ResolvableString]s unresolved so you should run [RawMap::resolve_strings]
-    /// if you intend to further edit the `RawMap` directly.
     pub fn write_map(&mut self, writer: &mut impl Write) -> std::io::Result<()> {
-        // unresolve strings, just in case people are editing the RawMap directly
-        self.map.unresolve_strings();
-
         writer.write_all(&self.map.to_bytes()?)
     }
 }

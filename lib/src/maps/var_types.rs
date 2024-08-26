@@ -28,7 +28,7 @@ impl EncodedVar {
             EncodedVar::Float(f) => format!("{f}_f32"),
             EncodedVar::LookupIndex(i) => lookup_table[*i].clone(),
             EncodedVar::String(s) => s.clone(),
-            EncodedVar::LengthEncodedString(s) => s.clone(),
+            EncodedVar::LengthEncodedString(s) => format!("RLE {s}"),
         }
     }
 
