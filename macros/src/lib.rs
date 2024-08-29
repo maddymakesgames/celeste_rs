@@ -36,6 +36,16 @@ pub(crate) fn celeste_rs() -> TokenStream {
 
 
 #[proc_macro_attribute]
+/// Makes a struct usable as the root of a celeste-related save file.
+///
+/// Specifically, makes a second version of the struct called `Root[struct name]`
+/// which has added fields for the xml metadata needed for saves to be loaded.
+/// Also creates `From` impl to and from the original struct.
+///
+/// You likely don't need to use this, it is used in `celeste_rs` to allow `modsavedata` files for
+/// Aurora's Additions and Collab Utils 2 to store `SavedSession`s that can still be read by the game.<br>
+/// Its only really needed if you're reimplementing `celeste_rs`'s `SaveData` struct or have a `modsavedata`
+/// storing xml data.
 pub fn root_tag(
     _args: proc_macro::TokenStream,
     element: proc_macro::TokenStream,
@@ -179,6 +189,73 @@ pub fn root_tag(
 }
 
 #[proc_macro_derive(MapElement, attributes(child, name, dyn_child, rle))]
+/// Derives the `MapElement` trait.
+///
+/// Every field in the struct needs to be annotated with either `child`, `name`, or `dyn_child`.
+/// The struct itself also needs to be annotated with `name`
+///
+/// #### name
+/// The name annotation is used to indicate the element's name in the binary file along with the name of any attributes.<br>
+/// For example: a struct representing an element called `box` would look like this
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {}
+///
+/// ```
+///
+/// If `Box` has the integer attributes `width` and `specialColorNumber` it would look like this:
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {
+///     #[name = "width"]
+///     width: Integer,
+///     #[name = "specialColorNumber"]
+///     special_color_number: Integer,
+/// }
+/// ```
+///
+/// This can parse an argument into anything that implements `TryFrom<&EncodedVar>`.
+///
+/// Specifically with `String` fields, you can also use the `rle` attribute to denote that the field
+/// should be read and written using [Run Length Encoding](https://en.wikipedia.org/wiki/Run-length_encoding)
+///
+/// #### child
+/// The `child` annotation is used to indicate that a field is a child element.<br>
+/// If this is used, there cannot be a field annotated with `dyn_child`.
+///
+/// For example: a struct representing a `box` element that has a `position` element as a child would look like this:
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {
+///     #[child]
+///     pos: Position
+/// }
+///
+/// #[derive(MapElement)]
+///#[name = "position"]
+/// pub struct Position {
+///     #[name = "x"]
+///     x: Integer,
+///     #[name = "y"]
+///     y: Integer,
+/// }
+/// ```
+///
+/// #### dyn_child
+/// The `dyn_child` annotation is used to indicate that a field should be parsed as a heterogenous array of all child elements.<br>
+/// If this is used, there can be no fields annotated with `child`.
+///
+/// This can be used like this:
+/// ```ignore
+/// #[derive(MapElement)]
+/// pub struct Collection {
+///     #[dyn_child]
+///     children: Vec<DynMapElement>,
+/// }
+/// ```
 pub fn map_element_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -195,6 +272,46 @@ pub fn map_element_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
 }
 
 #[proc_macro_derive(Entity, attributes(node, name))]
+/// Derives the `Entity` trait.
+///
+/// Every field in the struct needs to be annotated with either `node` or `name`.
+/// The struct itself also needs to be annotated with `name`
+///
+/// #### name
+/// The name annotation is used to indicate the entity's name in the binary file along with the name of any attributes.<br>
+/// For example: a struct representing an element called `box` would look like this
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {}
+///
+/// ```
+///
+/// If `Box` has the integer attributes `width` and `specialColorNumber` it would look like this:
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {
+///     #[name = "width"]
+///     width: Integer,
+///     #[name = "specialColorNumber"]
+///     special_color_number: Integer,
+/// }
+/// ```
+///
+/// This can parse an argument into anything that implements `TryFrom<&EncodedVar>`.
+///
+/// #### node
+/// The `node` annotation is used to indicate that a field is a child and is `Node`, `Option<Node>`, or `Vec<Node>`.<br>
+/// There can only be one field marked with `node` in a struct.
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {
+///     #[node]
+///     pos: Node
+/// }
+/// ```
 pub fn entity_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -211,6 +328,46 @@ pub fn entity_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream 
 }
 
 #[proc_macro_derive(Trigger, attributes(node, name))]
+/// Derives the `Trigger` trait.
+///
+/// Every field in the struct needs to be annotated with either `node` or `name`.
+/// The struct itself also needs to be annotated with `name`
+///
+/// #### name
+/// The name annotation is used to indicate the trigger's name in the binary file along with the name of any attributes.<br>
+/// For example: a struct representing an element called `box` would look like this
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {}
+///
+/// ```
+///
+/// If `Box` has the integer attributes `width` and `specialColorNumber` it would look like this:
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {
+///     #[name = "width"]
+///     width: Integer,
+///     #[name = "specialColorNumber"]
+///     special_color_number: Integer,
+/// }
+/// ```
+///
+/// This can parse an argument into anything that implements `TryFrom<&EncodedVar>`.
+///
+/// #### node
+/// The `node` annotation is used to indicate that a field is a child and is `Node`, `Option<Node>`, or `Vec<Node>`.<br>
+/// There can only be one field marked with `node` in a struct.
+/// ```ignore
+/// #[derive(MapElement)]
+/// #[name = "box"]
+/// pub struct Box {
+///     #[node]
+///     pos: Node
+/// }
+/// ```
 pub fn trigger_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
