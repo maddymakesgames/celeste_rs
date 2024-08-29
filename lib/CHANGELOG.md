@@ -1,3 +1,11 @@
+# celeste_rs/0.5.0 - 2024-08-29
+- Add `Trigger` trait and a corresponding derive macro.
+- Add `MapWriter` for actually writing the maps back to binary.
+- Fix various representations of vanilla elements.
+- Add support for all (used) vanilla entities and triggers. Found in the `vanilla_triggers` and `vanilla_entities` modules.
+    - Vanilla maps can be read in, modified, and written out and be loaded by the vanilla game now.
+- Add or update documentation for various structs.
+
 # celeste_rs/0.4.0 - 2024-07-20
 - Fix bug where `AmbienceVolume` can be non-null
 - Start adding support for reading & writing maps
