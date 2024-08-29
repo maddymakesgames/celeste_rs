@@ -34,6 +34,9 @@ pub(crate) fn celeste_rs() -> TokenStream {
     }
 }
 
+// TODO: probably combine map_element, entity, and trigger into a function with some options or smth
+// they're all so similar it feels bad to have so much copied code
+// at least entity and trigger can probably work.
 
 #[proc_macro_attribute]
 /// Makes a struct usable as the root of a celeste-related save file.
