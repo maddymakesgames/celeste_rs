@@ -15,14 +15,14 @@ use crate::maps::{
 #[derive(Debug)]
 /// The metadata related to all triggers
 pub struct MapTrigger<T: Trigger> {
-    id: Integer,
-    x: Float,
-    y: Float,
-    width: Option<Integer>,
-    height: Option<Integer>,
-    origin_x: Float,
-    origin_y: Float,
-    entity: T,
+    pub id: Integer,
+    pub x: Float,
+    pub y: Float,
+    pub width: Option<Integer>,
+    pub height: Option<Integer>,
+    pub origin_x: Float,
+    pub origin_y: Float,
+    pub entity: T,
 }
 
 impl<T: Trigger> MapElement for MapTrigger<T> {
@@ -109,15 +109,15 @@ pub mod vanilla_triggers {
     #[name = "musicTrigger"]
     pub struct MusicTrigger {
         #[name = "track"]
-        track: ResolvableString,
+        pub track: ResolvableString,
         #[name = "resetFade"]
-        resetfade: bool,
+        pub resetfade: bool,
         #[name = "setInSession"]
-        setinsession: bool,
+        pub setinsession: bool,
         #[name = "resetOnLeave"]
-        resetonleave: bool,
+        pub resetonleave: bool,
         #[name = "progress"]
-        progress: u8,
+        pub progress: u8,
     }
     #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
     #[name = "birdPathTrigger"]
@@ -127,91 +127,91 @@ pub mod vanilla_triggers {
     #[name = "blackholeStrength"]
     pub struct BlackholeStrength {
         #[name = "strength"]
-        strength: ResolvableString,
+        pub strength: ResolvableString,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "cameraOffsetTrigger"]
     pub struct CameraOffsetTrigger {
         #[name = "cameraX"]
-        camerax: Float,
+        pub camerax: Float,
         #[name = "cameraY"]
-        cameray: Float,
+        pub cameray: Float,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "changeRespawnTrigger"]
     pub struct ChangeRespawnTrigger {
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "minitextboxTrigger"]
     pub struct MiniTextboxTrigger {
         #[name = "mode"]
-        mode: ResolvableString,
+        pub mode: ResolvableString,
         #[name = "dialog_id"]
-        dialog_id: ResolvableString,
+        pub dialog_id: ResolvableString,
         #[name = "only_once"]
-        only_once: bool,
+        pub only_once: bool,
         #[name = "death_count"]
-        death_count: Integer,
+        pub death_count: Integer,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "respawnTargetTrigger"]
     pub struct RespawnTargetTrigger {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "noRefillTrigger"]
     pub struct NoRefillTrigger {
         #[name = "state"]
-        state: bool,
+        pub state: bool,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "bloomFadeTrigger"]
     pub struct BloomFadeTrigger {
         #[name = "bloomAddFrom"]
-        bloomaddfrom: Float,
+        pub bloomaddfrom: Float,
         #[name = "bloomAddTo"]
-        bloomaddto: Float,
+        pub bloomaddto: Float,
         #[name = "positionMode"]
-        positionmode: ResolvableString,
+        pub positionmode: ResolvableString,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "cameraTargetTrigger"]
     pub struct CameraTargetTrigger {
         #[name = "lerpStrength"]
-        lerpstrength: Float,
+        pub lerpstrength: Float,
         #[name = "positionMode"]
-        positionmode: ResolvableString,
+        pub positionmode: ResolvableString,
         #[name = "xOnly"]
-        xonly: bool,
+        pub xonly: bool,
         #[name = "yOnly"]
-        yonly: bool,
+        pub yonly: bool,
         #[name = "deleteFlag"]
-        deleteflag: Option<Character>,
+        pub deleteflag: Option<Character>,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "musicFadeTrigger"]
     pub struct MusicFadeTrigger {
         #[name = "direction"]
-        direction: ResolvableString,
+        pub direction: ResolvableString,
         #[name = "fadeA"]
-        fadea: u8,
+        pub fadea: u8,
         #[name = "fadeB"]
-        fadeb: u8,
+        pub fadeb: u8,
         #[name = "parameter"]
-        parameter: Option<ResolvableString>,
+        pub parameter: Option<ResolvableString>,
     }
     #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
     #[name = "goldenBerryCollectTrigger"]
@@ -221,37 +221,37 @@ pub mod vanilla_triggers {
     #[name = "cameraAdvanceTargetTrigger"]
     pub struct CameraAdvanceTargetTrigger {
         #[name = "lerpStrengthX"]
-        lerpstrengthx: u8,
+        pub lerpstrengthx: u8,
         #[name = "lerpStrengthY"]
-        lerpstrengthy: u8,
+        pub lerpstrengthy: u8,
         #[name = "positionModeX"]
-        positionmodex: ResolvableString,
+        pub positionmodex: ResolvableString,
         #[name = "positionModeY"]
-        positionmodey: ResolvableString,
+        pub positionmodey: ResolvableString,
         #[name = "xOnly"]
-        xonly: bool,
+        pub xonly: bool,
         #[name = "yOnly"]
-        yonly: bool,
+        pub yonly: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "lightFadeTrigger"]
     pub struct LightFadeTrigger {
         #[name = "lightAddFrom"]
-        lightaddfrom: Float,
+        pub lightaddfrom: Float,
         #[name = "lightAddTo"]
-        lightaddto: Float,
+        pub lightaddto: Float,
         #[name = "positionMode"]
-        positionmode: ResolvableString,
+        pub positionmode: ResolvableString,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "spawnFacingTrigger"]
     pub struct SpawnFacingTrigger {
         #[name = "facing"]
-        facing: ResolvableString,
+        pub facing: ResolvableString,
     }
     #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
     #[name = "windAttackTrigger"]
@@ -261,31 +261,31 @@ pub mod vanilla_triggers {
     #[name = "ambienceParamTrigger"]
     pub struct AmbienceParamTrigger {
         #[name = "direction"]
-        direction: ResolvableString,
+        pub direction: ResolvableString,
         #[name = "parameter"]
-        parameter: ResolvableString,
+        pub parameter: ResolvableString,
         #[name = "from"]
-        from: Float,
+        pub from: Float,
         #[name = "to"]
-        to: Float,
+        pub to: Float,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "eventTrigger"]
     pub struct EventTrigger {
         #[name = "event"]
-        event: ResolvableString,
+        pub event: ResolvableString,
         #[name = "onSpawn"]
-        onspawn: Option<bool>,
+        pub onspawn: Option<bool>,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "detachFollowersTrigger"]
     pub struct DetachFollowersTrigger {
         #[name = "global"]
-        global: bool,
+        pub global: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
@@ -296,64 +296,64 @@ pub mod vanilla_triggers {
     #[name = "altMusicTrigger"]
     pub struct AltMusicTrigger {
         #[name = "track"]
-        track: ResolvableString,
+        pub track: ResolvableString,
         #[name = "resetOnLeave"]
-        resetonleave: bool,
+        pub resetonleave: bool,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "windTrigger"]
     pub struct WindTrigger {
         #[name = "pattern"]
-        pattern: ResolvableString,
+        pub pattern: ResolvableString,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "creditsTrigger"]
     pub struct CreditsTrigger {
         #[name = "event"]
-        event: ResolvableString,
+        pub event: ResolvableString,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "rumbleTrigger"]
     pub struct RumbleTrigger {
         #[name = "manualTrigger"]
-        manualtrigger: bool,
+        pub manualtrigger: bool,
         #[name = "persistent"]
-        persistent: bool,
+        pub persistent: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "oshiroTrigger"]
     pub struct OshiroTrigger {
         #[name = "state"]
-        state: bool,
+        pub state: bool,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "moonGlitchBackgroundTrigger"]
     pub struct MoonGlitchBackgroundTrigger {
         #[name = "duration"]
-        duration: ResolvableString,
+        pub duration: ResolvableString,
         #[name = "stay"]
-        stay: bool,
+        pub stay: bool,
         #[name = "glitch"]
-        glitch: bool,
+        pub glitch: bool,
     }
 
     #[derive(Debug, Trigger)]
     #[name = "interactTrigger"]
     pub struct InteractTrigger {
         #[name = "event"]
-        event: ResolvableString,
+        pub event: ResolvableString,
         #[name = "event_2"]
-        event_2: ResolvableString,
+        pub event_2: ResolvableString,
         #[name = "event_3"]
-        event_3: ResolvableString,
+        pub event_3: ResolvableString,
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 }

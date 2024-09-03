@@ -18,14 +18,14 @@ use std::{any::Any, fmt::Debug};
 /// These fields are on every entity element and are
 /// useful even when we cannot resolve the entity itself
 pub struct MapEntity<T: Entity> {
-    id: Integer,
-    x: Float,
-    y: Float,
-    width: Option<Integer>,
-    height: Option<Integer>,
-    origin_x: Float,
-    origin_y: Float,
-    entity: T,
+    pub id: Integer,
+    pub x: Float,
+    pub y: Float,
+    pub width: Option<Integer>,
+    pub height: Option<Integer>,
+    pub origin_x: Float,
+    pub origin_y: Float,
+    pub entity: T,
 }
 
 impl<T: Entity> MapElement for MapEntity<T> {
@@ -273,7 +273,7 @@ pub mod vanilla_entities {
     #[name = "cassette"]
     pub struct Cassette {
         #[node]
-        bubble_points: Vec<Node>,
+        pub bubble_points: Vec<Node>,
     }
 
     #[derive(Debug, Entity)]
@@ -329,7 +329,7 @@ pub mod vanilla_entities {
     #[name = "birdForsakenCityGem"]
     pub struct BirdForsakenCityGem {
         #[node]
-        nodes: Vec<Node>,
+        pub nodes: Vec<Node>,
     }
 
     #[derive(Debug, Entity)]
@@ -434,149 +434,149 @@ pub mod vanilla_entities {
     #[name = "tentacles"]
     pub struct Tentacles {
         #[name = "fear_distance"]
-        fear_distance: ResolvableString,
+        pub fear_distance: ResolvableString,
         #[name = "slide_until"]
-        slide_until: u8,
+        pub slide_until: u8,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "glider"]
     pub struct Glider {
         #[name = "bubble"]
-        bubble: bool,
+        pub bubble: bool,
         #[name = "tutorial"]
-        tutorial: bool,
+        pub tutorial: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "flingBirdIntro"]
     pub struct FlingBirdIntro {
         #[name = "crashes"]
-        crashes: bool,
+        pub crashes: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "exitBlock"]
     pub struct ExitBlock {
         #[name = "tileType"]
-        tiletype: Character,
+        pub tiletype: Character,
     }
 
     #[derive(Debug, Entity)]
     #[name = "templeCrackedBlock"]
     pub struct TempleCrackedBlock {
         #[name = "persistent"]
-        persistent: bool,
+        pub persistent: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "clothesline"]
     pub struct Clothesline {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "redBlocks"]
     pub struct RedBlocks {
         #[name = "inverted"]
-        inverted: bool,
+        pub inverted: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "door"]
     pub struct Door {
         #[name = "type"]
-        kind: ResolvableString,
+        pub kind: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "dashSwitchV"]
     pub struct DashSwitchV {
         #[name = "ceiling"]
-        ceiling: bool,
+        pub ceiling: bool,
         #[name = "persistent"]
-        persistent: bool,
+        pub persistent: bool,
         #[name = "sprite"]
-        sprite: ResolvableString,
+        pub sprite: ResolvableString,
         #[name = "allGates"]
-        allgates: Option<bool>,
+        pub allgates: Option<bool>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "spinner"]
     pub struct Spinner {
         #[name = "attachToSolid"]
-        attachtosolid: bool,
+        pub attachtosolid: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "conditionBlock"]
     pub struct ConditionBlock {
         #[name = "tileType"]
-        tiletype: ResolvableString,
+        pub tiletype: ResolvableString,
         #[name = "condition"]
-        condition: ResolvableString,
+        pub condition: ResolvableString,
         #[name = "conditionID"]
-        conditionid: ResolvableString,
+        pub conditionid: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "floatySpaceBlock"]
     pub struct FloatySpaceBlock {
         #[name = "tiletype"]
-        tiletype: Character,
+        pub tiletype: Character,
         #[name = "disableSpawnOffset"]
-        disablespawnoffset: bool,
+        pub disablespawnoffset: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "soundSource"]
     pub struct SoundSource {
         #[name = "sound"]
-        sound: ResolvableString,
+        pub sound: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "lockBlock"]
     pub struct LockBlock {
         #[name = "stepMusicProgress"]
-        stepmusicprogress: bool,
+        pub stepmusicprogress: bool,
         #[name = "sprite"]
-        sprite: ResolvableString,
+        pub sprite: ResolvableString,
         #[name = "unlock_sfx"]
-        unlock_sfx: Option<ResolvableString>,
+        pub unlock_sfx: Option<ResolvableString>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "seeker"]
     pub struct Seeker {
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "dashSwitchH"]
     pub struct DashSwitchH {
         #[name = "leftSide"]
-        leftside: bool,
+        pub leftside: bool,
         #[name = "persistent"]
-        persistent: bool,
+        pub persistent: bool,
         #[name = "sprite"]
-        sprite: ResolvableString,
+        pub sprite: ResolvableString,
         #[name = "allGates"]
-        allgates: Option<bool>,
+        pub allgates: Option<bool>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "summitcheckpoint"]
     pub struct SummitCheckpoint {
         #[name = "number"]
-        number: u8,
+        pub number: u8,
     }
 
 
@@ -584,139 +584,139 @@ pub mod vanilla_entities {
     #[name = "summitgem"]
     pub struct SummitGem {
         #[name = "gem"]
-        gem: u8,
+        pub gem: u8,
     }
 
     #[derive(Debug, Entity)]
     #[name = "summitGemManager"]
     pub struct SummitGemManager {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "fireBall"]
     pub struct FireBall {
         #[name = "amount"]
-        amount: u8,
+        pub amount: u8,
         #[name = "offset"]
-        offset: Float,
+        pub offset: Float,
         #[name = "speed"]
-        speed: Float,
+        pub speed: Float,
         #[name = "notCoreMode"]
-        notcoremode: Option<bool>,
+        pub notcoremode: Option<bool>,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "flingBird"]
     pub struct FlingBird {
         #[name = "waiting"]
-        waiting: bool,
+        pub waiting: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "coreModeToggle"]
     pub struct CoreModeToggle {
         #[name = "onlyFire"]
-        onlyfire: bool,
+        pub onlyfire: bool,
         #[name = "onlyIce"]
-        onlyice: bool,
+        pub onlyice: bool,
         #[name = "persistent"]
-        persistent: bool,
+        pub persistent: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "heartGemDoor"]
     pub struct HeartGemDoor {
         #[name = "requires"]
-        requires: u8,
+        pub requires: u8,
         #[name = "startHidden"]
-        starthidden: Option<bool>,
+        pub starthidden: Option<bool>,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "eyebomb"]
     pub struct Eyebomb {
         #[name = "right"]
-        right: bool,
+        pub right: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "templeGate"]
     pub struct TempleGate {
         #[name = "type"]
-        kind: ResolvableString,
+        pub kind: ResolvableString,
         #[name = "sprite"]
-        sprite: ResolvableString,
+        pub sprite: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "playbackTutorial"]
     pub struct PlaybackTutorial {
         #[name = "tutorial"]
-        tutorial: ResolvableString,
+        pub tutorial: ResolvableString,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "starJumpBlock"]
     pub struct StarJumpBlock {
         #[name = "sinks"]
-        sinks: bool,
+        pub sinks: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "seekerStatue"]
     pub struct SeekerStatue {
         #[name = "hatch"]
-        hatch: ResolvableString,
+        pub hatch: ResolvableString,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "finalBoss"]
     pub struct FinalBoss {
         #[name = "patternIndex"]
-        patternindex: u8,
+        pub patternindex: u8,
         #[name = "cameraPastY"]
-        camerapasty: u8,
+        pub camerapasty: u8,
         #[name = "dialog"]
-        dialog: bool,
+        pub dialog: bool,
         #[name = "startHit"]
-        starthit: bool,
+        pub starthit: bool,
         #[name = "cameraLockY"]
-        cameralocky: bool,
+        pub cameralocky: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "cloud"]
     pub struct Cloud {
         #[name = "fragile"]
-        fragile: bool,
+        pub fragile: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "bigWaterfall"]
     pub struct BigWaterfall {
         #[name = "layer"]
-        layer: ResolvableString,
+        pub layer: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "wallSpringLeft"]
     pub struct WallSpringLeft {
         #[name = "playerCanUse"]
-        playercanuse: Option<bool>,
+        pub playercanuse: Option<bool>,
     }
 
 
@@ -724,393 +724,393 @@ pub mod vanilla_entities {
     #[name = "coreMessage"]
     pub struct CoreMessage {
         #[name = "line"]
-        line: u8,
+        pub line: u8,
     }
 
     #[derive(Debug, Entity)]
     #[name = "introCrusher"]
     pub struct IntroCrusher {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "key"]
     pub struct Key {
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "hahaha"]
     pub struct HaHaHa {
         #[name = "ifset"]
-        ifset: ResolvableString,
+        pub ifset: ResolvableString,
         #[name = "triggerLaughSfx"]
-        triggerlaughsfx: bool,
+        pub triggerlaughsfx: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "badelineBoost"]
     pub struct BadelineBoost {
         #[name = "lockCamera"]
-        lockcamera: bool,
+        pub lockcamera: bool,
         #[name = "canSkip"]
-        canskip: Option<bool>,
+        pub canskip: Option<bool>,
         #[name = "finalCh9Boost"]
-        finalch9boost: Option<bool>,
+        pub finalch9boost: Option<bool>,
         #[name = "finalCh9GoldenBoost"]
-        finalch9goldenboost: Option<bool>,
+        pub finalch9goldenboost: Option<bool>,
         #[name = "finalCh9Dialog"]
-        finalch9dialog: Option<bool>,
+        pub finalch9dialog: Option<bool>,
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "wallSpringRight"]
     pub struct WallSpringRight {
         #[name = "playerCanUse"]
-        playercanuse: Option<bool>,
+        pub playercanuse: Option<bool>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "crumbleWallOnRumble"]
     pub struct CrumbleWallOnRumble {
         #[name = "blendin"]
-        blendin: bool,
+        pub blendin: bool,
         #[name = "persistent"]
-        persistent: bool,
+        pub persistent: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "risingLava"]
     pub struct RisingLava {
         #[name = "intro"]
-        intro: bool,
+        pub intro: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "greenBlocks"]
     pub struct GreenBlocks {
         #[name = "inverted"]
-        inverted: bool,
+        pub inverted: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "lightningBlock"]
     pub struct LightningBlock {
         #[name = "flag"]
-        flag: bool,
+        pub flag: bool,
         #[name = "music"]
-        music: ResolvableString,
+        pub music: ResolvableString,
         #[name = "music_progress"]
-        music_progress: Integer,
+        pub music_progress: Integer,
         #[name = "music_session"]
-        music_session: Option<bool>,
+        pub music_session: Option<bool>,
         #[name = "flipX"]
-        flipx: bool,
+        pub flipx: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "birdPath"]
     pub struct BirdPath {
         #[name = "only_once"]
-        only_once: bool,
+        pub only_once: bool,
         #[name = "onlyIfLeft"]
-        onlyifleft: bool,
+        pub onlyifleft: bool,
         #[name = "speedMult"]
-        speedmult: Option<Float>,
+        pub speedmult: Option<Float>,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "cutsceneNode"]
     pub struct CutsceneNode {
         #[name = "nodeName"]
-        nodename: ResolvableString,
+        pub nodename: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "clutterDoor"]
     pub struct ClutterDoor {
         #[name = "type"]
-        kind: ResolvableString,
+        pub kind: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "bigSpinner"]
     pub struct BigSpinner {
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "cliffside_flag"]
     pub struct CliffsideFlag {
         #[name = "index"]
-        index: u8,
+        pub index: u8,
     }
 
     #[derive(Debug, Entity)]
     #[name = "ridgeGate"]
     pub struct RidgeGate {
         #[name = "strawberries"]
-        strawberries: ResolvableString,
+        pub strawberries: ResolvableString,
         #[name = "keys"]
-        keys: ResolvableString,
+        pub keys: ResolvableString,
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "swapBlock"]
     pub struct SwapBlock {
         #[name = "theme"]
-        theme: Option<ResolvableString>,
+        pub theme: Option<ResolvableString>,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "movingPlatform"]
     pub struct MovingPlatform {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "switchGate"]
     pub struct SwitchGate {
         #[name = "persistent"]
-        persistent: bool,
+        pub persistent: bool,
         #[name = "sprite"]
-        sprite: Option<ResolvableString>,
+        pub sprite: Option<ResolvableString>,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "blackGem"]
     pub struct BlackGem {
         #[name = "removeCameraTriggers"]
-        removecameratriggers: Option<bool>,
+        pub removecameratriggers: Option<bool>,
         #[name = "fake"]
-        fake: Option<bool>,
+        pub fake: Option<bool>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "SummitBackgroundManager"]
     pub struct SummitBackgroundManager {
         #[name = "index"]
-        index: Integer,
+        pub index: Integer,
         #[name = "intro_launch"]
-        intro_launch: bool,
+        pub intro_launch: bool,
         #[name = "cutscene"]
-        cutscene: Option<ResolvableString>,
+        pub cutscene: Option<ResolvableString>,
         #[name = "dark"]
-        dark: Option<bool>,
+        pub dark: Option<bool>,
         #[name = "ambience"]
-        ambience: Option<ResolvableString>,
+        pub ambience: Option<ResolvableString>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "templeMirror"]
     pub struct TempleMirror {
         #[name = "reflectX"]
-        reflectx: Integer,
+        pub reflectx: Integer,
         #[name = "reflectY"]
-        reflecty: u8,
+        pub reflecty: u8,
     }
 
     #[derive(Debug, Entity)]
     #[name = "moveBlock"]
     pub struct MoveBlock {
         #[name = "direction"]
-        direction: ResolvableString,
+        pub direction: ResolvableString,
         #[name = "canSteer"]
-        cansteer: bool,
+        pub cansteer: bool,
         #[name = "fast"]
-        fast: bool,
+        pub fast: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "dreamBlock"]
     pub struct DreamBlock {
         #[name = "fastMoving"]
-        fastmoving: Option<bool>,
+        pub fastmoving: Option<bool>,
         #[name = "oneUse"]
-        oneuse: Option<bool>,
+        pub oneuse: Option<bool>,
         #[name = "below"]
-        below: Option<bool>,
+        pub below: Option<bool>,
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "wallBooster"]
     pub struct WallBooster {
         #[name = "left"]
-        left: bool,
+        pub left: bool,
         #[name = "notCoreMode"]
-        notcoremode: Option<bool>,
+        pub notcoremode: Option<bool>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "water"]
     pub struct Water {
         #[name = "steamy"]
-        steamy: bool,
+        pub steamy: bool,
         #[name = "hasBottom"]
-        hasbottom: bool,
+        pub hasbottom: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "lightning"]
     pub struct Lightning {
         #[name = "perLevel"]
-        perlevel: bool,
+        pub perlevel: bool,
         #[name = "moveTime"]
-        movetime: Float,
+        pub movetime: Float,
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "moonCreature"]
     pub struct MoonCreature {
         #[name = "number"]
-        number: u8,
+        pub number: u8,
     }
 
     #[derive(Debug, Entity)]
     #[name = "finalBossMovingBlock"]
     pub struct FinalBossMovingBlock {
         #[name = "nodeIndex"]
-        nodeindex: u8,
+        pub nodeindex: u8,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "rotateSpinner"]
     pub struct RotateSpinner {
         #[name = "clockwise"]
-        clockwise: bool,
+        pub clockwise: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "booster"]
     pub struct Booster {
         #[name = "red"]
-        red: bool,
+        pub red: bool,
         #[name = "ch9_hub_booster"]
-        ch9_hub_booster: Option<bool>,
+        pub ch9_hub_booster: Option<bool>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "bird"]
     pub struct Bird {
         #[name = "mode"]
-        mode: ResolvableString,
+        pub mode: ResolvableString,
         #[name = "onlyOnce"]
-        onlyonce: Option<bool>,
+        pub onlyonce: Option<bool>,
         #[name = "onlyIfPlayerLeft"]
-        onlyifplayerleft: Option<bool>,
+        pub onlyifplayerleft: Option<bool>,
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "reflectionHeartStatue"]
     pub struct ReflectionHeartStatue {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "yellowBlocks"]
     pub struct YellowBlocks {
         #[name = "inverted"]
-        inverted: bool,
+        pub inverted: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "towerviewer"]
     pub struct TowerViewer {
         #[name = "summit"]
-        summit: Option<bool>,
+        pub summit: Option<bool>,
         #[name = "onlyY"]
-        onlyy: Option<bool>,
+        pub onlyy: Option<bool>,
         #[node]
-        node: Option<Node>,
+        pub node: Option<Node>,
     }
 
     #[derive(Debug, Entity)]
     #[name = "cobweb"]
     pub struct Cobweb {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "infiniteStar"]
     pub struct InfiniteStar {
         #[name = "shielded"]
-        shielded: bool,
+        pub shielded: bool,
         #[name = "singleUse"]
-        singleuse: bool,
+        pub singleuse: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "torch"]
     pub struct Torch {
         #[name = "startLit"]
-        startlit: bool,
+        pub startlit: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "colorSwitch"]
     pub struct ColorSwitch {
         #[name = "type"]
-        kind: ResolvableString,
+        pub kind: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "cliffflag"]
     pub struct CliffFlag {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "lamp"]
     pub struct Lamp {
         #[name = "broken"]
-        broken: bool,
+        pub broken: bool,
     }
 
     #[derive(Debug, Entity)]
     #[name = "powerSourceNumber"]
     pub struct PowerSourceNumber {
         #[name = "number"]
-        number: u8,
+        pub number: u8,
         #[name = "strawberries"]
-        strawberries: ResolvableString,
+        pub strawberries: ResolvableString,
         #[name = "keys"]
-        keys: ResolvableString,
+        pub keys: ResolvableString,
     }
 
     #[derive(Debug, Entity)]
     #[name = "bridge"]
     pub struct Bridge {
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
 
@@ -1118,9 +1118,9 @@ pub mod vanilla_entities {
     #[name = "crushBlock"]
     pub struct CrushBlock {
         #[name = "axes"]
-        axes: ResolvableString,
+        pub axes: ResolvableString,
         #[name = "chillout"]
-        chillout: bool,
+        pub chillout: bool,
     }
 
 
@@ -1128,19 +1128,19 @@ pub mod vanilla_entities {
     #[name = "trackSpinner"]
     pub struct TrackSpinner {
         #[name = "startCenter"]
-        startcenter: bool,
+        pub startcenter: bool,
         #[name = "speed"]
-        speed: ResolvableString,
+        pub speed: ResolvableString,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 
     #[derive(Debug, Entity)]
     #[name = "gondola"]
     pub struct Gondola {
         #[name = "active"]
-        active: bool,
+        pub active: bool,
         #[node]
-        node: Node,
+        pub node: Node,
     }
 }

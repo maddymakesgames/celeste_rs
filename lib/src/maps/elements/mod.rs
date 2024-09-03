@@ -78,7 +78,7 @@ pub struct Rect {
 #[name = "node"]
 pub struct Node {
     #[name = "x"]
-    x: Float,
+    pub x: Float,
     #[name = "y"]
-    y: Float,
+    pub y: Float,
 }
