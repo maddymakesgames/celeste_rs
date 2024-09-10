@@ -1,4 +1,8 @@
 # celeste_rs
+[![crates.io](https://img.shields.io/crates/v/celeste_rs.svg)](https://crates.io/crates/celeste_rs)
+[![docs](https://docs.rs/celeste_rs/badge.svg)](https://docs.rs/celeste_rs)
+[![Rust CI](https://github.com/maddymakesgames/celeste_rs/actions/workflows/rust.yaml/badge.svg)](https://github.com/maddymakesgames/celeste_rs/actions/workflows/rust.yaml)
+
 Collection of Rust crates to work with data formats found in the game Celeste and it's modding scene.
 
 
