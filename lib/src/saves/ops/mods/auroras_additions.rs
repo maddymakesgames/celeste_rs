@@ -4,12 +4,12 @@ use anyhow::{anyhow, Result};
 use saphyr::{Hash, Yaml};
 
 use crate::{
+    anyhow_utils::ResultMapIter,
     saves::{
         mods::{auroras_additions::AurorasAdditionsSave, ModFile, ModSave},
         ops::XML_VERSION_HEADER,
         session::{RootSavedSession, SavedSession},
     },
-    utils::ResultMapIter,
 };
 
 impl ModSave for AurorasAdditionsSave {}
