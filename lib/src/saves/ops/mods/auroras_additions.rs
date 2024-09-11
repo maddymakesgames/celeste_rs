@@ -10,14 +10,16 @@ use crate::{
         ops::XML_VERSION_HEADER,
         session::{RootSavedSession, SavedSession},
     },
+    utils::YamlFile,
 };
 
 impl ModSave for AurorasAdditionsSave {}
 
 impl ModFile for AurorasAdditionsSave {
     const MOD_NAME: &'static str = "AurorasAdditions";
-
-    fn parse_from_yaml(yaml: Yaml) -> Result<Self> {
+}
+impl YamlFile for AurorasAdditionsSave {
+    fn parse_from_yaml(yaml: &Yaml) -> Result<Self> {
         let mut sessions_per_level = HashMap::new();
 
         let sessions_per_level_map = yaml["SessionsPerLevel"].as_hash().ok_or(anyhow!(

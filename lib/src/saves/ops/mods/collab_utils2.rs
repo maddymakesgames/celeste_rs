@@ -8,6 +8,7 @@ use crate::{
         session::{RootSavedSession, SavedSession},
         util::FileTime,
     },
+    utils::YamlFile,
 };
 
 use anyhow::{anyhow, Error, Result};
@@ -17,8 +18,9 @@ impl ModSave for CollabsUtils2Save {}
 
 impl ModFile for CollabsUtils2Save {
     const MOD_NAME: &'static str = "CollabUtils2";
-
-    fn parse_from_yaml(yaml: saphyr::Yaml) -> anyhow::Result<Self> {
+}
+impl YamlFile for CollabsUtils2Save {
+    fn parse_from_yaml(yaml: &saphyr::Yaml) -> anyhow::Result<Self> {
         let mut sessions_per_level = HashMap::new();
 
         let sessions_per_level_map = yaml["SessionsPerLevel"].as_hash().ok_or(anyhow!(

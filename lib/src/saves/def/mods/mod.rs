@@ -8,13 +8,11 @@
 pub mod auroras_additions;
 pub mod collab_utils2;
 
-use std::{fmt::Write, io::Read};
+use saphyr::Yaml;
 
-use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlEmitter, YamlLoader};
-
-use crate::saves::mods::{
-    auroras_additions::AurorasAdditionsSave,
-    collab_utils2::CollabsUtils2Save,
+use crate::{
+    saves::mods::{auroras_additions::AurorasAdditionsSave, collab_utils2::CollabsUtils2Save},
+    utils::YamlFile,
 };
 
 /// A mod related file<br>
@@ -25,41 +23,11 @@ use crate::saves::mods::{
 /// To implement for a mod file that does not use YAML
 /// make the `parse_from_yaml` body `unreachable!()`
 /// and overwrite `parse_from_str` and `parse_from_reader`
-pub trait ModFile: Sized {
+pub trait ModFile: YamlFile + Sized {
     /// The unlocalized name of the mod the file is for.
     ///
     /// This is the third part of the file name and should be used to verify which file you're loading.
     const MOD_NAME: &'static str;
-
-    fn parse_from_yaml(yaml: Yaml) -> anyhow::Result<Self>;
-
-    fn parse_from_str(str: &str) -> anyhow::Result<Self> {
-        let yaml = YamlLoader::load_from_str(str)?;
-        Self::parse_from_yaml(yaml[0].clone())
-    }
-
-    fn parse_from_reader(reader: impl Read) -> anyhow::Result<Self> {
-        let yaml = YamlDecoder::read(reader)
-            .encoding_trap(YAMLDecodingTrap::Strict)
-            .decode();
-        match yaml {
-            Ok(y) => Self::parse_from_yaml(y[0].clone()),
-            Err(e) => match e {
-                saphyr::yaml::LoadError::IO(e) => Err(Box::new(e).into()),
-                saphyr::yaml::LoadError::Scan(e) => Err(Box::new(e).into()),
-                saphyr::yaml::LoadError::Decode(e) => Err(anyhow::format_err!(e)),
-            },
-        }
-    }
-
-    fn to_yaml(&self) -> anyhow::Result<Yaml>;
-
-    fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
-        let yaml = self.to_yaml()?;
-        let mut emitter = YamlEmitter::new(writer);
-        emitter.multiline_strings(true);
-        Ok(emitter.dump(&yaml)?)
-    }
 }
 
 

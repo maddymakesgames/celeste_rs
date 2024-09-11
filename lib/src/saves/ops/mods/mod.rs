@@ -1,9 +1,8 @@
 use std::{ffi::OsStr, fmt::Write, fs::OpenOptions, io::Read, path::Path};
 
-use crate::saves::mods::{
-    auroras_additions::AurorasAdditionsSave,
-    collab_utils2::CollabsUtils2Save,
-    *,
+use crate::{
+    saves::mods::{auroras_additions::AurorasAdditionsSave, collab_utils2::CollabsUtils2Save, *},
+    utils::YamlFile,
 };
 use anyhow::{anyhow, Result};
 use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlLoader};
@@ -190,18 +189,21 @@ impl DynYamlDoc {
     }
 }
 
-impl ModFile for DynYamlDoc {
-    const MOD_NAME: &'static str = "";
-
-    fn parse_from_yaml(_yaml: saphyr::Yaml) -> anyhow::Result<Self> {
+impl YamlFile for DynYamlDoc {
+    fn parse_from_yaml(_yaml: &saphyr::Yaml) -> anyhow::Result<Self> {
         unimplemented!(
-            "Don't call ModFile::parse_from_yaml on DynYamlDoc, use one of the DynYamlDoc methods."
+            "Don't call YamlFile::parse_from_yaml on DynYamlDoc, use one of the DynYamlDoc \
+             methods."
         )
     }
 
     fn to_yaml(&self) -> anyhow::Result<saphyr::Yaml> {
         Ok(self.1.clone())
     }
+}
+
+impl ModFile for DynYamlDoc {
+    const MOD_NAME: &'static str = "";
 }
 
 impl ModSave for DynYamlDoc {}
