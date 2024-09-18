@@ -1,4 +1,8 @@
-use std::{error::Error, fmt::Display};
+use std::{
+    error::Error,
+    fmt::Display,
+    io::{Result as IoResult, Write},
+};
 
 pub struct BinReader<'a> {
     contents: &'a [u8],
@@ -170,71 +174,70 @@ impl Display for BinReadError {
     }
 }
 
-#[derive(Default)]
-pub struct BinWriter {
-    buf: Vec<u8>,
+pub struct BinWriter<T: Write> {
+    writer: T,
 }
 
-impl BinWriter {
-    pub fn new() -> Self {
-        BinWriter::default()
+impl<T: Write> BinWriter<T> {
+    pub fn new(writer: T) -> Self {
+        BinWriter { writer }
     }
 
-    pub fn finish(self) -> Vec<u8> {
-        self.buf
+    // pub fn to_writer(self, mut writer: impl Write) -> std::io::Result<()> {
+    //     writer.write_all(&self.buf)
+    // }
+
+    pub fn write_u8(&mut self, byte: u8) -> IoResult<()> {
+        self.writer.write_all(&[byte])
     }
 
-    pub fn write_u8(&mut self, byte: u8) {
-        self.buf.push(byte);
+    pub fn write_i8(&mut self, byte: i8) -> IoResult<()> {
+        self.writer.write_all(&[byte as u8])
     }
 
-    pub fn write_i8(&mut self, byte: i8) {
-        self.buf.push(byte as u8);
+    pub fn write_u16(&mut self, short: u16) -> IoResult<()> {
+        self.writer.write_all(&short.to_le_bytes())
     }
 
-    pub fn write_u16(&mut self, short: u16) {
-        self.buf.extend_from_slice(&short.to_le_bytes());
+    pub fn write_i16(&mut self, short: i16) -> IoResult<()> {
+        self.writer.write_all(&short.to_le_bytes())
     }
 
-    pub fn write_i16(&mut self, short: i16) {
-        self.buf.extend_from_slice(&short.to_le_bytes());
+    pub fn write_u32(&mut self, int: u32) -> IoResult<()> {
+        self.writer.write_all(&int.to_le_bytes())
     }
 
-    pub fn write_u32(&mut self, int: u32) {
-        self.buf.extend_from_slice(&int.to_le_bytes());
+    pub fn write_i32(&mut self, int: i32) -> IoResult<()> {
+        self.writer.write_all(&int.to_le_bytes())
     }
 
-    pub fn write_i32(&mut self, int: i32) {
-        self.buf.extend_from_slice(&int.to_le_bytes());
+    pub fn write_u64(&mut self, long: u64) -> IoResult<()> {
+        self.writer.write_all(&long.to_le_bytes())
     }
 
-    pub fn write_u64(&mut self, long: u64) {
-        self.buf.extend_from_slice(&long.to_le_bytes());
+    pub fn write_i64(&mut self, long: i64) -> IoResult<()> {
+        self.writer.write_all(&long.to_le_bytes())
     }
 
-    pub fn write_i64(&mut self, long: i64) {
-        self.buf.extend_from_slice(&long.to_le_bytes());
+    pub fn write_bool(&mut self, bool: bool) -> IoResult<()> {
+        self.writer.write_all(&[bool as u8])
     }
 
-    pub fn write_bool(&mut self, bool: bool) {
-        self.buf.push(bool as u8)
+    pub fn write_f32(&mut self, float: f32) -> IoResult<()> {
+        self.writer.write_all(&float.to_le_bytes())
     }
 
-    pub fn write_f32(&mut self, float: f32) {
-        self.buf.extend_from_slice(&float.to_le_bytes());
+    pub fn write_f64(&mut self, double: f64) -> IoResult<()> {
+        self.writer.write_all(&double.to_le_bytes())
     }
 
-    pub fn write_f64(&mut self, double: f64) {
-        self.buf.extend_from_slice(&double.to_le_bytes());
-    }
-
-    pub fn write_char(&mut self, char: char) {
+    pub fn write_char(&mut self, char: char) -> IoResult<()> {
         debug_assert!(char.is_ascii());
         // We only accept ascii chars so this is fine
-        self.buf.push(char as u8);
+        self.writer.write_all(&[char as u8])
     }
 
-    pub fn write_varint(&mut self, mut int: u32) {
+    pub fn write_varint(&mut self, mut int: u32) -> IoResult<()> {
         let mut next_byte: u8;
         let mut buf = [0u8; 5];
         let mut i = 0;
@@ -253,23 +256,23 @@ impl BinWriter {
             }
         }
 
-        self.buf.extend_from_slice(&buf[.. i]);
+        self.writer.write_all(&buf[.. i])
     }
 
-    pub fn write_string(&mut self, str: &str) {
-        self.write_varint(str.len() as u32);
+    pub fn write_string(&mut self, str: &str) -> IoResult<()> {
+        self.write_varint(str.len() as u32)?;
 
         for c in str.chars() {
-            self.write_char(c);
+            self.write_char(c)?;
         }
+        Ok(())
     }
 
-    pub fn write_length_encoded_string(&mut self, str: &str) {
+    pub fn write_length_encoded_string(&mut self, str: &str) -> IoResult<()> {
         let mut buf = Vec::with_capacity(str.len());
 
         if str.is_empty() {
-            self.write_i16(0);
-            return;
+            return self.write_i16(0);
         }
 
         let mut char_iter = str.chars();
@@ -292,7 +295,7 @@ impl BinWriter {
         buf.push(cur_char_count);
         buf.push(cur_char as u8);
 
-        self.write_i16(buf.len() as i16);
-        self.buf.extend(&buf);
+        self.write_i16(buf.len() as i16)?;
+        self.writer.write_all(&buf)
     }
 }

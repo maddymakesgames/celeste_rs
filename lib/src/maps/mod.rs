@@ -83,15 +83,16 @@ impl RawMap {
     }
 
     fn to_bytes(&self) -> Result<Vec<u8>, MapWriteError> {
-        let mut writer = MapWriter::new();
+        let mut buf = Vec::new();
+        let mut writer = MapWriter::new(&mut buf);
 
-        writer.write_string("CELESTE MAP");
+        writer.write_string("CELESTE MAP")?;
 
-        writer.write_string(&self.name);
-        writer.write_lookup_table(&self.lookup_table);
+        writer.write_string(&self.name)?;
+        writer.write_lookup_table(&self.lookup_table)?;
         writer.write_element(&self.root_element)?;
 
-        Ok(writer.finish())
+        Ok(buf)
     }
 
     /// Resolve all the [ResolvableString]s stored in the map
