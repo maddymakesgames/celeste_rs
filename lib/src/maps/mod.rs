@@ -62,7 +62,7 @@ pub struct RawMap {
 }
 
 impl RawMap {
-    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, MapReadError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, MapReadError> {
         let mut reader = MapReader::new(bytes);
 
         let check_string = reader.read_string()?;
@@ -350,7 +350,7 @@ impl MapManager {
 
         reader.read_to_end(&mut buf)?;
 
-        let mut raw = RawMap::from_bytes(buf)?;
+        let mut raw = RawMap::from_bytes(&buf)?;
 
         let parsers = HashMap::new();
 
