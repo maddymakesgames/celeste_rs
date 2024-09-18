@@ -36,7 +36,7 @@ impl<'a> MapReader<'a> {
             1 => EncodedVar::Byte(self.read_u8()?),
             2 => EncodedVar::Short(self.read_i16()?),
             3 => EncodedVar::Int(self.read_i32()?),
-            4 => EncodedVar::Float(self.read_float()?),
+            4 => EncodedVar::Float(self.read_f32()?),
             5 => EncodedVar::LookupIndex(self.read_lookup_index()?),
             6 => EncodedVar::String(self.read_string()?),
             7 => EncodedVar::LengthEncodedString(self.read_length_encoded_string()?),

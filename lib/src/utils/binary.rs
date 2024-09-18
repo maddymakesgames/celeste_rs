@@ -88,11 +88,11 @@ impl<'a> BinReader<'a> {
         }
     }
 
-    pub fn read_float(&mut self) -> Result<f32, BinReadError> {
+    pub fn read_f32(&mut self) -> Result<f32, BinReadError> {
         Ok(f32::from_bits(self.read_u32()?))
     }
 
-    pub fn read_double(&mut self) -> Result<f64, BinReadError> {
+    pub fn read_f64(&mut self) -> Result<f64, BinReadError> {
         Ok(f64::from_bits(self.read_u64()?))
     }
 
