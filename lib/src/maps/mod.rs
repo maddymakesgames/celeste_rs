@@ -82,17 +82,25 @@ impl RawMap {
         })
     }
 
-    fn to_bytes(&self) -> Result<Vec<u8>, MapWriteError> {
-        let mut buf = Vec::new();
-        let mut writer = MapWriter::new(&mut buf);
-
+    fn write<T: Write>(&self, writer: &mut MapWriter<T>) -> Result<(), MapWriteError> {
         writer.write_string("CELESTE MAP")?;
 
         writer.write_string(&self.name)?;
         writer.write_lookup_table(&self.lookup_table)?;
         writer.write_element(&self.root_element)?;
+        Ok(())
+    }
+
+    fn to_bytes(&self) -> Result<Vec<u8>, MapWriteError> {
+        let mut buf = Vec::new();
+        self.to_writer(&mut buf)?;
 
         Ok(buf)
+    }
+
+    fn to_writer(&self, writer: impl Write) -> Result<(), MapWriteError> {
+        let mut map_writer = MapWriter::new(writer);
+        self.write(&mut map_writer)
     }
 
     /// Resolve all the [ResolvableString]s stored in the map
@@ -424,7 +432,12 @@ impl MapManager {
     }
 
     /// Writes the stored map data as binary into the provided writer
-    pub fn write_map(&mut self, writer: &mut impl Write) -> std::io::Result<()> {
-        writer.write_all(&self.map.to_bytes()?)
+    pub fn write_map(&self, writer: &mut impl Write) -> Result<(), MapWriteError> {
+        self.map.to_writer(writer)
+    }
+
+    /// Writes the stored map to binary and returns the bytes
+    pub fn map_bytes(&self) -> Result<Vec<u8>, MapWriteError> {
+        self.map.to_bytes()
     }
 }
