@@ -279,26 +279,6 @@ impl<T: MapElement> ErasedMapElement for T {
     }
 }
 
-// This allows us to parse optional children when using MapParser::child
-// BUT add_parser shouldn't be called with Option
-// It'll probably be fine because of monomorphization
-// so Option<u8> and Option<u16> are different
-// BUT still doesn't make sense to allow this when parsing dyn elements
-// impl<T: MapElement> MapElement for Option<T> {
-//     const NAME: &'static str = T::NAME;
-
-//     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
-//     where Self: Sized {
-//         Ok(parser.parse_element::<T>().ok())
-//     }
-
-//     fn to_raw(&self, encoder: &mut MapEncoder) {
-//         if let Some(t) = self {
-//             t.to_raw(encoder)
-//         }
-//     }
-// }
-
 /// A dynamic element, if a parser for the element was registered it will be parsed into that struct, otherwise it is a [RawMapElement]
 ///
 /// You can check what the element is with [ErasedMapElement::name], and check if the element is parsed using [Any::type_id]
