@@ -5,7 +5,8 @@
 )]
 
 //! Celeste save reader and writer
-mod anyhow_utils;
 pub mod maps;
+pub mod mods;
+pub mod playbacks;
 pub mod saves;
 pub mod utils;

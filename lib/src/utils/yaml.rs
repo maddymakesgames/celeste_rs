@@ -2,7 +2,7 @@ use std::{fmt::Write, io::Read};
 
 use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlEmitter, YamlLoader};
 
-use crate::anyhow_utils::AnyhowOption;
+use crate::utils::anyhow::AnyhowOption;
 
 pub trait YamlFile: Sized {
     fn parse_from_yaml(yaml: &Yaml) -> anyhow::Result<Self>;
