@@ -91,7 +91,7 @@ impl RawMap {
         writer.write_lookup_table(&self.lookup_table);
         writer.write_element(&self.root_element)?;
 
-        Ok(writer.bytes())
+        Ok(writer.finish())
     }
 
     /// Resolve all the [ResolvableString]s stored in the map

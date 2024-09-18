@@ -169,3 +169,130 @@ impl Display for BinReadError {
         })
     }
 }
+
+#[derive(Default)]
+pub struct BinWriter {
+    buf: Vec<u8>,
+}
+
+impl BinWriter {
+    pub fn new() -> Self {
+        BinWriter::default()
+    }
+
+    pub fn finish(self) -> Vec<u8> {
+        self.buf
+    }
+
+    pub fn write_u8(&mut self, byte: u8) {
+        self.buf.push(byte);
+    }
+
+    pub fn write_i8(&mut self, byte: i8) {
+        self.buf.push(byte as u8);
+    }
+
+    pub fn write_u16(&mut self, short: u16) {
+        self.buf.extend_from_slice(&short.to_le_bytes());
+    }
+
+    pub fn write_i16(&mut self, short: i16) {
+        self.buf.extend_from_slice(&short.to_le_bytes());
+    }
+
+    pub fn write_u32(&mut self, int: u32) {
+        self.buf.extend_from_slice(&int.to_le_bytes());
+    }
+
+    pub fn write_i32(&mut self, int: i32) {
+        self.buf.extend_from_slice(&int.to_le_bytes());
+    }
+
+    pub fn write_u64(&mut self, long: u64) {
+        self.buf.extend_from_slice(&long.to_le_bytes());
+    }
+
+    pub fn write_i64(&mut self, long: i64) {
+        self.buf.extend_from_slice(&long.to_le_bytes());
+    }
+
+    pub fn write_bool(&mut self, bool: bool) {
+        self.buf.push(bool as u8)
+    }
+
+    pub fn write_f32(&mut self, float: f32) {
+        self.buf.extend_from_slice(&float.to_le_bytes());
+    }
+
+    pub fn write_f64(&mut self, double: f64) {
+        self.buf.extend_from_slice(&double.to_le_bytes());
+    }
+
+    pub fn write_char(&mut self, char: char) {
+        debug_assert!(char.is_ascii());
+        // We only accept ascii chars so this is fine
+        self.buf.push(char as u8);
+    }
+
+    pub fn write_varint(&mut self, mut int: u32) {
+        let mut next_byte: u8;
+        let mut buf = [0u8; 5];
+        let mut i = 0;
+
+        while i < 5 {
+            next_byte = (int & 0x7F) as u8;
+            int >>= 7;
+            if int != 0 {
+                next_byte |= 0x80;
+            }
+            buf[i] = next_byte;
+            i += 1;
+
+            if int == 0 {
+                break;
+            }
+        }
+
+        self.buf.extend_from_slice(&buf[.. i]);
+    }
+
+    pub fn write_string(&mut self, str: &str) {
+        self.write_varint(str.len() as u32);
+
+        for c in str.chars() {
+            self.write_char(c);
+        }
+    }
+
+    pub fn write_length_encoded_string(&mut self, str: &str) {
+        let mut buf = Vec::with_capacity(str.len());
+
+        if str.is_empty() {
+            self.write_i16(0);
+            return;
+        }
+
+        let mut char_iter = str.chars();
+
+        let mut cur_char = char_iter.next().unwrap();
+        let mut cur_char_count = 1;
+
+        for c in char_iter {
+            if c != cur_char || cur_char_count == 255 {
+                buf.push(cur_char_count);
+                buf.push(cur_char as u8);
+
+                cur_char = c;
+                cur_char_count = 1;
+            } else {
+                cur_char_count += 1;
+            }
+        }
+
+        buf.push(cur_char_count);
+        buf.push(cur_char as u8);
+
+        self.write_i16(buf.len() as i16);
+        self.buf.extend(&buf);
+    }
+}

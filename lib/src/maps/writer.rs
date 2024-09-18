@@ -1,12 +1,19 @@
-use std::{error::Error, fmt::Display};
+use std::{
+    error::Error,
+    fmt::Display,
+    ops::{Deref, DerefMut},
+};
 
-use crate::maps::{
-    var_types::EncodedVar,
-    LookupIndex,
-    LookupTable,
-    MapAttribute,
-    RawMapElement,
-    ResolvableString,
+use crate::{
+    maps::{
+        var_types::EncodedVar,
+        LookupIndex,
+        LookupTable,
+        MapAttribute,
+        RawMapElement,
+        ResolvableString,
+    },
+    utils::binary::BinWriter,
 };
 
 // TODO: this would probably be better if we
@@ -15,7 +22,7 @@ use crate::maps::{
 // Leaving that for later though since it'll be somewhat hard
 #[derive(Default)]
 pub struct MapWriter {
-    buf: Vec<u8>,
+    writer: BinWriter,
 }
 
 impl MapWriter {
@@ -23,140 +30,49 @@ impl MapWriter {
         MapWriter::default()
     }
 
-    pub fn write_byte(&mut self, byte: u8) {
-        self.buf.push(byte);
-    }
-
-    pub fn write_short(&mut self, short: i16) {
-        self.buf.extend_from_slice(&short.to_le_bytes());
-    }
-
-    pub fn write_int(&mut self, int: i32) {
-        self.buf.extend_from_slice(&int.to_le_bytes());
-    }
-
-    pub fn write_long(&mut self, long: i64) {
-        self.buf.extend_from_slice(&long.to_le_bytes());
-    }
-
-    pub fn write_bool(&mut self, bool: bool) {
-        self.buf.push(bool as u8)
-    }
-
-    pub fn write_float(&mut self, float: f32) {
-        self.buf.extend_from_slice(&float.to_le_bytes());
-    }
-
-    pub fn write_double(&mut self, double: f64) {
-        self.buf.extend_from_slice(&double.to_le_bytes());
-    }
-
-    pub fn write_char(&mut self, char: char) {
-        // Char can only be ascii so this works
-        self.buf.push(char as u8);
-    }
-
-    pub fn write_varint(&mut self, mut int: u32) {
-        let mut next_byte: u8;
-        let mut buf = [0u8; 5];
-        let mut i = 0;
-
-        while i < 5 {
-            next_byte = (int & 0x7F) as u8;
-            int >>= 7;
-            if int != 0 {
-                next_byte |= 0x80;
-            }
-            buf[i] = next_byte;
-            i += 1;
-
-            if int == 0 {
-                break;
-            }
-        }
-
-        self.buf.extend_from_slice(&buf[.. i]);
-    }
-
-    pub fn write_string(&mut self, str: &str) {
-        self.write_varint(str.len() as u32);
-
-        for c in str.chars() {
-            self.write_char(c);
-        }
-    }
-
-    pub fn write_length_encoded_string(&mut self, str: &str) {
-        let mut buf = Vec::with_capacity(str.len());
-
-        if str.is_empty() {
-            self.write_short(0);
-            return;
-        }
-
-        let mut char_iter = str.chars();
-
-        let mut cur_char = char_iter.next().unwrap();
-        let mut cur_char_count = 1;
-
-        for c in char_iter {
-            if c != cur_char || cur_char_count == 255 {
-                buf.push(cur_char_count);
-                buf.push(cur_char as u8);
-
-                cur_char = c;
-                cur_char_count = 1;
-            } else {
-                cur_char_count += 1;
-            }
-        }
-
-        buf.push(cur_char_count);
-        buf.push(cur_char as u8);
-
-        self.write_short(buf.len() as i16);
-        self.buf.extend(&buf);
+    pub fn finish(self) -> Vec<u8> {
+        self.writer.finish()
     }
 
     pub fn write_encoded_var(&mut self, var: &EncodedVar) {
         match var {
             EncodedVar::Bool(b) => {
-                self.write_byte(0);
+                self.write_u8(0);
                 self.write_bool(*b);
             }
             EncodedVar::Byte(b) => {
-                self.write_byte(1);
-                self.write_byte(*b);
+                self.write_u8(1);
+                self.write_u8(*b);
             }
             EncodedVar::Short(s) => {
-                self.write_byte(2);
-                self.write_short(*s);
+                self.write_u8(2);
+                self.write_i16(*s);
             }
             EncodedVar::Int(i) => {
-                self.write_byte(3);
-                self.write_int(*i);
+                self.write_u8(3);
+                self.write_i32(*i);
             }
             EncodedVar::Float(f) => {
-                self.write_byte(4);
-                self.write_float(*f);
+                self.write_u8(4);
+                self.write_f32(*f);
             }
             EncodedVar::LookupIndex(i) => {
-                self.write_byte(5);
+                self.write_u8(5);
                 self.write_lookup_index(*i);
             }
             EncodedVar::String(s) => {
-                self.write_byte(6);
+                self.write_u8(6);
                 self.write_string(s);
             }
             EncodedVar::LengthEncodedString(s) => {
-                self.write_byte(7);
+                self.write_u8(7);
                 self.write_length_encoded_string(s);
             }
         }
     }
 
     pub fn write_lookup_table(&mut self, table: &LookupTable) {
-        self.write_short(table.lookup_strings.len() as i16);
+        self.write_i16(table.lookup_strings.len() as i16);
 
         for str in &table.lookup_strings {
             self.write_string(str);
@@ -164,7 +80,7 @@ impl MapWriter {
     }
 
     pub fn write_lookup_index(&mut self, idx: LookupIndex) {
-        self.buf.extend_from_slice(&idx.0.to_le_bytes());
+        self.write_u16(idx.0);
     }
 
     pub fn write_element(&mut self, element: &RawMapElement) -> Result<(), MapWriteError> {
@@ -174,13 +90,13 @@ impl MapWriter {
             return Err(MapWriteError::ResolvedString);
         }
 
-        self.write_byte(element.attributes.len() as u8);
+        self.write_u8(element.attributes.len() as u8);
 
         for attr in &element.attributes {
             self.write_attribute(attr)?;
         }
 
-        self.write_short(element.children.len() as i16);
+        self.write_i16(element.children.len() as i16);
 
         for child in &element.children {
             self.write_element(child)?;
@@ -199,9 +115,19 @@ impl MapWriter {
         self.write_encoded_var(&attr.value);
         Ok(())
     }
+}
 
-    pub fn bytes(self) -> Vec<u8> {
-        self.buf
+impl Deref for MapWriter {
+    type Target = BinWriter;
+
+    fn deref(&self) -> &Self::Target {
+        &self.writer
+    }
+}
+
+impl DerefMut for MapWriter {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.writer
     }
 }
 
