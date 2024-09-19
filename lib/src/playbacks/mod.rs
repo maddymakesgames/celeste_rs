@@ -1,4 +1,7 @@
-use std::io::Write;
+use std::{
+    fmt::Display,
+    io::{Read, Write},
+};
 
 use crate::utils::binary::{BinReadError, BinReader, BinWriter};
 
@@ -15,8 +18,15 @@ pub struct Playback {
 }
 
 impl Playback {
+    pub fn from_reader(mut reader: impl Read) -> Result<Self, PlaybackReadError> {
+        let mut buf = Vec::new();
+        reader.read_to_end(&mut buf)?;
+
+        Self::from_bytes(&buf)
+    }
+
     /// Reads a [Playback] from binary data
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, BinReadError> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, PlaybackReadError> {
         let mut reader = BinReader::new(bytes);
 
         let mut skip_scale = 1;
@@ -166,5 +176,34 @@ impl PlaybackFacing {
             1 => Some(PlaybackFacing::Right),
             _ => None,
         }
+    }
+}
+
+#[derive(Debug)]
+pub enum PlaybackReadError {
+    BinError(BinReadError),
+    IoError(std::io::Error),
+}
+
+impl Display for PlaybackReadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PlaybackReadError::BinError(bin_read_error) => bin_read_error.fmt(f),
+            PlaybackReadError::IoError(error) => error.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for PlaybackReadError {}
+
+impl From<BinReadError> for PlaybackReadError {
+    fn from(value: BinReadError) -> Self {
+        PlaybackReadError::BinError(value)
+    }
+}
+
+impl From<std::io::Error> for PlaybackReadError {
+    fn from(value: std::io::Error) -> Self {
+        PlaybackReadError::IoError(value)
     }
 }
