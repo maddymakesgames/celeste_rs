@@ -57,7 +57,7 @@ pub struct SessionStats {
     #[serde(deserialize_with = "deserialize_number_from_string")]
     pub dark_room_alpha: f32,
     #[serde(rename = "@CoreMode")]
-    pub core_more: String,
+    pub core_mode: String,
     #[serde(rename = "@GrabbedGolden")]
     #[serde(deserialize_with = "deserialize_bool_from_anything")]
     pub grabbed_golden: bool,
