@@ -1,3 +1,4 @@
+#![allow(unused)]
 use anyhow::{anyhow, Error};
 use std::{
     fmt,
@@ -27,6 +28,17 @@ pub(crate) trait AnyhowIter<T>: Iterator<Item = Option<T>> {
 
 impl<T, B> AnyhowIter<B> for T where T: Iterator<Item = Option<B>> {}
 
+pub(crate) trait OptionOkOrIter<T, E: Clone>: Iterator<Item = Option<T>> {
+    fn ok_or(self, val: E) -> OkOrIter<Self, E>
+    where Self: Sized {
+        OkOrIter {
+            iter: self,
+            err: val,
+        }
+    }
+}
+
+impl<T, I, E: Clone> OptionOkOrIter<I, E> for T where T: Iterator<Item = Option<I>> + ?Sized {}
 
 pub(crate) trait ResultMapIter<T, E>: Iterator<Item = Result<T, E>> {
     fn map_result<U, F: FnMut(T) -> U>(self, f: F) -> ResultMap<Self, F>
@@ -111,3 +123,51 @@ where F: FnMut(T) -> B
 
 impl<B, T, E, I: FusedIterator + Iterator<Item = Result<T, E>>, F> FusedIterator for ResultMap<I, F> where F: FnMut(T) -> B
 {}
+
+
+#[derive(Clone)]
+pub(crate) struct OkOrIter<I, E> {
+    iter: I,
+    err: E,
+}
+
+impl<I: fmt::Debug, F> fmt::Debug for OkOrIter<I, F> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("OkOrIter")
+            .field("iter", &self.iter)
+            .finish()
+    }
+}
+
+impl<T, E: Clone, I: Iterator<Item = Option<T>>> Iterator for OkOrIter<I, E> {
+    type Item = Result<T, E>;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next().map(|r| r.ok_or(self.err.clone()))
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+}
+
+impl<T, E: Clone, I: DoubleEndedIterator + Iterator<Item = Option<T>>> DoubleEndedIterator
+    for OkOrIter<I, E>
+{
+    #[inline]
+    fn next_back(&mut self) -> Option<Self::Item> {
+        self.iter.next_back().map(|r| r.ok_or(self.err.clone()))
+    }
+}
+
+impl<T, E: Clone, I: ExactSizeIterator + Iterator<Item = Option<T>>> ExactSizeIterator
+    for OkOrIter<I, E>
+{
+    fn len(&self) -> usize {
+        self.iter.len()
+    }
+}
+
+impl<T, E: Clone, I: FusedIterator + Iterator<Item = Option<T>>> FusedIterator for OkOrIter<I, E> {}
