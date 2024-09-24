@@ -97,10 +97,9 @@ pub(super) fn yaml_derive(input: DeriveInput) -> Result<TokenStream, Error> {
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(quote! {
-        {
-            use #celeste_rs::utils::yaml::saphyr::Yaml;
+
             impl #celeste_rs::utils::yaml::YamlFile for #struct_ident {
-                fn parse_from_yaml(yaml: &Yaml) -> Result<Self, #celeste_rs::utils::yaml::YamlParseError> {
+                fn parse_from_yaml(yaml: &#celeste_rs::utils::yaml::saphyr::Yaml) -> Result<Self, #celeste_rs::utils::yaml::YamlParseError> {
                     #(#field_parsers)*
 
                     Ok(#struct_ident {
@@ -108,15 +107,15 @@ pub(super) fn yaml_derive(input: DeriveInput) -> Result<TokenStream, Error> {
                     })
                 }
 
-                fn to_yaml(&self) -> Result<Yaml, #celeste_rs::utils::yaml::YamlWriteError> {
+                fn to_yaml(&self) -> Result<#celeste_rs::utils::yaml::saphyr::Yaml, #celeste_rs::utils::yaml::YamlWriteError> {
                     let mut output = saphyr::Hash::new();
 
                     #(#field_writers);*
 
-                    Ok(Yaml::Hash(output))
+                    Ok(#celeste_rs::utils::yaml::saphyr::Yaml::Hash(output))
                 }
             }
-        }
+
     })
 }
 
@@ -229,12 +228,13 @@ fn gen_array_parser(name: &str, ty: &Type, len: &Expr) -> Result<TokenStream, Er
 }
 
 fn gen_field_writer(field: &Field) -> Result<TokenStream, Error> {
+    let celeste_rs = celeste_rs();
     if let Some(func) = &field.writing_fn {
         let ident = &field.rust_name;
         let name = &field.yaml_name;
         return Ok(quote! {
             output.insert(
-                Yaml::String(#name.to_owned()),
+                #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
                 #func(&self.#ident)?
             );
         });
@@ -248,8 +248,8 @@ fn gen_type_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, 
     match &ty {
         Type::Array(_) => Ok(quote! {
             output.insert(
-                Yaml::String(#name.to_owned()),
-                Yaml::Array(self.#ident.iter().map(#celeste_rs::utils::yaml::YamlFile::to_yaml).collect::<Result<Vec<_>,_>>()?)
+                #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
+                #celeste_rs::utils::yaml::saphyr::Yaml::Array(self.#ident.iter().map(#celeste_rs::utils::yaml::YamlFile::to_yaml).collect::<Result<Vec<_>,_>>()?)
             );
         }),
         Type::Paren(type_paren) => gen_type_writer(name, ident, &type_paren.elem),
@@ -262,11 +262,12 @@ fn gen_type_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, 
 }
 
 fn gen_path_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, Error> {
+    let celeste_rs = celeste_rs();
     Ok(if let Some(_ty) = get_option_ty(ty) {
         quote! {
             if let Some(yaml) = self.#ident.to_yaml() {
                 output.insert(
-                    Yaml::String(#name.to_owned()),
+                    #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
                     yaml
                 );
             }
@@ -274,7 +275,7 @@ fn gen_path_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, 
     } else {
         quote! {
             output.insert(
-                Yaml::String(#name.to_owned()),
+                #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
                 self.#ident.to_yaml()?
             );
         }
