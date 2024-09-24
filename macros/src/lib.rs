@@ -1,6 +1,7 @@
 mod entity;
 mod map_element;
 mod trigger;
+mod yaml;
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_crate::{crate_name, FoundCrate};
@@ -382,6 +383,22 @@ pub fn trigger_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream
         .into_compile_error()
     } else {
         trigger::trigger_derive(input).unwrap_or_else(Error::into_compile_error)
+    }
+    .into()
+}
+
+#[proc_macro_derive(YamlFile, attributes(name, parse_fn, write_fn))]
+pub fn yaml_file_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    if matches!(input.data, syn::Data::Enum(_) | syn::Data::Union(_)) {
+        Error::new(
+            input.ident.span(),
+            "YamlFile can currently only be derived for structs",
+        )
+        .into_compile_error()
+    } else {
+        yaml::yaml_derive(input).unwrap_or_else(Error::into_compile_error)
     }
     .into()
 }
