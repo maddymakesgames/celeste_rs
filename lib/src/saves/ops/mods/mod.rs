@@ -2,10 +2,10 @@ use std::{ffi::OsStr, fmt::Write, fs::OpenOptions, io::Read, path::Path};
 
 use crate::{
     saves::mods::{auroras_additions::AurorasAdditionsSave, collab_utils2::CollabsUtils2Save, *},
-    utils::YamlFile,
+    utils::{YamlFile, YamlParseError, YamlWriteError},
 };
 use anyhow::{anyhow, Result};
-use saphyr::{YAMLDecodingTrap, YamlDecoder, YamlLoader};
+use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlLoader};
 
 mod auroras_additions;
 mod collab_utils2;
@@ -88,7 +88,7 @@ impl ParsedModSave {
         }))
     }
 
-    pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+    pub fn to_writer(&self, writer: &mut impl Write) -> Result<(), YamlWriteError> {
         match self {
             ParsedModSave::AurorasAdditions(a) => a.to_writer(writer),
             ParsedModSave::CollabUtils2(c) => c.to_writer(writer),
@@ -126,7 +126,7 @@ impl ParsedModSession {
         }))
     }
 
-    pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+    pub fn to_writer(&self, writer: &mut impl Write) -> Result<(), YamlWriteError> {
         match self {
             ParsedModSession::Unknown(doc) => doc.to_writer(writer),
         }
@@ -161,7 +161,7 @@ impl ParsedModSetting {
         }))
     }
 
-    pub fn to_writer(&self, writer: &mut impl Write) -> anyhow::Result<()> {
+    pub fn to_writer(&self, writer: &mut impl Write) -> Result<(), YamlWriteError> {
         match self {
             ParsedModSetting::Unknown(doc) => doc.to_writer(writer),
         }
@@ -190,14 +190,14 @@ impl DynYamlDoc {
 }
 
 impl YamlFile for DynYamlDoc {
-    fn parse_from_yaml(_yaml: &saphyr::Yaml) -> anyhow::Result<Self> {
+    fn parse_from_yaml(_yaml: &Yaml) -> Result<Self, YamlParseError> {
         unimplemented!(
             "Don't call YamlFile::parse_from_yaml on DynYamlDoc, use one of the DynYamlDoc \
              methods."
         )
     }
 
-    fn to_yaml(&self) -> anyhow::Result<saphyr::Yaml> {
+    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
         Ok(self.1.clone())
     }
 }

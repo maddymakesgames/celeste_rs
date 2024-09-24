@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use anyhow::{anyhow, Result};
 use saphyr::{Hash, Yaml};
 
 use crate::{
@@ -9,7 +8,7 @@ use crate::{
         ops::XML_VERSION_HEADER,
         session::{RootSavedSession, SavedSession},
     },
-    utils::{anyhow::ResultMapIter, YamlFile},
+    utils::{anyhow::ResultMapIter, YamlFile, YamlParseError, YamlWriteError},
 };
 
 impl ModSave for AurorasAdditionsSave {}
@@ -18,85 +17,95 @@ impl ModFile for AurorasAdditionsSave {
     const MOD_NAME: &'static str = "AurorasAdditions";
 }
 impl YamlFile for AurorasAdditionsSave {
-    fn parse_from_yaml(yaml: &Yaml) -> Result<Self> {
+    fn parse_from_yaml(yaml: &Yaml) -> Result<AurorasAdditionsSave, YamlParseError> {
         let mut sessions_per_level = HashMap::new();
 
-        let sessions_per_level_map = yaml["SessionsPerLevel"].as_hash().ok_or(anyhow!(
-            "Aurora's Additions save doesn't contain a SessionsPerLevel entry"
-        ))?;
+        let sessions_per_level_map =
+            yaml["SessionsPerLevel"]
+                .as_hash()
+                .ok_or(YamlParseError::custom(
+                    "Aurora's Additions save doesn't contain a SessionsPerLevel entry",
+                ))?;
 
 
         for (sid, value) in sessions_per_level_map {
             let (sid, mode) = sid
                 .as_str()
-                .ok_or(anyhow!(
-                    "Aurora's Additions save SessionsPerLevel entry key isn't a string"
+                .ok_or(YamlParseError::custom(
+                    "Aurora's Additions save SessionsPerLevel entry key isn't a string",
                 ))?
                 .split_once(',')
-                .ok_or(anyhow!(
+                .ok_or(YamlParseError::custom(
                     "Aurora's Additions SessionsPerLevel entry doesn't have a properly formatted \
-                     key"
+                     key",
                 ))?;
 
-            let session = value.as_str().ok_or(anyhow!(
-                "Aurora's Additions SessionsPerLevel entry doesn't have a string value"
+            let session = value.as_str().ok_or(YamlParseError::custom(
+                "Aurora's Additions SessionsPerLevel entry doesn't have a string value",
             ))?;
 
-            let session = quick_xml::de::from_str::<SavedSession>(session)?;
+            let session = quick_xml::de::from_str::<SavedSession>(session)
+                .map_err(YamlParseError::custom_from_err)?;
 
             sessions_per_level.insert((sid.to_owned(), mode.trim().to_owned()), session);
         }
 
         let mut mod_sessions_per_level = HashMap::new();
-        let mod_sessions_per_level_map = yaml["ModSessionsPerLevel"].as_hash().ok_or(anyhow!(
-            "Aurora's Additions save doesn't have ModSessionsPerLevel entry"
-        ))?;
+        let mod_sessions_per_level_map =
+            yaml["ModSessionsPerLevel"]
+                .as_hash()
+                .ok_or(YamlParseError::custom(
+                    "Aurora's Additions save doesn't have ModSessionsPerLevel entry",
+                ))?;
 
         for (sid_mode, value) in mod_sessions_per_level_map {
             let (sid, mode) = sid_mode
                 .as_str()
-                .ok_or(anyhow!(
-                    "Aurora's Additions ModSessionsPerLevel entry doesn't have a string key"
+                .ok_or(YamlParseError::custom(
+                    "Aurora's Additions ModSessionsPerLevel entry doesn't have a string key",
                 ))?
                 .split_once(',')
-                .ok_or(anyhow!(
-                    "Aurora's Additions ModSessionsPerLevel entry has improperly formatted key"
+                .ok_or(YamlParseError::custom(
+                    "Aurora's Additions ModSessionsPerLevel entry has improperly formatted key",
                 ))?;
 
             mod_sessions_per_level.insert((sid.to_owned(), mode.trim().to_owned()), value.clone());
         }
 
         let mut mod_sessions_per_level_binary = HashMap::new();
-        let mod_sessions_per_level_map = yaml["ModSessionsPerLevelBinary"].as_hash().ok_or(
-            anyhow!("Aurora's Additions save doesn't have a ModSessionsPerLevelBinary field"),
-        )?;
+        let mod_sessions_per_level_map =
+            yaml["ModSessionsPerLevelBinary"]
+                .as_hash()
+                .ok_or(YamlParseError::custom(
+                    "Aurora's Additions save doesn't have a ModSessionsPerLevelBinary field",
+                ))?;
 
         for (sid_mode, value) in mod_sessions_per_level_map {
             let (sid, mode) = sid_mode
                 .as_str()
-                .ok_or(anyhow!(
-                    "Aurora's Additions ModSessionsPerLevelBinary entry doesn't have a string key"
+                .ok_or(YamlParseError::custom(
+                    "Aurora's Additions ModSessionsPerLevelBinary entry doesn't have a string key",
                 ))?
                 .split_once(',')
-                .ok_or(anyhow!(
+                .ok_or(YamlParseError::custom(
                     "Aurora's Additions ModSessionsPerLevelBinary entry has improperly formatted \
-                     key"
+                     key",
                 ))?;
 
             let mut mod_data = HashMap::new();
 
-            for (mod_name, base64) in value.as_hash().ok_or(anyhow!(
+            for (mod_name, base64) in value.as_hash().ok_or(YamlParseError::custom(
                 "Aurora's Additions save ModSessionsPerLevelBinary doesn't have a list of mod \
-                 sessions"
+                 sessions",
             ))? {
-                let mod_name = mod_name.as_str().ok_or(anyhow!(
+                let mod_name = mod_name.as_str().ok_or(YamlParseError::custom(
                     "Aurora's Additions save ModSessionsPerLevelBinary mod entry doesn't have a \
-                     string key"
+                     string key",
                 ))?;
 
-                let base64 = base64.as_str().ok_or(anyhow!(
+                let base64 = base64.as_str().ok_or(YamlParseError::custom(
                     "Aurora's Additions save ModSessionsPerLevelBinary mod entry doesn't have a \
-                     string value"
+                     string value",
                 ))?;
 
                 mod_data.insert(mod_name.to_owned(), base64.to_owned());
@@ -106,9 +115,12 @@ impl YamlFile for AurorasAdditionsSave {
                 .insert((sid.to_owned(), mode.trim().to_owned()), mod_data);
         }
 
-        let music_volume_memory = yaml["MusicVolumeMemory"]
-            .as_i64()
-            .ok_or(anyhow!("Aurora's Additions MusicVolumeMemory isn't an int"))?;
+        let music_volume_memory =
+            yaml["MusicVolumeMemory"]
+                .as_i64()
+                .ok_or(YamlParseError::custom(
+                    "Aurora's Additions MusicVolumeMemory isn't an int",
+                ))?;
 
         Ok(AurorasAdditionsSave {
             sessions_per_level,
@@ -118,7 +130,7 @@ impl YamlFile for AurorasAdditionsSave {
         })
     }
 
-    fn to_yaml(&self) -> Result<saphyr::Yaml> {
+    fn to_yaml(&self) -> Result<saphyr::Yaml, YamlWriteError> {
         let mut root = Hash::new();
 
         let sessions_per_level = self
@@ -132,7 +144,8 @@ impl YamlFile for AurorasAdditionsSave {
                         quick_xml::se::to_string_with_root::<RootSavedSession>(
                             "Session",
                             &session.clone().into(),
-                        )?
+                        )
+                        .map_err(YamlWriteError::custom_from_err)?
                     ),
                 ))
             })
@@ -142,7 +155,7 @@ impl YamlFile for AurorasAdditionsSave {
                     Yaml::String(session),
                 )
             })
-            .collect::<Result<Hash>>()?;
+            .collect::<Result<Hash, YamlWriteError>>()?;
 
         root.insert(
             Yaml::String("SessionsPerLevel".to_owned()),

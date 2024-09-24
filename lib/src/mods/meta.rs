@@ -1,9 +1,8 @@
-use anyhow::anyhow;
 use std::{cmp::Ordering, fmt::Display};
 
 use saphyr::{Hash, Yaml};
 
-use crate::utils::{anyhow::AnyhowOption, YamlFile};
+use crate::utils::{YamlFile, YamlParseError, YamlWriteError};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 /// A (Semantic Versioning)[https://semver.org/]-respecting version number
@@ -70,36 +69,60 @@ pub struct ModMeta {
 }
 
 impl ModMeta {
-    fn parse_name_version_from_yaml(yaml: &Yaml) -> anyhow::Result<(String, Version)> {
+    fn parse_name_version_from_yaml(yaml: &Yaml) -> Result<(String, Version), YamlParseError> {
         let name = yaml["Name"]
             .as_str()
             .map(ToString::to_string)
-            .anyhow("everest.yaml mod definition found without a name")?;
+            .ok_or(YamlParseError::Custom(
+                "everest.yaml mod definition found without a name".to_string(),
+            ))?;
 
         let mut version_parts = yaml["Version"]
             .as_str()
-            .anyhow("everest.yaml mod definition found without a version")?
+            .ok_or(YamlParseError::Custom(
+                "everest.yaml mod definition found without a version".to_string(),
+            ))?
             .split('.');
 
         let major = match version_parts.next() {
             Some("*") =>
-                return Err(anyhow!(
-                    "mod version isn't allowed to have '*' for major number"
+                return Err(YamlParseError::Custom(
+                    "mod version isn't allowed to have '*' for major number".to_string(),
                 )),
-            Some(str) => str.parse::<u16>()?,
-            None => return Err(anyhow!("mod version found with no major version number")),
+            Some(str) => str
+                .parse::<u16>()
+                .map_err(|e| e.to_string())
+                .map_err(YamlParseError::Custom)?,
+            None =>
+                return Err(YamlParseError::Custom(
+                    "mod version found with no major version number".to_string(),
+                )),
         };
 
         let minor = match version_parts.next() {
             Some("*") => None,
-            Some(str) => Some(str.parse::<u16>()?),
-            None => return Err(anyhow!("mod version found with no minor version number")),
+            Some(str) => Some(
+                str.parse::<u16>()
+                    .map_err(|e| e.to_string())
+                    .map_err(YamlParseError::Custom)?,
+            ),
+            None =>
+                return Err(YamlParseError::Custom(
+                    "mod version found with no minor version number".to_string(),
+                )),
         };
 
         let patch = match version_parts.next() {
             Some("*") => None,
-            Some(str) => Some(str.parse::<u16>()?),
-            None => return Err(anyhow!("mod version found with no patch version number")),
+            Some(str) => Some(
+                str.parse::<u16>()
+                    .map_err(|e| e.to_string())
+                    .map_err(YamlParseError::Custom)?,
+            ),
+            None =>
+                return Err(YamlParseError::Custom(
+                    "mod version found with no patch version number".to_string(),
+                )),
         };
 
         Ok((name, Version {
@@ -122,14 +145,16 @@ impl ModMeta {
 }
 
 impl YamlFile for ModMeta {
-    fn parse_from_yaml(yaml: &saphyr::Yaml) -> anyhow::Result<Self> {
+    fn parse_from_yaml(yaml: &saphyr::Yaml) -> Result<ModMeta, YamlParseError> {
         let (name, version) = ModMeta::parse_name_version_from_yaml(yaml)?;
 
         let dll = yaml["dll"].as_str().map(ToOwned::to_owned);
 
         let dependencies = yaml["Dependencies"]
             .as_vec()
-            .anyhow("No dependencies declared in everest.yaml")?
+            .ok_or(YamlParseError::Custom(
+                "No dependencies declared in everest.yaml".to_string(),
+            ))?
             .iter()
             .map(ModMeta::parse_name_version_from_yaml)
             .collect::<Result<Vec<_>, _>>()?;
@@ -154,7 +179,7 @@ impl YamlFile for ModMeta {
         })
     }
 
-    fn to_yaml(&self) -> anyhow::Result<saphyr::Yaml> {
+    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
         let mut hash = Hash::new();
         ModMeta::name_version_to_yaml(&self.name, &self.version, &mut hash);
 

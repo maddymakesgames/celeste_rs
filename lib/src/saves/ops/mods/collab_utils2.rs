@@ -8,12 +8,13 @@ use crate::{
         util::FileTime,
     },
     utils::{
-        anyhow::{AnyhowIter, AnyhowOption, ResultMapIter},
+        anyhow::{OptionOkOrIter, ResultMapIter},
         YamlFile,
+        YamlParseError,
+        YamlWriteError,
     },
 };
 
-use anyhow::{anyhow, Error, Result};
 use saphyr::{Hash, Yaml};
 
 impl ModSave for CollabsUtils2Save {}
@@ -22,64 +23,74 @@ impl ModFile for CollabsUtils2Save {
     const MOD_NAME: &'static str = "CollabUtils2";
 }
 impl YamlFile for CollabsUtils2Save {
-    fn parse_from_yaml(yaml: &saphyr::Yaml) -> anyhow::Result<Self> {
+    fn parse_from_yaml(yaml: &saphyr::Yaml) -> Result<CollabsUtils2Save, YamlParseError> {
         let mut sessions_per_level = HashMap::new();
 
-        let sessions_per_level_map = yaml["SessionsPerLevel"].as_hash().ok_or(anyhow!(
-            "CollabUtils2 save doesn't contain a SessionsPerLevel entry"
-        ))?;
+        let sessions_per_level_map =
+            yaml["SessionsPerLevel"]
+                .as_hash()
+                .ok_or(YamlParseError::custom(
+                    "CollabUtils2 save doesn't contain a SessionsPerLevel entry",
+                ))?;
 
 
         for (sid, value) in sessions_per_level_map {
-            let sid = sid.as_str().ok_or(anyhow!(
-                "CollabUtils2 save SessionsPerLevel entry key isn't a string"
+            let sid = sid.as_str().ok_or(YamlParseError::custom(
+                "CollabUtils2 save SessionsPerLevel entry key isn't a string",
             ))?;
 
-            let session = value.as_str().ok_or(anyhow!(
-                "CollabUtils2 SessionsPerLevel entry doesn't have a string value"
+            let session = value.as_str().ok_or(YamlParseError::custom(
+                "CollabUtils2 SessionsPerLevel entry doesn't have a string value",
             ))?;
 
-            let session = quick_xml::de::from_str::<SavedSession>(session)?;
+            let session = quick_xml::de::from_str::<SavedSession>(session)
+                .map_err(YamlParseError::custom_from_err)?;
 
             sessions_per_level.insert(sid.to_owned(), session);
         }
 
         let mut mod_sessions_per_level = HashMap::new();
-        let mod_sessions_per_level_map = yaml["ModSessionsPerLevel"].as_hash().ok_or(anyhow!(
-            "CollabUtils2 save doesn't have ModSessionsPerLevel entry"
-        ))?;
+        let mod_sessions_per_level_map =
+            yaml["ModSessionsPerLevel"]
+                .as_hash()
+                .ok_or(YamlParseError::custom(
+                    "CollabUtils2 save doesn't have ModSessionsPerLevel entry",
+                ))?;
 
         for (sid, value) in mod_sessions_per_level_map {
-            let sid = sid.as_str().ok_or(anyhow!(
-                "CollabUtils2 ModSessionsPerLevel entry doesn't have a string key"
+            let sid = sid.as_str().ok_or(YamlParseError::custom(
+                "CollabUtils2 ModSessionsPerLevel entry doesn't have a string key",
             ))?;
 
             mod_sessions_per_level.insert(sid.to_owned(), value.clone());
         }
 
         let mut mod_sessions_per_level_binary = HashMap::new();
-        let mod_sessions_per_level_binary_map = yaml["ModSessionsPerLevelBinary"].as_hash().ok_or(
-            anyhow!("CollabUtils2 save doesn't have a ModSessionsPerLevelBinary field"),
-        )?;
+        let mod_sessions_per_level_binary_map =
+            yaml["ModSessionsPerLevelBinary"]
+                .as_hash()
+                .ok_or(YamlParseError::custom(
+                    "CollabUtils2 save doesn't have a ModSessionsPerLevelBinary field",
+                ))?;
 
         for (sid, value) in mod_sessions_per_level_binary_map {
-            let sid = sid.as_str().ok_or(anyhow!(
-                "CollabUtils2 ModSessionsPerLevelBinary entry doesn't have a string key"
+            let sid = sid.as_str().ok_or(YamlParseError::custom(
+                "CollabUtils2 ModSessionsPerLevelBinary entry doesn't have a string key",
             ))?;
 
             let mut mod_data = HashMap::new();
 
-            for (mod_name, base64) in value.as_hash().ok_or(anyhow!(
-                "CollabUtils2 save ModSessionsPerLevelBinary doesn't have a list of mod sessions"
+            for (mod_name, base64) in value.as_hash().ok_or(YamlParseError::custom(
+                "CollabUtils2 save ModSessionsPerLevelBinary doesn't have a list of mod sessions",
             ))? {
-                let mod_name = mod_name.as_str().ok_or(anyhow!(
+                let mod_name = mod_name.as_str().ok_or(YamlParseError::custom(
                     "CollabUtils2 save ModSessionsPerLevelBinary mod entry doesn't have a string \
-                     key"
+                     key",
                 ))?;
 
-                let base64 = base64.as_str().ok_or(anyhow!(
+                let base64 = base64.as_str().ok_or(YamlParseError::custom(
                     "CollabUtils2 save ModSessionsPerLevelBinary mod entry doesn't have a string \
-                     value"
+                     value",
                 ))?;
 
                 mod_data.insert(mod_name.to_owned(), base64.to_owned());
@@ -89,17 +100,20 @@ impl YamlFile for CollabsUtils2Save {
         }
 
         let mut visited_lobby_positions = HashMap::new();
-        let visited_lobby_positions_map = yaml["VisitedLobbyPositions"].as_hash().ok_or(
-            anyhow!("CollabUtils2 save doesn't have a VisitedLobbyPositions field"),
-        )?;
+        let visited_lobby_positions_map =
+            yaml["VisitedLobbyPositions"]
+                .as_hash()
+                .ok_or(YamlParseError::custom(
+                    "CollabUtils2 save doesn't have a VisitedLobbyPositions field",
+                ))?;
 
         for (sid, position) in visited_lobby_positions_map {
-            let sid = sid.as_str().ok_or(anyhow!(
-                "CollabUtils2 VisitedLobbyPositions entry doesn't have a string key"
+            let sid = sid.as_str().ok_or(YamlParseError::custom(
+                "CollabUtils2 VisitedLobbyPositions entry doesn't have a string key",
             ))?;
 
-            let position_code = position.as_str().ok_or(anyhow!(
-                "CollabUtils2 VisitedLobbyPositions entry doesn't have a string value"
+            let position_code = position.as_str().ok_or(YamlParseError::custom(
+                "CollabUtils2 VisitedLobbyPositions entry doesn't have a string value",
             ))?;
 
             visited_lobby_positions.insert(sid.to_owned(), position_code.to_owned());
@@ -107,60 +121,85 @@ impl YamlFile for CollabsUtils2Save {
 
         let opened_mini_heart_doors = yaml["OpenedMiniHeartDoors"]
             .as_vec()
-            .anyhow("CollabUtils2 save doesn't have a OpenedMiniHeartDoors field")?
+            .ok_or(YamlParseError::custom(
+                "CollabUtils2 save doesn't have a OpenedMiniHeartDoors field",
+            ))?
             .iter()
-            .map(Yaml::as_str)
-            .anyhow("CollabUtils2 OpenedMiniHeartDoors entry isn't a string")
+            .map(|y| {
+                y.as_str().ok_or(YamlParseError::custom(
+                    "CollabUtils2 OpenedMiniHeartDoors entry isn't a string",
+                ))
+            })
             .map_result(ToOwned::to_owned)
             .collect::<Result<HashSet<_>, _>>()?;
 
         let combined_rainbow_berries = yaml["CombinedRainbowBerries"]
             .as_vec()
-            .anyhow("CollabUtils2 save doesn't have a CombinedRainbowBerries field")?
+            .ok_or(YamlParseError::custom(
+                "CollabUtils2 save doesn't have a CombinedRainbowBerries field",
+            ))?
             .iter()
             .map(Yaml::as_str)
-            .anyhow("CollabUtils2 CombinedRainbowBerries entry isn't a string")
+            .ok_or(YamlParseError::custom(
+                "CollabUtils2 CombinedRainbowBerries entry isn't a string",
+            ))
             .map_result(ToOwned::to_owned)
-            .collect::<Result<HashSet<_>>>()?;
+            .collect::<Result<HashSet<_>, _>>()?;
 
         let speed_berry_pbs = yaml["SpeedBerryPBs"]
             .as_hash()
-            .anyhow("CollabUtils2 save doesn't have a SpeedBerryPBs field")?
+            .ok_or(YamlParseError::custom(
+                "CollabUtils2 save doesn't have a SpeedBerryPBs field",
+            ))?
             .iter()
             .map(|(sid, val)| {
                 (
-                    sid.as_str()
-                        .anyhow("CollabUtils2 SpeedBerryPBs entry doesn't have string key"),
-                    val.as_i64()
-                        .anyhow("CollabUtils2 SpeedBerryPBs entry doesn't have an integer value"),
+                    sid.as_str().ok_or(YamlParseError::custom(
+                        "CollabUtils2 SpeedBerryPBs entry doesn't have string key",
+                    )),
+                    val.as_i64().ok_or(YamlParseError::custom(
+                        "CollabUtils2 SpeedBerryPBs entry doesn't have an integer value",
+                    )),
                 )
             })
             .map(|(s, t)| (s.map(ToOwned::to_owned), t.map(|t| FileTime(t as u64))))
-            .map(|(a, b)| Ok((a?, b?)))
-            .collect::<Result<HashMap<_, _>, Error>>()?;
+            .map(|(a, b)| Ok::<_, YamlParseError>((a?, b?)))
+            .collect::<Result<HashMap<_, _>, _>>()?;
 
         let speed_berry_option_message_shown = yaml["SpeedberryOptionMessageShown"]
             .as_bool()
-            .anyhow("CollabUtils2 save doesn't have SpeedberryOptionMessageShown field")?;
+            .ok_or(YamlParseError::custom(
+                "CollabUtils2 save doesn't have SpeedberryOptionMessageShown field",
+            ))?;
 
         let completed_warp_pedestal_sids = yaml["CompletedWarpPedestalSIDs"]
             .as_vec()
-            .anyhow("CollabUtils2 save doesn't have CompletedWarpPedestalSIDs field")?
+            .ok_or(YamlParseError::custom(
+                "CollabUtils2 save doesn't have CompletedWarpPedestalSIDs field",
+            ))?
             .iter()
             .map(Yaml::as_str)
-            .anyhow("CollabUtils2 CompletedWarpPedestalSIDs entry isn't a string")
+            .ok_or(YamlParseError::custom(
+                "CollabUtils2 CompletedWarpPedestalSIDs entry isn't a string",
+            ))
             .map_result(ToOwned::to_owned)
-            .collect::<Result<_>>()?;
+            .collect::<Result<_, _>>()?;
 
-        let reveal_map = yaml["RevealMap"]
-            .as_bool()
-            .anyhow("CollabUtils2 save doesn't have RevealMap field")?;
-        let pause_visiting_points = yaml["PauseVisitingPoints"]
-            .as_bool()
-            .anyhow("CollabUtils2 save doesn't have PauseVisitingPoints field")?;
-        let show_visited_points = yaml["ShowVisitedPoints"]
-            .as_bool()
-            .anyhow("CollabUtils2 save doesn't have ShowVisitedPoints field")?;
+        let reveal_map = yaml["RevealMap"].as_bool().ok_or(YamlParseError::custom(
+            "CollabUtils2 save doesn't have RevealMap field",
+        ))?;
+        let pause_visiting_points =
+            yaml["PauseVisitingPoints"]
+                .as_bool()
+                .ok_or(YamlParseError::custom(
+                    "CollabUtils2 save doesn't have PauseVisitingPoints field",
+                ))?;
+        let show_visited_points =
+            yaml["ShowVisitedPoints"]
+                .as_bool()
+                .ok_or(YamlParseError::custom(
+                    "CollabUtils2 save doesn't have ShowVisitedPoints field",
+                ))?;
 
 
         Ok(CollabsUtils2Save {
@@ -179,26 +218,27 @@ impl YamlFile for CollabsUtils2Save {
         })
     }
 
-    fn to_yaml(&self) -> Result<saphyr::Yaml> {
+    fn to_yaml(&self) -> Result<saphyr::Yaml, YamlWriteError> {
         let mut root = Hash::new();
 
         let sessions_per_level = self
             .sessions_per_level
             .iter()
             .map(|(sid, session)| {
-                Ok((
+                Ok::<_, YamlWriteError>((
                     sid,
                     format!(
                         "{XML_VERSION_HEADER}{}",
                         quick_xml::se::to_string_with_root::<RootSavedSession>(
                             "Session",
                             &session.clone().into()
-                        )?
+                        )
+                        .map_err(YamlWriteError::custom_from_err)?
                     ),
                 ))
             })
             .map_result(|(sid, session)| (Yaml::String(sid.clone()), Yaml::String(session)))
-            .collect::<Result<Hash>>()?;
+            .collect::<Result<Hash, _>>()?;
 
         root.insert(
             Yaml::String("SessionsPerLevel".to_owned()),
