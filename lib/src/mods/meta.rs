@@ -2,7 +2,7 @@ use std::{cmp::Ordering, fmt::Display};
 
 use saphyr::{Hash, Yaml};
 
-use crate::utils::{YamlFile, YamlParseError, YamlWriteError};
+use crate::utils::{FromYaml, YamlParseError, YamlWriteError};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 /// A (Semantic Versioning)[https://semver.org/]-respecting version number
@@ -144,7 +144,7 @@ impl ModMeta {
     }
 }
 
-impl YamlFile for ModMeta {
+impl FromYaml for ModMeta {
     fn parse_from_yaml(yaml: &saphyr::Yaml) -> Result<ModMeta, YamlParseError> {
         let (name, version) = ModMeta::parse_name_version_from_yaml(yaml)?;
 

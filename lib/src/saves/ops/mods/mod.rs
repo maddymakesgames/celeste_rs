@@ -2,7 +2,7 @@ use std::{ffi::OsStr, fmt::Write, fs::OpenOptions, io::Read, path::Path};
 
 use crate::{
     saves::mods::{auroras_additions::AurorasAdditionsSave, collab_utils2::CollabsUtils2Save, *},
-    utils::{YamlFile, YamlParseError, YamlWriteError},
+    utils::{FromYaml, YamlParseError, YamlWriteError},
 };
 use anyhow::{anyhow, Result};
 use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlLoader};
@@ -189,7 +189,7 @@ impl DynYamlDoc {
     }
 }
 
-impl YamlFile for DynYamlDoc {
+impl FromYaml for DynYamlDoc {
     fn parse_from_yaml(_yaml: &Yaml) -> Result<Self, YamlParseError> {
         unimplemented!(
             "Don't call YamlFile::parse_from_yaml on DynYamlDoc, use one of the DynYamlDoc \

@@ -9,7 +9,7 @@ use crate::{
     },
     utils::{
         anyhow::{OptionOkOrIter, ResultMapIter},
-        YamlFile,
+        FromYaml,
         YamlParseError,
         YamlWriteError,
     },
@@ -22,7 +22,7 @@ impl ModSave for CollabsUtils2Save {}
 impl ModFile for CollabsUtils2Save {
     const MOD_NAME: &'static str = "CollabUtils2";
 }
-impl YamlFile for CollabsUtils2Save {
+impl FromYaml for CollabsUtils2Save {
     fn parse_from_yaml(yaml: &saphyr::Yaml) -> Result<CollabsUtils2Save, YamlParseError> {
         let mut sessions_per_level = HashMap::new();
 

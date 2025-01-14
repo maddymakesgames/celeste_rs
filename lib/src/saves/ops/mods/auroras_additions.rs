@@ -8,7 +8,7 @@ use crate::{
         ops::XML_VERSION_HEADER,
         session::{RootSavedSession, SavedSession},
     },
-    utils::{anyhow::ResultMapIter, YamlFile, YamlParseError, YamlWriteError},
+    utils::{anyhow::ResultMapIter, FromYaml, YamlParseError, YamlWriteError},
 };
 
 impl ModSave for AurorasAdditionsSave {}
@@ -16,7 +16,7 @@ impl ModSave for AurorasAdditionsSave {}
 impl ModFile for AurorasAdditionsSave {
     const MOD_NAME: &'static str = "AurorasAdditions";
 }
-impl YamlFile for AurorasAdditionsSave {
+impl FromYaml for AurorasAdditionsSave {
     fn parse_from_yaml(yaml: &Yaml) -> Result<AurorasAdditionsSave, YamlParseError> {
         let mut sessions_per_level = HashMap::new();
 

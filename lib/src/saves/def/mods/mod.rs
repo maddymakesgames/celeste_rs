@@ -12,7 +12,7 @@ use saphyr::Yaml;
 
 use crate::{
     saves::mods::{auroras_additions::AurorasAdditionsSave, collab_utils2::CollabsUtils2Save},
-    utils::YamlFile,
+    utils::FromYaml,
 };
 
 /// A mod related file<br>
@@ -23,7 +23,7 @@ use crate::{
 /// To implement for a mod file that does not use YAML
 /// make the `parse_from_yaml` body `unreachable!()`
 /// and overwrite `parse_from_str` and `parse_from_reader`
-pub trait ModFile: YamlFile + Sized {
+pub trait ModFile: FromYaml + Sized {
     /// The unlocalized name of the mod the file is for.
     ///
     /// This is the third part of the file name and should be used to verify which file you're loading.
