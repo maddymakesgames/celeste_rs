@@ -448,3 +448,17 @@ impl<K: FromYaml + Ord, V: FromYaml> FromYaml for BTreeMap<K, V> {
         ))
     }
 }
+
+impl<T: FromYaml> FromYaml for Option<T> {
+    fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
+        Ok(T::parse_from_yaml(yaml).ok())
+    }
+
+    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
+        if let Some(t) = self {
+            t.to_yaml()
+        } else {
+            Ok(Yaml::Null)
+        }
+    }
+}
