@@ -10,6 +10,8 @@ use std::{
 use saphyr::{
     emitter::EmitError,
     yaml::LoadError,
+    Array,
+    Hash as YamlHash,
     ScanError,
     YAMLDecodingTrap,
     Yaml,
@@ -20,7 +22,114 @@ use saphyr::{
 
 pub use saphyr;
 
-pub trait YamlFile: Sized {
+pub trait YamlExt {
+    fn try_as_bool(&self) -> Result<bool, YamlParseError>;
+    fn try_as_i64(&self) -> Result<i64, YamlParseError>;
+    fn try_as_f64(&self) -> Result<f64, YamlParseError>;
+    fn try_as_str(&self) -> Result<&str, YamlParseError>;
+    fn try_as_hash(&self) -> Result<&YamlHash, YamlParseError>;
+    fn try_as_vec(&self) -> Result<&Array, YamlParseError>;
+    fn try_as_mut_hash(&mut self) -> Result<&mut YamlHash, YamlParseError>;
+    fn try_as_mut_vec(&mut self) -> Result<&mut Array, YamlParseError>;
+    fn type_name(&self) -> &'static str;
+}
+
+impl YamlExt for Yaml {
+    fn try_as_bool(&self) -> Result<bool, YamlParseError> {
+        self.as_bool()
+            .ok_or(YamlParseError::TypeMismatch("bool", self.type_name()))
+    }
+
+    fn try_as_i64(&self) -> Result<i64, YamlParseError> {
+        self.as_i64()
+            .ok_or(YamlParseError::TypeMismatch("i64", self.type_name()))
+    }
+
+    fn try_as_f64(&self) -> Result<f64, YamlParseError> {
+        self.as_f64()
+            .ok_or(YamlParseError::TypeMismatch("f64", self.type_name()))
+    }
+
+    fn try_as_str(&self) -> Result<&str, YamlParseError> {
+        self.as_str()
+            .ok_or(YamlParseError::TypeMismatch("String", self.type_name()))
+    }
+
+    fn try_as_hash(&self) -> Result<&YamlHash, YamlParseError> {
+        self.as_hash()
+            .ok_or(YamlParseError::TypeMismatch("Hash", self.type_name()))
+    }
+
+    fn try_as_vec(&self) -> Result<&Array, YamlParseError> {
+        self.as_vec()
+            .ok_or(YamlParseError::TypeMismatch("Vec", self.type_name()))
+    }
+
+    fn try_as_mut_hash(&mut self) -> Result<&mut YamlHash, YamlParseError> {
+        let type_name = self.type_name();
+        self.as_mut_hash()
+            .ok_or(YamlParseError::TypeMismatch("Hash", type_name))
+    }
+
+    fn try_as_mut_vec(&mut self) -> Result<&mut Array, YamlParseError> {
+        let type_name = self.type_name();
+        self.as_mut_vec()
+            .ok_or(YamlParseError::TypeMismatch("Vec", type_name))
+    }
+
+    fn type_name(&self) -> &'static str {
+        yaml_type_name(self)
+    }
+}
+
+
+pub trait HashExt {
+    fn get_bool(&self, key: &Yaml) -> Option<Result<bool, YamlParseError>>;
+    fn get_i64(&self, key: &Yaml) -> Option<Result<i64, YamlParseError>>;
+    fn get_f64(&self, key: &Yaml) -> Option<Result<f64, YamlParseError>>;
+    fn get_str(&self, key: &Yaml) -> Option<Result<&str, YamlParseError>>;
+    fn get_hash(&self, key: &Yaml) -> Option<Result<&YamlHash, YamlParseError>>;
+    fn get_vec(&self, key: &Yaml) -> Option<Result<&Array, YamlParseError>>;
+    fn get_mut_hash(&mut self, key: &Yaml) -> Option<Result<&mut YamlHash, YamlParseError>>;
+    fn get_mut_vec(&mut self, key: &Yaml) -> Option<Result<&mut Array, YamlParseError>>;
+}
+
+impl HashExt for YamlHash {
+    fn get_bool(&self, key: &Yaml) -> Option<Result<bool, YamlParseError>> {
+        self.get(key).map(YamlExt::try_as_bool)
+    }
+
+    fn get_i64(&self, key: &Yaml) -> Option<Result<i64, YamlParseError>> {
+        self.get(key).map(YamlExt::try_as_i64)
+    }
+
+    fn get_f64(&self, key: &Yaml) -> Option<Result<f64, YamlParseError>> {
+        self.get(key).map(YamlExt::try_as_f64)
+    }
+
+    fn get_str(&self, key: &Yaml) -> Option<Result<&str, YamlParseError>> {
+        self.get(key).map(YamlExt::try_as_str)
+    }
+
+    fn get_hash(&self, key: &Yaml) -> Option<Result<&YamlHash, YamlParseError>> {
+        self.get(key).map(YamlExt::try_as_hash)
+    }
+
+    fn get_vec(&self, key: &Yaml) -> Option<Result<&Array, YamlParseError>> {
+        self.get(key).map(YamlExt::try_as_vec)
+    }
+
+    fn get_mut_hash(&mut self, key: &Yaml) -> Option<Result<&mut YamlHash, YamlParseError>> {
+        self.get_mut(key).map(YamlExt::try_as_mut_hash)
+    }
+
+    fn get_mut_vec(&mut self, key: &Yaml) -> Option<Result<&mut Array, YamlParseError>> {
+        self.get_mut(key).map(YamlExt::try_as_mut_vec)
+    }
+}
+
+
+pub trait FromYaml: Sized {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError>;
 
     fn parse_from_str(str: &str) -> Result<Self, YamlParseError> {
@@ -48,7 +157,7 @@ pub trait YamlFile: Sized {
     }
 }
 
-impl<T: YamlFile> YamlFile for Vec<T> {
+impl<T: FromYaml> FromYaml for Vec<T> {
     fn parse_from_str(str: &str) -> Result<Vec<T>, YamlParseError> {
         YamlLoader::load_from_str(str)?
             .iter()
@@ -68,14 +177,7 @@ impl<T: YamlFile> YamlFile for Vec<T> {
     }
 
     fn parse_from_yaml(yaml: &Yaml) -> Result<Vec<T>, YamlParseError> {
-        yaml.as_vec()
-            .ok_or(YamlParseError::TypeMismatch(
-                "Yaml passed to Vec::parsed_from_yaml isn't an array.",
-                yaml_type_name(yaml),
-            ))?
-            .iter()
-            .map(T::parse_from_yaml)
-            .collect()
+        yaml.try_as_vec()?.iter().map(T::parse_from_yaml).collect()
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
@@ -208,10 +310,9 @@ pub fn yaml_type_name(yaml: &Yaml) -> &'static str {
     }
 }
 
-impl YamlFile for f64 {
+impl FromYaml for f64 {
     fn parse_from_yaml(yaml: &Yaml) -> Result<f64, YamlParseError> {
-        yaml.as_f64()
-            .ok_or(YamlParseError::TypeMismatch("f64", yaml_type_name(yaml)))
+        yaml.try_as_f64()
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
@@ -219,7 +320,7 @@ impl YamlFile for f64 {
     }
 }
 
-impl YamlFile for f32 {
+impl FromYaml for f32 {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
         f64::parse_from_yaml(yaml).map(|d| d as f32)
     }
@@ -229,10 +330,9 @@ impl YamlFile for f32 {
     }
 }
 
-impl YamlFile for i64 {
+impl FromYaml for i64 {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
-        yaml.as_i64()
-            .ok_or(YamlParseError::TypeMismatch("i64", yaml_type_name(yaml)))
+        yaml.try_as_i64()
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
@@ -240,7 +340,7 @@ impl YamlFile for i64 {
     }
 }
 
-impl YamlFile for i32 {
+impl FromYaml for i32 {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
         i64::parse_from_yaml(yaml).map(|d| d as i32)
     }
@@ -250,12 +350,9 @@ impl YamlFile for i32 {
     }
 }
 
-impl YamlFile for String {
+impl FromYaml for String {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
-        Ok(yaml
-            .as_str()
-            .ok_or(YamlParseError::TypeMismatch("String", yaml_type_name(yaml)))?
-            .to_owned())
+        Ok(yaml.try_as_str()?.to_owned())
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
@@ -263,10 +360,9 @@ impl YamlFile for String {
     }
 }
 
-impl YamlFile for bool {
+impl FromYaml for bool {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
-        yaml.as_bool()
-            .ok_or(YamlParseError::TypeMismatch("bool", yaml_type_name(yaml)))
+        yaml.try_as_bool()
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
@@ -274,26 +370,23 @@ impl YamlFile for bool {
     }
 }
 
-impl<K: YamlFile + Eq + Hash, V: YamlFile> YamlFile for HashMap<K, V> {
+impl<K: FromYaml + Eq + Hash, V: FromYaml> FromYaml for HashMap<K, V> {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
-        yaml.as_hash()
-            .ok_or(YamlParseError::TypeMismatch("Hash", yaml_type_name(yaml)))
-            .map(|h| {
-                h.into_iter()
-                    .map(|(k, v)| {
-                        let k = match K::parse_from_yaml(k) {
-                            Ok(k) => k,
-                            Err(e) => return Err(e),
-                        };
-                        let v = match V::parse_from_yaml(v) {
-                            Ok(v) => v,
-                            Err(e) => return Err(e),
-                        };
+        yaml.try_as_hash()?
+            .into_iter()
+            .map(|(k, v)| {
+                let k = match K::parse_from_yaml(k) {
+                    Ok(k) => k,
+                    Err(e) => return Err(e),
+                };
+                let v = match V::parse_from_yaml(v) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e),
+                };
 
-                        Ok((k, v))
-                    })
-                    .collect::<Result<HashMap<K, V>, _>>()
-            })?
+                Ok((k, v))
+            })
+            .collect::<Result<HashMap<K, V>, _>>()
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
@@ -317,26 +410,23 @@ impl<K: YamlFile + Eq + Hash, V: YamlFile> YamlFile for HashMap<K, V> {
 }
 
 
-impl<K: YamlFile + Ord, V: YamlFile> YamlFile for BTreeMap<K, V> {
+impl<K: FromYaml + Ord, V: FromYaml> FromYaml for BTreeMap<K, V> {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
-        yaml.as_hash()
-            .ok_or(YamlParseError::TypeMismatch("Hash", yaml_type_name(yaml)))
-            .map(|h| {
-                h.into_iter()
-                    .map(|(k, v)| {
-                        let k = match K::parse_from_yaml(k) {
-                            Ok(k) => k,
-                            Err(e) => return Err(e),
-                        };
-                        let v = match V::parse_from_yaml(v) {
-                            Ok(v) => v,
-                            Err(e) => return Err(e),
-                        };
+        yaml.try_as_hash()?
+            .into_iter()
+            .map(|(k, v)| {
+                let k = match K::parse_from_yaml(k) {
+                    Ok(k) => k,
+                    Err(e) => return Err(e),
+                };
+                let v = match V::parse_from_yaml(v) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e),
+                };
 
-                        Ok((k, v))
-                    })
-                    .collect::<Result<BTreeMap<K, V>, _>>()
-            })?
+                Ok((k, v))
+            })
+            .collect::<Result<BTreeMap<K, V>, _>>()
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
