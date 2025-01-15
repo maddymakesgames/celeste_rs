@@ -11,6 +11,7 @@ use syn::{
     punctuated::Punctuated,
     token::{Bracket, Colon, Crate, Paren, PathSep, Pound, Pub},
     Attribute,
+    DataEnum,
     DeriveInput,
     Error,
     Field,
@@ -387,14 +388,14 @@ pub fn trigger_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream
     .into()
 }
 
-#[proc_macro_derive(YamlFile, attributes(name, parse_fn, write_fn))]
-pub fn yaml_file_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+#[proc_macro_derive(FromYaml, attributes(name, parse_fn, write_fn))]
+pub fn from_yaml_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    if matches!(input.data, syn::Data::Enum(_) | syn::Data::Union(_)) {
+    if matches!(input.data, syn::Data::Union(_)) {
         Error::new(
             input.ident.span(),
-            "YamlFile can currently only be derived for structs",
+            "YamlFile can currently only be derived for structs and enums",
         )
         .into_compile_error()
     } else {

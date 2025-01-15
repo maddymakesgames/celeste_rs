@@ -3,6 +3,7 @@ use quote::quote;
 use syn::{
     spanned::Spanned,
     Data,
+    DataStruct,
     DeriveInput,
     Error,
     Expr,
@@ -19,11 +20,10 @@ use syn::{
 
 use crate::celeste_rs;
 
-pub(super) fn yaml_derive(input: DeriveInput) -> Result<TokenStream, Error> {
-    let Data::Struct(struct_data) = input.data.clone() else {
-        unreachable!()
-    };
-
+pub(super) fn yaml_derive_struct(
+    input: DeriveInput,
+    struct_data: DataStruct,
+) -> Result<TokenStream, Error> {
     let struct_ident = input.ident.clone();
 
     let mut fields = Vec::new();
@@ -32,7 +32,7 @@ pub(super) fn yaml_derive(input: DeriveInput) -> Result<TokenStream, Error> {
         if field.ident.is_none() {
             return Err(Error::new(
                 input.span(),
-                "YamlFile derive cannot currently be implemented on tuple structs",
+                "FromYaml derive cannot currently be implemented on tuple structs",
             ));
         }
 
@@ -98,7 +98,7 @@ pub(super) fn yaml_derive(input: DeriveInput) -> Result<TokenStream, Error> {
 
     Ok(quote! {
 
-            impl #celeste_rs::utils::yaml::YamlFile for #struct_ident {
+            impl #celeste_rs::utils::yaml::FromYaml for #struct_ident {
                 fn parse_from_yaml(yaml: &#celeste_rs::utils::yaml::saphyr::Yaml) -> Result<Self, #celeste_rs::utils::yaml::YamlParseError> {
                     #(#field_parsers)*
 
@@ -108,7 +108,7 @@ pub(super) fn yaml_derive(input: DeriveInput) -> Result<TokenStream, Error> {
                 }
 
                 fn to_yaml(&self) -> Result<#celeste_rs::utils::yaml::saphyr::Yaml, #celeste_rs::utils::yaml::YamlWriteError> {
-                    let mut output = saphyr::Hash::new();
+                    let mut output = #celeste_rs::utils::saphyr::Hash::new();
 
                     #(#field_writers);*
 
@@ -141,7 +141,7 @@ fn gen_type_parse(name: &str, ty: &Type) -> Result<TokenStream, Error> {
         Type::Path(_) => gen_path_parser(name, ty),
         t => Err(Error::new(
             t.span(),
-            format!("Field of type {t:?} is not allowed in YamlFile derive"),
+            format!("Field of type {t:?} is not allowed in FromYaml derive"),
         ))?,
     }
 }
@@ -150,9 +150,9 @@ fn gen_path_parser(name: &str, ty: &Type) -> Result<TokenStream, Error> {
     let celeste_rs = celeste_rs();
 
     Ok(if let Some(ty) = get_option_ty(ty) {
-        quote! {<#ty as #celeste_rs::utils::yaml::YamlFile>::parse_from_yaml(&yaml[#name]).ok()}
+        quote! {<#ty as #celeste_rs::utils::yaml::FromYaml>::parse_from_yaml(&yaml[#name]).ok()}
     } else {
-        quote! {<#ty as #celeste_rs::utils::yaml::YamlFile>::parse_from_yaml(&yaml[#name])?}
+        quote! {<#ty as #celeste_rs::utils::yaml::FromYaml>::parse_from_yaml(&yaml[#name])?}
     })
 }
 
@@ -195,11 +195,11 @@ fn gen_array_parser(name: &str, ty: &Type, len: &Expr) -> Result<TokenStream, Er
         ))?;
 
         quote! {
-            output[i] = <#ty as #celeste_rs::utils::yaml::YamlFile>::parse_from_yaml(ele).ok();
+            output[i] = <#ty as #celeste_rs::utils::yaml::FromYaml>::parse_from_yaml(ele).ok();
         }
     } else {
         quote! {
-            output[i].write(<#ty as #celeste_rs::utils::yaml::YamlFile>::parse_from_yaml(ele)?);
+            output[i].write(<#ty as #celeste_rs::utils::yaml::FromYaml>::parse_from_yaml(ele)?);
         }
     };
 
@@ -249,14 +249,14 @@ fn gen_type_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, 
         Type::Array(_) => Ok(quote! {
             output.insert(
                 #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
-                #celeste_rs::utils::yaml::saphyr::Yaml::Array(self.#ident.iter().map(#celeste_rs::utils::yaml::YamlFile::to_yaml).collect::<Result<Vec<_>,_>>()?)
+                #celeste_rs::utils::yaml::saphyr::Yaml::Array(self.#ident.iter().map(#celeste_rs::utils::yaml::FromYaml::to_yaml).collect::<Result<Vec<_>,_>>()?)
             );
         }),
         Type::Paren(type_paren) => gen_type_writer(name, ident, &type_paren.elem),
         Type::Path(_) => gen_path_writer(name, ident, ty),
         t => Err(Error::new(
             t.span(),
-            format!("Field of type {t:?} is not allowed in YamlFile derive"),
+            format!("Field of type {t:?} is not allowed in FromYaml derive"),
         )),
     }
 }
@@ -265,10 +265,10 @@ fn gen_path_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, 
     let celeste_rs = celeste_rs();
     Ok(if let Some(_ty) = get_option_ty(ty) {
         quote! {
-            if let Some(yaml) = self.#ident.to_yaml() {
+            if let Some(val) = &self.#ident {
                 output.insert(
                     #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
-                    yaml
+                    val.to_yaml()?
                 );
             }
         }
@@ -291,6 +291,14 @@ fn is_option_type(ty: &Type) -> bool {
 }
 
 fn get_option_ty(ty: &Type) -> Option<&Type> {
+    if is_option_type(ty) {
+        get_nested_ty(ty)
+    } else {
+        None
+    }
+}
+
+fn get_nested_ty(ty: &Type) -> Option<&Type> {
     if let Type::Path(TypePath { path, .. }) = ty {
         let segment = path.segments.first()?;
 
