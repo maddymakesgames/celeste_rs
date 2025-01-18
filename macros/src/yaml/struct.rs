@@ -2,7 +2,6 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
     spanned::Spanned,
-    Data,
     DataStruct,
     DeriveInput,
     Error,
@@ -103,7 +102,7 @@ pub(super) fn yaml_derive_struct(
                     #(#field_parsers)*
 
                     Ok(#struct_ident {
-                        #(#field_names),*
+                        #(#field_names: #field_names?),*
                     })
                 }
 
@@ -129,8 +128,10 @@ fn gen_field_parser(field: &Field) -> Result<TokenStream, Error> {
 
     let parser = gen_type_parse(&field.yaml_name, &field.rust_type)?;
     let ident = &field.rust_name;
+    let ty = &field.rust_type;
+    let celeste_rs = celeste_rs();
     Ok(quote! {
-        let #ident = {#parser};
+        let #ident: Result<#ty, #celeste_rs::utils::yaml::YamlParseError>  = {#parser};
     })
 }
 
@@ -150,9 +151,10 @@ fn gen_path_parser(name: &str, ty: &Type) -> Result<TokenStream, Error> {
     let celeste_rs = celeste_rs();
 
     Ok(if let Some(ty) = get_option_ty(ty) {
-        quote! {<#ty as #celeste_rs::utils::yaml::FromYaml>::parse_from_yaml(&yaml[#name]).ok()}
+        let parser = gen_type_parse(name, ty)?;
+        quote! {Ok({#parser}.ok())}
     } else {
-        quote! {<#ty as #celeste_rs::utils::yaml::FromYaml>::parse_from_yaml(&yaml[#name])?}
+        quote! {<#ty as #celeste_rs::utils::yaml::FromYaml>::parse_from_yaml(&yaml[#name])}
     })
 }
 
@@ -166,11 +168,8 @@ fn gen_array_parser(name: &str, ty: &Type, len: &Expr) -> Result<TokenStream, Er
     };
 
     let header = quote! {
-        let arr = yaml[#name].as_vec()
-            .ok_or(#celeste_rs::utils::yaml::YamlParseError::TypeMismatch(
-                "Vec",
-                #celeste_rs::utils::yaml::yaml_type_name(&yaml[#name])
-            ))?;
+        use #celeste_rs::utils::yaml::YamlExt;
+        let arr = yaml[#name].try_as_vec()?;
         let mut output = #output_dec;
         let mut i = 0;
     };
@@ -223,15 +222,15 @@ fn gen_array_parser(name: &str, ty: &Type, len: &Expr) -> Result<TokenStream, Er
         }
 
         #unsafe_cast
-        output
+        Ok::<[#ty; #len], #celeste_rs::utils::yaml::YamlParseError>(output)
     })
 }
 
 fn gen_field_writer(field: &Field) -> Result<TokenStream, Error> {
     let celeste_rs = celeste_rs();
+    let name = &field.yaml_name;
     if let Some(func) = &field.writing_fn {
         let ident = &field.rust_name;
-        let name = &field.yaml_name;
         return Ok(quote! {
             output.insert(
                 #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
@@ -240,17 +239,28 @@ fn gen_field_writer(field: &Field) -> Result<TokenStream, Error> {
         });
     }
 
-    gen_type_writer(&field.yaml_name, &field.rust_name, &field.rust_type)
+    let writer = gen_type_writer(&field.yaml_name, &field.rust_name, &field.rust_type)?;
+    let ident = &field.rust_name;
+    Ok(quote! {
+        output.insert(
+            #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
+            {
+                let val = &self.#ident;
+                let output: Result<
+                    #celeste_rs::utils::yaml::saphyr::Yaml,
+                    #celeste_rs::utils::yaml::YamlWriteError
+                > = {#writer};
+                output?
+            }
+        );
+    })
 }
 
 fn gen_type_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, Error> {
     let celeste_rs = celeste_rs();
     match &ty {
         Type::Array(_) => Ok(quote! {
-            output.insert(
-                #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
-                #celeste_rs::utils::yaml::saphyr::Yaml::Array(self.#ident.iter().map(#celeste_rs::utils::yaml::FromYaml::to_yaml).collect::<Result<Vec<_>,_>>()?)
-            );
+                Ok(#celeste_rs::utils::yaml::saphyr::Yaml::Array(val.iter().map(#celeste_rs::utils::yaml::FromYaml::to_yaml).collect::<Result<Vec<_>,_>>()?))
         }),
         Type::Paren(type_paren) => gen_type_writer(name, ident, &type_paren.elem),
         Type::Path(_) => gen_path_writer(name, ident, ty),
@@ -263,21 +273,19 @@ fn gen_type_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, 
 
 fn gen_path_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, Error> {
     let celeste_rs = celeste_rs();
-    Ok(if let Some(_ty) = get_option_ty(ty) {
+    Ok(if let Some(ty) = get_option_ty(ty) {
+        let writer = gen_type_writer(name, ident, ty)?;
         quote! {
-            if let Some(val) = &self.#ident {
-                output.insert(
-                    #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
-                    val.to_yaml()?
-                );
-            }
+            Ok(if let Some(val) = &val {
+                let output: Result<#celeste_rs::utils::yaml::saphyr::Yaml, #celeste_rs::utils::yaml::YamlWriteError> = {#writer};
+                output?
+            } else {
+                #celeste_rs::utils::yaml::saphyr::Yaml::Null
+            })
         }
     } else {
         quote! {
-            output.insert(
-                #celeste_rs::utils::yaml::saphyr::Yaml::String(#name.to_owned()),
-                self.#ident.to_yaml()?
-            );
+            val.to_yaml()
         }
     })
 }
