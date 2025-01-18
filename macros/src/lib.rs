@@ -11,7 +11,6 @@ use syn::{
     punctuated::Punctuated,
     token::{Bracket, Colon, Crate, Paren, PathSep, Pound, Pub},
     Attribute,
-    DataEnum,
     DeriveInput,
     Error,
     Field,
