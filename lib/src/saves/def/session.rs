@@ -1,4 +1,4 @@
-use celeste_rs_macros::root_tag;
+use celeste_rs_macros::{root_tag, FromYaml};
 use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::{deserialize_bool_from_anything, deserialize_number_from_string};
 
@@ -227,7 +227,7 @@ pub struct OldStats {
     pub modes: Modes,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, FromYaml, Debug, Clone)]
 pub enum CoreModes {
     None,
     Hot,
