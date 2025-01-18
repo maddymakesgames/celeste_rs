@@ -10,6 +10,6 @@ pub(super) fn yaml_derive(input: DeriveInput) -> Result<TokenStream, Error> {
     match input.data.clone() {
         Data::Struct(data_struct) => yaml_struct::yaml_derive_struct(input, data_struct),
         Data::Enum(data_enum) => yaml_enum::yaml_derive_enum(input, data_enum),
-        Data::Union(data_union) => unreachable!("We check before running this function"),
+        Data::Union(_) => unreachable!("We check before running this function"),
     }
 }
