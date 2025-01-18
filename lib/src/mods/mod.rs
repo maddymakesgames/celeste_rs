@@ -12,9 +12,13 @@ use zip::{read::ZipFile, result::ZipError, HasZipMetadata, ZipArchive};
 
 use crate::{
     maps::{parser::MapElementParsingError, reader::MapReadError, MapManager},
-    mods::{dll::BufferedDLL, maps::BundledMap, meta::ModMeta},
+    mods::{
+        dll::BufferedDLL,
+        maps::{BundledMap, MapMeta},
+        meta::ModMeta,
+    },
     playbacks::{Playback, PlaybackReadError},
-    utils::YamlFile,
+    utils::{FromYaml, YamlReadError},
 };
 
 pub mod dll;
@@ -71,7 +75,9 @@ impl<R: Read + Seek> ZipBuf<R> {
 
 impl<R: Read + Seek> FileProvider for ZipBuf<R> {
     type Err = ZipError;
-    type Reader<'a> = ZipFile<'a> where R: 'a;
+    type Reader<'a>
+        = ZipFile<'a>
+    where R: 'a;
 
     fn get_file(
         &mut self,
@@ -148,7 +154,8 @@ impl DirBuf {
 
 impl FileProvider for DirBuf {
     type Err = std::io::Error;
-    type Reader<'a> = &'a File
+    type Reader<'a>
+        = &'a File
     where Self: 'a;
 
     fn get_file(
@@ -245,8 +252,7 @@ impl ModCollection {
             .collect();
 
         let mut tutorials = HashMap::new();
-        let mut maps = HashMap::new();
-        let map_metas: HashMap<String, maps::MapMeta> = HashMap::new();
+        let mut map_metas = HashMap::new();
         let mut map_bins = HashMap::new();
 
         let paths = provider
@@ -331,11 +337,12 @@ impl ModCollection {
                 } else if path.ends_with(".altsideshelper.meta.yaml") {
                     // TODO: altsides helper stuff
                 } else if path.ends_with(".meta.yaml") {
-                    // TODO: map meta stuff;
+                    map_metas.insert(sid.to_owned(), MapMeta::parse_from_reader(&mut file)?);
                 }
             }
         }
 
+        let mut maps = HashMap::new();
         for (sid, map_meta) in map_metas {
             let map_bin = map_bins.remove(&sid).unwrap();
             maps.insert(sid.to_owned(), BundledMap {
@@ -388,6 +395,7 @@ pub enum ModReadError<T: Error> {
     MapParseError(MapElementParsingError),
     IoError(std::io::Error),
     PlaybackError(PlaybackReadError),
+    YamlReadError(YamlReadError),
 }
 
 impl<T: Error> Display for ModReadError<T> {
@@ -399,6 +407,7 @@ impl<T: Error> Display for ModReadError<T> {
             ModReadError::MapParseError(e) => Display::fmt(e, f),
             ModReadError::IoError(e) => Display::fmt(e, f),
             ModReadError::PlaybackError(e) => Display::fmt(e, f),
+            ModReadError::YamlReadError(e) => Display::fmt(e, f),
         }
     }
 }
@@ -436,5 +445,11 @@ impl<T: Error> From<std::io::Error> for ModReadError<T> {
 impl<T: Error> From<PlaybackReadError> for ModReadError<T> {
     fn from(value: PlaybackReadError) -> Self {
         ModReadError::<T>::PlaybackError(value)
+    }
+}
+
+impl<T: Error> From<YamlReadError> for ModReadError<T> {
+    fn from(value: YamlReadError) -> Self {
+        ModReadError::<T>::YamlReadError(value)
     }
 }

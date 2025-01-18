@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-
-use celeste_rs_macros::YamlFile;
+use celeste_rs_macros::FromYaml;
 
 use crate::{maps::elements::MapRoot, saves::session::CoreModes};
 
@@ -11,7 +10,7 @@ pub struct BundledMap {
     pub map: MapRoot,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct MapMeta {
     #[name = "Parent"]
     pub parent: String,
@@ -97,7 +96,7 @@ pub struct MapMeta {
     pub cassette_modifier: CassetteModifier,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct MapMetaModeProperty {
     #[name = "AudioState"]
     pub audio_state: MapMetaAudioState,
@@ -122,7 +121,7 @@ pub struct MapMetaModeProperty {
     pub theo_in_bubble: Option<bool>,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct MapMetaAudioState {
     #[name = "Music"]
     pub music: String,
@@ -130,7 +129,7 @@ pub struct MapMetaAudioState {
     pub ambience: String,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct MapMetaCheckpointData {
     #[name = "Level"]
     pub level: String,
@@ -148,7 +147,7 @@ pub struct MapMetaCheckpointData {
     pub core_mode: Option<CoreModes>,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct MountainData {
     #[name = "MountainModelDirectory"]
     pub mountain_model_directory: Option<String>,
@@ -188,7 +187,7 @@ pub struct MountainData {
     pub show_snow: bool,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct CompleteScreen {
     #[name = "Atlas"]
     pub atlas: String,
@@ -206,7 +205,7 @@ pub struct CompleteScreen {
     pub title: CompleteScreenTitle,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct CompleteScreenLayer {
     #[name = "Type"]
     pub kind: String,
@@ -228,7 +227,7 @@ pub struct CompleteScreenLayer {
     pub loop_frame: bool,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct CompleteScreenTitle {
     #[name = "ASide"]
     pub a_side: String,
@@ -240,7 +239,7 @@ pub struct CompleteScreenTitle {
     pub full_clear: String,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct TextVignette {
     #[name = "Dialog"]
     pub dialog: String,
@@ -254,7 +253,7 @@ pub struct TextVignette {
     pub snow_direction: [f32; 2],
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct CassetteModifier {
     #[name = "TempoMul"]
     pub tempo_mult: i32,
@@ -276,7 +275,7 @@ pub struct CassetteModifier {
     pub old_behavior: bool,
 }
 
-#[derive(YamlFile)]
+#[derive(FromYaml)]
 pub struct MountainPosition {
     #[name = "Position"]
     pub position: [f64; 3],
@@ -286,6 +285,7 @@ pub struct MountainPosition {
 
 pub struct AltSidesMeta {}
 
+#[derive(FromYaml)]
 pub enum IntroTypes {
     Transition,
     Respawn,
