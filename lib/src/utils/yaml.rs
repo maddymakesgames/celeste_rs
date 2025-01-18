@@ -220,6 +220,7 @@ impl From<YamlParseError> for YamlReadError {
 pub enum YamlParseError {
     TypeMismatch(&'static str, &'static str),
     ArrayLenMismatch(&'static str, usize, usize),
+    UnknownVariant(&'static str, String),
     ScanError(ScanError),
     IoError(Arc<std::io::Error>),
     Custom(String),
@@ -240,6 +241,10 @@ impl Display for YamlParseError {
             YamlParseError::IoError(error) => Display::fmt(error, f),
             YamlParseError::ScanError(scan_error) => Display::fmt(scan_error, f),
             YamlParseError::Custom(str) => write!(f, "{str}"),
+            YamlParseError::UnknownVariant(enum_name, found) => write!(
+                f,
+                "Found unknown enum variant \"{found}\" when parsing {enum_name}"
+            ),
         }
     }
 }
@@ -337,16 +342,6 @@ impl FromYaml for i64 {
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
         Ok(Yaml::Integer(*self))
-    }
-}
-
-impl FromYaml for i32 {
-    fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
-        i64::parse_from_yaml(yaml).map(|d| d as i32)
-    }
-
-    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
-        i64::to_yaml(&(*self as i64))
     }
 }
 
@@ -449,16 +444,30 @@ impl<K: FromYaml + Ord, V: FromYaml> FromYaml for BTreeMap<K, V> {
     }
 }
 
-impl<T: FromYaml> FromYaml for Option<T> {
-    fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
-        Ok(T::parse_from_yaml(yaml).ok())
-    }
+macro_rules! ints_yaml {
+    ($($int: ty, $int_str: literal),*) => {
+        $(
+            impl FromYaml for $int {
+                fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
+                    if let Ok(int) = yaml.try_as_i64()?.try_into() {
+                        Ok(int)
+                    } else {
+                        Err(YamlParseError::custom(concat!("Could not fit the number parsed into an ", $int_str)))
+                    }
+                }
 
-    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
-        if let Some(t) = self {
-            t.to_yaml()
-        } else {
-            Ok(Yaml::Null)
-        }
-    }
+                fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
+                    // Allow this, compiler should optimize out any unneeded branches
+                    #[allow(irrefutable_let_patterns)]
+                    if let Ok(int) = (*self).try_into() {
+                        Ok(Yaml::Integer(int))
+                    } else {
+                        Err(YamlWriteError::custom(concat!("Could not fit an ", $int_str, " into a i64 when writing")))
+                    }
+                }
+            }
+        )*
+    };
 }
+
+ints_yaml!(u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32");
