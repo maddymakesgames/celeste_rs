@@ -9,8 +9,8 @@ use dotnetdll::{dll::DLLError, prelude::Resolution};
 /// A self-referential type to hold the data used by [Resolution]
 ///
 /// This is needed because [Resolution] only holds references into the raw dll binary.
-/// Because we need the [FileProvider] api to be compatable with [ZipArchive] we need
-/// exclusive access to the provider at all times. Thus we need all data stored in [Mod]
+/// Because we need the [FileProvider](super::FileProvider) api to be compatable with [ZipArchive](zip::ZipArchive) we need
+/// exclusive access to the provider at all times. Thus we need all data stored in [Mod](super::Mod)
 /// to be buffered.
 ///
 /// So [Resolution] needs a reference into a buffer, but also the data comes from something
