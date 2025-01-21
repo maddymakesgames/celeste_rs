@@ -19,7 +19,7 @@ pub struct MapParser<'a> {
     pub(crate) parsers: &'a HashMap<&'static str, Box<dyn ElementParserImpl>>,
 }
 
-impl<'a> MapParser<'a> {
+impl MapParser<'_> {
     /// Parses `T` without forking, needed to parse the map root properly
     pub(crate) fn parse_self<T: MapElement>(self) -> Result<T, MapElementParsingError> {
         T::from_raw(self)

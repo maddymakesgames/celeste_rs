@@ -14,7 +14,7 @@ pub struct MapEncoder<'a> {
     pub(crate) attrs: Vec<MapAttribute>,
 }
 
-impl<'a> MapEncoder<'a> {
+impl MapEncoder<'_> {
     /// Sets the name of the raw element
     ///
     /// This is already done when creating the [MapEncoder] so this

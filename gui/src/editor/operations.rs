@@ -135,7 +135,7 @@ impl<'a> EditorTab<'a> for OperationsTab<'a> {
     }
 }
 
-impl<'a> OperationsTab<'a> {
+impl OperationsTab<'_> {
     fn save_file(
         &self,
         data: &mut OperationsData,

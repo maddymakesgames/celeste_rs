@@ -117,7 +117,7 @@ impl<'a> EditorTab<'a> for LevelSetsTab<'a> {
     }
 }
 
-impl<'a> LevelSetsTab<'a> {
+impl LevelSetsTab<'_> {
     pub fn show_modded(self, ui: &mut Ui, data: &mut LevelSetsData) {
         let row_height = ui.text_style_height(&TextStyle::Body);
 

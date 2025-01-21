@@ -84,7 +84,7 @@ impl<'a> EditorTab<'a> for MetadataTab<'a> {
 }
 
 // TODO: add summit gems
-impl<'a> MetadataTab<'a> {
+impl MetadataTab<'_> {
     pub fn show_flags(&mut self, ui: &mut Ui) {
         let met_theo = self.flags.contains(&VanillaFlags::MetTheo.into());
         let mut met_theo2 = met_theo;

@@ -166,7 +166,7 @@ impl<'a> EditorTab<'a> for SessionsTab<'a> {
     }
 }
 
-impl<'a> SessionsTab<'a> {
+impl SessionsTab<'_> {
     #[allow(clippy::too_many_arguments)]
     fn show_session_impl(
         ui: &mut Ui,

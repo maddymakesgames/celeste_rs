@@ -99,7 +99,7 @@ impl<'a> Deref for MapReader<'a> {
     }
 }
 
-impl<'a> DerefMut for MapReader<'a> {
+impl DerefMut for MapReader<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.reader
     }
