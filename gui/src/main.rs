@@ -60,14 +60,33 @@ fn main() {
 
     // Expect is fine since its on startup
     wasm_bindgen_futures::spawn_local(async {
-        eframe::WebRunner::new()
+        let document = web_sys::window()
+            .expect("No window")
+            .document()
+            .expect("No document");
+
+        let start_result = eframe::WebRunner::new()
             .start(
                 "the_canvas_id",
                 eframe::WebOptions::default(),
                 Box::new(|cc| Box::new(SaveEditor::new(cc))),
             )
-            .await
-            .expect("Error starting eframe app")
+            .await;
+
+        // Remove the loading text and spinner:
+        if let Some(loading_text) = document.get_element_by_id("loading_text") {
+            match start_result {
+                Ok(_) => {
+                    loading_text.remove();
+                }
+                Err(e) => {
+                    loading_text.set_inner_html(
+                        "<p> The app has crashed. See the developer console for details. </p>",
+                    );
+                    panic!("Failed to start eframe: {e:?}");
+                }
+            }
+        }
     });
 }
 
