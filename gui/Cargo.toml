@@ -1,6 +1,6 @@
 [package]
 name = "celeste_rs_gui"
-version = "0.4.1+0.4.0"
+version = "0.4.1+0.5.1"
 edition = "2021"
 repository = "https://github.com/maddymakesgames/celeste_rs"
 authors = ["Maddymakesgames (madelinemakesgames@gmail.com)"]
