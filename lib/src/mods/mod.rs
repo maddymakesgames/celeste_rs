@@ -1,4 +1,3 @@
-use dotnetdll::dll::DLLError;
 use std::{
     collections::{BTreeMap, HashMap},
     error::Error,
@@ -13,7 +12,6 @@ use zip::{read::ZipFile, result::ZipError, HasZipMetadata, ZipArchive};
 use crate::{
     maps::{parser::MapElementParsingError, reader::MapReadError, MapManager},
     mods::{
-        dll::BufferedDLL,
         maps::{BundledMap, MapMeta},
         meta::ModMeta,
     },
@@ -21,6 +19,14 @@ use crate::{
     utils::{FromYaml, YamlReadError},
 };
 
+
+#[cfg(not(target_family = "wasm"))]
+use dotnetdll::dll::DLLError;
+
+#[cfg(not(target_family = "wasm"))]
+use crate::mods::dll::BufferedDLL;
+
+#[cfg(not(target_family = "wasm"))]
 pub mod dll;
 pub mod maps;
 pub mod meta;
@@ -372,11 +378,13 @@ pub struct Mod {
     pub meta: ModMeta,
     /// Whether this mod should be the one with all the non-dll assets connected to it
     pub root: bool,
+    #[cfg(not(target_family = "wasm"))]
     pub dll: Option<BufferedDLL>,
 }
 
 impl Mod {
     fn new(meta: ModMeta, root: bool, provider: &mut impl FileProvider) -> Self {
+        #[cfg(not(target_family = "wasm"))]
         let dll = if let Some(dll_path) = &meta.dll {
             let dll_bytes = provider.get_file_bytes(dll_path).unwrap();
             Some(BufferedDLL::new(dll_bytes).unwrap())
@@ -384,12 +392,19 @@ impl Mod {
             None
         };
 
-        Mod { meta, root, dll }
+        Mod {
+            meta,
+            root,
+
+            #[cfg(not(target_family = "wasm"))]
+            dll,
+        }
     }
 }
 
 pub enum ModReadError<T: Error> {
     ProviderError(T),
+    #[cfg(not(target_family = "wasm"))]
     DllError(DLLError),
     MapReadError(MapReadError),
     MapParseError(MapElementParsingError),
@@ -402,6 +417,7 @@ impl<T: Error> Display for ModReadError<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ModReadError::ProviderError(e) => Display::fmt(e, f),
+            #[cfg(not(target_family = "wasm"))]
             ModReadError::DllError(e) => Display::fmt(e, f),
             ModReadError::MapReadError(e) => Display::fmt(e, f),
             ModReadError::MapParseError(e) => Display::fmt(e, f),
@@ -418,6 +434,7 @@ impl<T: Error> From<FileProviderError<T>> for ModReadError<T> {
     }
 }
 
+#[cfg(not(target_family = "wasm"))]
 impl<T: Error> From<DLLError> for ModReadError<T> {
     fn from(value: DLLError) -> Self {
         ModReadError::<T>::DllError(value)
