@@ -17,6 +17,8 @@ The gui library we use, [egui](https://github.com/emilk/egui), also requires tha
 sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev
 `
 
+We also include a [nix](https://nixos.org) flake making builds easy if you use the nix package manager (currently only tested on linux).
+
 ## Feedback
 Please provide feedback or bug reports via github issues. If you would like to contribute you can make a pull request and I can look over it.
 
