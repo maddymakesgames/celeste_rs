@@ -5,3 +5,5 @@ dist/
 /*.celeste
 .vscode/
 /*.txt
+.direnv/
+/result
