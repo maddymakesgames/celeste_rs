@@ -27,8 +27,8 @@
       cargo
     ];
   in {
-    packages.${system} = {
-      default = rustPlatform.buildRustPackage rec {
+    packages.${system} = rec {
+      gui = rustPlatform.buildRustPackage rec {
         pname = "celeste_rs_gui";
         version = "0.4.1+0.5.1";
 
@@ -42,7 +42,12 @@
           root = ./.;
           fileset = ./.;
         };
+
+        RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+        LD_LIBRARY_PATH = libPath;
       };
+
+      default = gui;
 
       debug = rustPlatform.buildRustPackage rec {
         pname = "celeste_rs_gui";
@@ -59,6 +64,9 @@
           root = ./.;
           fileset = ./.;
         };
+        
+        RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+        LD_LIBRARY_PATH = libPath;
       };
 
       lib = rustPlatform.buildRustPackage rec {
