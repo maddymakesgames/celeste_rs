@@ -6,11 +6,14 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use chrono::NaiveDateTime;
 pub use quick_xml::DeError;
 
 use crate::saves::{
     def::{everest::LevelSetStats, vanilla::AreaStats},
+    util::FileTime,
     AreaCount,
+    Assists,
     DashCount,
     DashMode,
     DeathCount,
@@ -273,7 +276,6 @@ impl SaveData {
 
         self.unlocked_areas = AreaCount::max(self.unlocked_areas, other.unlocked_areas);
 
-
         // Get the areas
         let areas_to_copy = other.all_areas();
         let curr_areas = self.all_areas_mut();
@@ -386,6 +388,44 @@ impl SaveData {
         if self.total_golden_strawberries < other.total_golden_strawberries {
             self.total_golden_strawberries +=
                 other.total_golden_strawberries - self.total_golden_strawberries;
+        }
+    }
+}
+
+// Manual default because we need the urls, version, and names to be specific things
+impl Default for SaveData {
+    fn default() -> Self {
+        Self {
+            xsi_url: XSI_URL.to_owned(),
+            xsd_url: XSD_URL.to_owned(),
+            version: "1.4.0.0".to_owned(),
+            name: "Madeline".to_owned(),
+            time: FileTime(0),
+            last_save: NaiveDateTime::default(),
+            cheat_mode: false,
+            assist_mode: false,
+            variant_mode: false,
+            assists: Default::default(),
+            theo_sister_name: "Alex".to_owned(),
+            unlocked_areas: 0,
+            total_deaths: 0,
+            total_strawberries: 0,
+            total_golden_strawberries: 0,
+            total_jumps: 0,
+            total_wall_jumps: 0,
+            total_dashes: 0,
+            flags: Default::default(),
+            poem: Default::default(),
+            summit_gems: None,
+            revealed_farewell: false,
+            last_area: Default::default(),
+            current_session: None,
+            areas: Default::default(),
+            level_sets: Default::default(),
+            level_set_recycle_bin: Default::default(),
+            has_modded_save_data: false,
+            last_area_safe: None,
+            current_session_safe: None,
         }
     }
 }
@@ -555,6 +595,18 @@ impl ModSaveData {
     }
 }
 
+impl Default for ModSaveData {
+    fn default() -> Self {
+        Self {
+            xsi_url: XSI_URL.to_owned(),
+            xsd_url: XSD_URL.to_owned(),
+            level_sets: Default::default(),
+            level_set_recycle_bin: Default::default(),
+            last_area_safe: None,
+        }
+    }
+}
+
 impl Display for DashMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
@@ -616,5 +668,25 @@ impl Deref for Poem {
 impl DerefMut for Poem {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.string
+    }
+}
+
+impl Default for Assists {
+    fn default() -> Self {
+        Self {
+            game_speed: 10,
+            invincible: false,
+            dash_mode: Default::default(),
+            dash_assist: false,
+            infinite_stamina: false,
+            mirror_mode: false,
+            full_dashing: false,
+            invisible_motion: false,
+            no_grabbing: false,
+            low_friction: false,
+            super_dash: false,
+            hiccups: false,
+            badeline: false,
+        }
     }
 }
