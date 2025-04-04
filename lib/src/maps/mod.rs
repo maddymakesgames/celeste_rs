@@ -309,7 +309,7 @@ impl ErasedMapElement for RawMapElement {
 }
 
 
-impl ErasedMapElement for Box<dyn ErasedMapElement> {
+impl ErasedMapElement for DynMapElement {
     fn name(&self) -> &str {
         self.as_ref().name()
     }
