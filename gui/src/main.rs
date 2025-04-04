@@ -219,7 +219,7 @@ impl ScreenState {
         ui: &mut Ui,
         rt: &Runtime,
         popups: &Arc<Mutex<Vec<PopupWindow>>>,
-    ) -> Option<impl Iterator<Item = (String, LoadableFiles)>> {
+    ) -> Option<impl Iterator<Item = (String, LoadableFiles)> + use<>> {
         match self {
             ScreenState::Menu(m) =>
             // The main menu displays until a file has been opened

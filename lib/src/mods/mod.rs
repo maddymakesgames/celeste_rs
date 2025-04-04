@@ -214,7 +214,7 @@ impl<T: FileProvider> ModManager<T> {
         Ok(ModManager { provider, mods })
     }
 
-    pub fn get_file<'a>(&'a mut self, path: &Path) -> Result<impl Read + 'a, T::Err> {
+    pub fn get_file<'a>(&'a mut self, path: &Path) -> Result<impl Read + 'a + use<'a, T>, T::Err> {
         self.provider.get_file(path).map_err(|e| e.0)
     }
 

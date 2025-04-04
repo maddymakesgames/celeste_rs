@@ -326,17 +326,20 @@ impl OperationsTab<'_> {
         popups: &Arc<Mutex<Vec<PopupWindow>>>,
     ) {
         let mut buf = String::new();
-        if let Err(e) = to_writer_func(file, &mut buf) {
-            let mut popup_guard = popups.blocking_lock();
-            popup_guard.push(PopupWindow::new(
-                ErrorSeverity::Error,
-                format!(
-                    "Error serializing save file: {e:?}.\nThis is likely a bug. Please report it \
-                     on github."
-                ),
-            ));
-        } else {
-            OperationsTab::save_file_impl(buf, file_name, rt, popups);
+        match to_writer_func(file, &mut buf) {
+            Err(e) => {
+                let mut popup_guard = popups.blocking_lock();
+                popup_guard.push(PopupWindow::new(
+                    ErrorSeverity::Error,
+                    format!(
+                        "Error serializing save file: {e:?}.\nThis is likely a bug. Please report \
+                         it on github."
+                    ),
+                ));
+            }
+            _ => {
+                OperationsTab::save_file_impl(buf, file_name, rt, popups);
+            }
         }
     }
 
