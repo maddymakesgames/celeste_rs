@@ -52,6 +52,7 @@ fn main() {
 
 #[cfg(target_family = "wasm")]
 fn main() {
+    use eframe::wasm_bindgen::JsCast;
     // Make sure panics are logged using `console.error`.
     console_error_panic_hook::set_once();
 
@@ -65,9 +66,15 @@ fn main() {
             .document()
             .expect("No document");
 
+        let canvas = document
+            .get_element_by_id("the_canvas_id")
+            .expect("Canvas doesn't exist")
+            .dyn_into::<web_sys::HtmlCanvasElement>()
+            .expect("Canvas element isn't a canvas");
+
         let start_result = eframe::WebRunner::new()
             .start(
-                "the_canvas_id",
+                canvas,
                 eframe::WebOptions::default(),
                 Box::new(|cc| Ok(Box::new(SaveEditor::new(cc)))),
             )

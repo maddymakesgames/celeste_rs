@@ -383,6 +383,7 @@ pub struct Mod {
 }
 
 impl Mod {
+    #[cfg_attr(target_family = "wasm", allow(unused_variables))]
     fn new(meta: ModMeta, root: bool, provider: &mut impl FileProvider) -> Self {
         #[cfg(not(target_family = "wasm"))]
         let dll = if let Some(dll_path) = &meta.dll {
