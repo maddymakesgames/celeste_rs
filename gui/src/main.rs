@@ -45,7 +45,7 @@ fn main() {
             viewport: ViewportBuilder::default().with_drag_and_drop(true),
             ..Default::default()
         },
-        Box::new(|cc| Box::new(SaveEditor::new(cc))),
+        Box::new(|cc| Ok(Box::new(SaveEditor::new(cc)))),
     )
     .expect("Error starting eframe app")
 }
@@ -69,7 +69,7 @@ fn main() {
             .start(
                 "the_canvas_id",
                 eframe::WebOptions::default(),
-                Box::new(|cc| Box::new(SaveEditor::new(cc))),
+                Box::new(|cc| Ok(Box::new(SaveEditor::new(cc)))),
             )
             .await;
 

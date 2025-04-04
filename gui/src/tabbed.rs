@@ -4,14 +4,15 @@ use eframe::egui::{
     scroll_area::ScrollBarVisibility,
     Align,
     Color32,
+    CornerRadius,
     FontSelection,
     InnerResponse,
     Pos2,
     Rect,
-    Rounding,
     ScrollArea,
     Sense,
     Stroke,
+    StrokeKind,
     TextStyle,
     Ui,
     Vec2,
@@ -37,7 +38,7 @@ impl TabbedContentWidget {
             let mut selected_rect = Rect::NOTHING;
             let mut farthest_right = -1.0;
             ScrollArea::horizontal()
-                .id_source(tabs.as_ref())
+                .id_salt(tabs.as_ref())
                 .auto_shrink(true)
                 .scroll_bar_visibility(scroll_bar)
                 .show(ui, |ui| {
@@ -75,9 +76,10 @@ impl TabbedContentWidget {
 
                             painter.rect(
                                 res.rect,
-                                Rounding::same(0.0),
+                                CornerRadius::same(0),
                                 color,
                                 Stroke::new(0.0, color),
+                                StrokeKind::Outside,
                             );
 
                             painter.galley(

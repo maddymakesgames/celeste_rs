@@ -81,7 +81,9 @@ impl MainMenu {
         }
 
         // disable the ui when we're already trying to read a file
-        ui.set_enabled(self.file_listener.is_none());
+        if self.file_listener.is_some() {
+            ui.disable();
+        }
 
         if ui.button("Open Files").clicked() {
             // Create a file dialogue filtered for .celeste files

@@ -116,7 +116,7 @@ impl<'a> EditorTab<'a> for StatsTab<'a> {
                     });
 
                     ui.horizontal(|ui| {
-                        ui.add(DragValue::new(&mut self.save.unlocked_areas).clamp_range(1 ..= 10));
+                        ui.add(DragValue::new(&mut self.save.unlocked_areas).range(1 ..= 10));
                     });
                 });
             });
