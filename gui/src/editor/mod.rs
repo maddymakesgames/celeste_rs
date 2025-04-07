@@ -112,6 +112,7 @@ impl EditorScreen {
                     tab.display(ui, data, rt, popups)
                 })
             },
+            None,
         );
         self.selected_panel = selected_panel;
 

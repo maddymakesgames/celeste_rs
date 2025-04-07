@@ -147,6 +147,7 @@ impl<'a> EditorTab<'a> for SessionsTab<'a> {
                         &mut data.add_dnl_buf,
                     )
                 },
+                None,
             )
             .response
         } else {
