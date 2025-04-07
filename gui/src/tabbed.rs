@@ -30,68 +30,47 @@ impl TabbedContentWidget {
         scroll_bar: ScrollBarVisibility,
         text_style: TextStyle,
         show_ui: impl FnOnce(usize, &mut Ui) -> R,
+        mut add_clicked: Option<&mut bool>,
     ) -> InnerResponse<R>
     where
         W: Into<WidgetText> + Clone + Hash,
     {
         ui.vertical(|ui| {
             let mut selected_rect = Rect::NOTHING;
-            let mut farthest_right = -1.0;
+            let mut furthest_right = -1.0;
+            let mut selected_saved = 0;
             ScrollArea::horizontal()
                 .id_salt(tabs.as_ref())
                 .auto_shrink(true)
                 .scroll_bar_visibility(scroll_bar)
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        for (idx, label) in tabs.as_ref().iter().enumerate() {
-                            let label: WidgetText = label.clone().into();
-
-                            let job = label.into_layout_job(
-                                ui.style(),
-                                FontSelection::Style(text_style.clone()),
-                                Align::Center,
+                        let tabs = tabs.as_ref();
+                        for (idx, label) in tabs.iter().enumerate() {
+                            render_tab_label(
+                                ui,
+                                label,
+                                text_style.clone(),
+                                selected,
+                                idx,
+                                &mut selected_rect,
+                                &mut furthest_right,
                             );
-
-
-                            let galley = ui.painter().layout_job(job);
-
-                            let (res, painter) =
-                                ui.allocate_painter(galley.rect.expand(4.0).size(), Sense::click());
-
-                            let mut color = ui.style().visuals.window_fill();
-
-
-                            if res.clicked() {
-                                *selected = idx;
-                            }
-
-                            if *selected == idx {
-                                selected_rect = res.rect;
-                                color = Color32::from_gray(64);
-                            }
-
-                            if res.hovered() {
-                                color = Color32::from_gray(80);
-                            }
-
-                            painter.rect(
-                                res.rect,
-                                CornerRadius::same(0),
-                                color,
-                                Stroke::new(0.0, color),
-                                StrokeKind::Outside,
-                            );
-
-                            painter.galley(
-                                res.rect.shrink(4.0).left_top(),
-                                galley,
-                                ui.style().visuals.text_color(),
-                            );
-
-                            if res.rect.right() > farthest_right {
-                                farthest_right = res.rect.right();
-                            }
                         }
+
+                        if let Some(clicked) = &mut add_clicked {
+                            selected_saved = *selected;
+                            render_tab_label(
+                                ui,
+                                &"+",
+                                text_style,
+                                selected,
+                                tabs.len(),
+                                &mut selected_rect,
+                                &mut furthest_right,
+                            );
+                            **clicked = *selected == tabs.len();
+                        };
                     });
                 });
 
@@ -170,8 +149,74 @@ impl TabbedContentWidget {
                     separator_stroke,
                 );
             }
-
-            show_ui(*selected, ui)
+            if let Some(clicked) = add_clicked {
+                if *clicked {
+                    show_ui(selected_saved, ui)
+                } else {
+                    show_ui(*selected, ui)
+                }
+            } else {
+                show_ui(*selected, ui)
+            }
         })
+    }
+}
+
+fn render_tab_label<W>(
+    ui: &mut Ui,
+    label: &W,
+    text_style: TextStyle,
+    selected: &mut usize,
+    idx: usize,
+    selected_rect: &mut Rect,
+    furthest_right: &mut f32,
+) where
+    W: Into<WidgetText> + Clone + Hash,
+{
+    let label = label.clone().into();
+
+    let job = label.into_layout_job(
+        ui.style(),
+        FontSelection::Style(text_style.clone()),
+        Align::Center,
+    );
+
+
+    let galley = ui.painter().layout_job(job);
+
+    let (res, painter) = ui.allocate_painter(galley.rect.expand(4.0).size(), Sense::click());
+
+    let mut color = ui.style().visuals.window_fill();
+
+
+    if res.clicked() {
+        *selected = idx;
+    }
+
+    if *selected == idx {
+        *selected_rect = res.rect;
+        color = Color32::from_gray(64);
+    }
+
+    if res.hovered() {
+        color = Color32::from_gray(80);
+    }
+
+    painter.rect(
+        res.rect,
+        CornerRadius::same(0),
+        color,
+        Stroke::new(0.0, color),
+        StrokeKind::Outside,
+    );
+
+    painter.galley(
+        res.rect.shrink(4.0).left_top(),
+        galley,
+        ui.style().visuals.text_color(),
+    );
+
+    if res.rect.right() > *furthest_right {
+        *furthest_right = res.rect.right();
     }
 }

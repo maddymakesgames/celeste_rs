@@ -152,6 +152,7 @@ impl App for SaveEditor {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         // Show the main window contents
         CentralPanel::default().show(ctx, |ui| {
+            let mut add_empty_tab = false;
             TabbedContentWidget::show(
                 ui,
                 &mut self.selected_screen,
@@ -184,7 +185,27 @@ impl App for SaveEditor {
                         }
                     }
                 },
+                Some(&mut add_empty_tab),
             );
+            if add_empty_tab {
+                let mut max_file = 0;
+                for (name, _) in &self.screens {
+                    if let Ok(num) = name.parse::<i32>() {
+                        if num >= max_file {
+                            max_file = num + 1;
+                        }
+                    }
+                }
+
+                let file_name = format!("{max_file}.celeste");
+                self.screens.insert(
+                    max_file.to_string(),
+                    ScreenState::Editor(EditorScreen::new(
+                        file_name.clone(),
+                        LoadableFiles::SaveData(file_name, Box::default()),
+                    )),
+                );
+            }
         });
 
         let mut popup_guard = self.popups.blocking_lock();

@@ -30,10 +30,12 @@ pub type AreaId = u16;
 pub struct SaveData {
     #[doc(hidden)]
     #[serde(rename = "@xmlns:xsi")]
-    xsi_url: String,
+    /// XML metadata about the xsi library, should always be [crate::saves::ops::XSI_URL]
+    pub(crate) xsi_url: String,
     #[doc(hidden)]
     #[serde(rename(serialize = "@xmlns:xsd", deserialize = "@xmlns:xsd"))]
-    xsd_url: String,
+    /// XML metadata about the xsd library, should always be [crate::saves::ops::XSD_URL]
+    pub(crate) xsd_url: String,
     /// The last celeste version that the save file was opened with
     #[serde(rename = "Version")]
     pub version: String,
@@ -156,10 +158,12 @@ pub struct SaveData {
 pub struct ModSaveData {
     #[doc(hidden)]
     #[serde(rename(serialize = "@xmlns:xsi", deserialize = "@xmlns:xsi"))]
-    xsi_url: String,
+    /// XML metadata about the xsi library, should always be [crate::saves::ops::XSI_URL]
+    pub(crate) xsi_url: String,
     #[doc(hidden)]
     #[serde(rename(serialize = "@xmlns:xsd", deserialize = "@xmlns:xsd"))]
-    xsd_url: String,
+    /// XML metadata about the xsd library, should always be [crate::saves::ops::XSD_URL]
+    pub(crate) xsd_url: String,
     /// Data about all the modded level sets that were loaded last time this save was played on
     #[serde(rename = "LevelSets")]
     #[serde(default)]
@@ -206,14 +210,15 @@ pub struct Assists {
     pub badeline: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DashMode {
+    #[default]
     Normal,
     Two,
     Infinite,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Flags {
     #[serde(default)]
     #[serde(rename = "string")]
@@ -227,7 +232,7 @@ pub struct VanillaFlagsWrapper {
     pub(crate) flag: VanillaFlags,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Poem {
     #[serde(default)]
     pub(crate) string: Vec<String>,
@@ -247,7 +252,7 @@ pub enum VanillaFlags {
 /// THIS DOES REMOVE THE ERRORING ELEMENTS FROM THE LIST!!!
 ///
 /// Update this comment when you add this to anything else:
-/// [Flags]
+/// - [Flags]
 fn xsi_nil_weird_list_deserialization<'de, D, T: Deserialize<'de> + 'de>(
     deserializer: D,
 ) -> Result<Vec<T>, D::Error>
@@ -274,7 +279,7 @@ impl<'de, T: Deserialize<'de>> Visitor<'de> for WeirdSeqVisitor<'de, T> {
         let mut vec = Vec::new();
         loop {
             // idk if this will break stuff cause we're now ignoring any errors
-            // the only possible error *should* be the one this intended to overcome but idk /shrug
+            // the only likely error *should* be the one this is intended to overcome but idk /shrug
             if let Ok(val) = seq.next_element() {
                 match val {
                     Some(v) => vec.push(v),

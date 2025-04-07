@@ -119,7 +119,7 @@ pub struct LevelFlags {
     pub(crate) level_flags: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Strawberries {
     #[serde(default)]
     #[serde(rename = "EntityID")]

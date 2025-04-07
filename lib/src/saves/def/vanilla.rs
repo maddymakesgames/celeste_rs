@@ -65,7 +65,7 @@ pub struct AreaDef {
     pub sid: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AreaMode {
     #[serde(flatten)]
     pub stats: AreaModeStats,
@@ -75,7 +75,7 @@ pub struct AreaMode {
     pub checkpoints: Checkpoints,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Checkpoints {
     #[serde(default)]
     #[serde(rename = "string")]
