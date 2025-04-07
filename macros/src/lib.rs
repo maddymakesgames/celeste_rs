@@ -3,13 +3,10 @@ mod map_element;
 mod trigger;
 mod yaml;
 
+use proc_macro_crate::{FoundCrate, crate_name};
 use proc_macro2::{Span, TokenStream};
-use proc_macro_crate::{crate_name, FoundCrate};
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::{
-    parse_macro_input,
-    punctuated::Punctuated,
-    token::{Bracket, Colon, Crate, Paren, PathSep, Pound, Pub},
     Attribute,
     DeriveInput,
     Error,
@@ -26,6 +23,9 @@ use syn::{
     Type,
     TypePath,
     Visibility,
+    parse_macro_input,
+    punctuated::Punctuated,
+    token::{Bracket, Colon, Crate, Paren, PathSep, Pound, Pub},
 };
 
 pub(crate) fn celeste_rs() -> TokenStream {

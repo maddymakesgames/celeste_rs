@@ -4,11 +4,11 @@ use saphyr::{Hash, Yaml};
 
 use crate::{
     saves::{
-        mods::{auroras_additions::AurorasAdditionsSave, ModFile, ModSave},
+        mods::{ModFile, ModSave, auroras_additions::AurorasAdditionsSave},
         ops::XML_VERSION_HEADER,
         session::{RootSavedSession, SavedSession},
     },
-    utils::{anyhow::ResultMapIter, FromYaml, YamlParseError, YamlWriteError},
+    utils::{FromYaml, YamlParseError, YamlWriteError, anyhow::ResultMapIter},
 };
 
 impl ModSave for AurorasAdditionsSave {}

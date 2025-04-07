@@ -1,10 +1,10 @@
 use celeste_rs_macros::MapElement;
 
 use crate::maps::{
-    var_types::{Float, Integer},
     DynMapElement,
     MapElement,
     ResolvableString,
+    var_types::{Float, Integer},
 };
 
 #[derive(Debug, MapElement)]

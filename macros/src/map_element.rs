@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{spanned::Spanned, Data, DeriveInput, Error, Expr, Meta, Type};
+use syn::{Data, DeriveInput, Error, Expr, Meta, Type, spanned::Spanned};
 
 enum FieldType {
     Normal(Expr, bool),

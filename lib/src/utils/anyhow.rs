@@ -1,5 +1,5 @@
 #![allow(unused)]
-use anyhow::{anyhow, Error};
+use anyhow::{Error, anyhow};
 use std::{
     fmt,
     iter::{FusedIterator, Map},

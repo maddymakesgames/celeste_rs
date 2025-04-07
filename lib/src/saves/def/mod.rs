@@ -11,7 +11,7 @@ pub mod vanilla;
 use std::marker::PhantomData;
 
 use everest::*;
-use serde::{de::Visitor, Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, de::Visitor};
 use session::*;
 use util::*;
 use vanilla::*;

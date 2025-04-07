@@ -1,7 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    spanned::Spanned,
     DataStruct,
     DeriveInput,
     Error,
@@ -15,6 +14,7 @@ use syn::{
     Type,
     TypeArray,
     TypePath,
+    spanned::Spanned,
 };
 
 use crate::celeste_rs;

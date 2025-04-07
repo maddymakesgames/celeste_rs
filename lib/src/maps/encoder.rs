@@ -1,10 +1,10 @@
 use crate::maps::{
-    var_types::EncodedVar,
     ErasedMapElement,
     LookupTable,
     MapAttribute,
     RawMapElement,
     ResolvableString,
+    var_types::EncodedVar,
 };
 
 pub struct MapEncoder<'a> {

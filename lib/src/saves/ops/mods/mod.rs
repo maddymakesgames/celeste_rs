@@ -4,7 +4,7 @@ use crate::{
     saves::mods::{auroras_additions::AurorasAdditionsSave, collab_utils2::CollabsUtils2Save, *},
     utils::{FromYaml, YamlParseError, YamlWriteError},
 };
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlLoader};
 
 mod auroras_additions;

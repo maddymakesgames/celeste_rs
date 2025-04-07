@@ -10,8 +10,6 @@ use chrono::NaiveDateTime;
 pub use quick_xml::DeError;
 
 use crate::saves::{
-    def::{everest::LevelSetStats, vanilla::AreaStats},
-    util::FileTime,
     AreaCount,
     Assists,
     DashCount,
@@ -24,6 +22,8 @@ use crate::saves::{
     StrawberryCount,
     VanillaFlags,
     VanillaFlagsWrapper,
+    def::{everest::LevelSetStats, vanilla::AreaStats},
+    util::FileTime,
 };
 
 pub mod everest;

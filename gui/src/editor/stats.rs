@@ -2,7 +2,7 @@ use celeste_rs::saves::SaveData;
 use eframe::egui::{DragValue, Ui};
 
 use crate::{
-    editor::{file_time_widget, CelesteEditorUiExt, EditorTab},
+    editor::{CelesteEditorUiExt, EditorTab, file_time_widget},
     main_menu::LoadableFiles,
 };
 

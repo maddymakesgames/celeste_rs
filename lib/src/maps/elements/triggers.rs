@@ -3,13 +3,13 @@ use std::{any::Any, fmt::Debug};
 use celeste_rs_macros::Trigger;
 
 use crate::maps::{
-    encoder::MapEncoder,
-    parser::{MapElementParsingError, MapParser},
-    var_types::{Character, Float, Integer},
     MapElement,
     MapManager,
     Node,
     ResolvableString,
+    encoder::MapEncoder,
+    parser::{MapElementParsingError, MapParser},
+    var_types::{Character, Float, Integer},
 };
 
 #[derive(Debug)]

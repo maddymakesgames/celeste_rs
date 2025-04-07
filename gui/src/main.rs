@@ -7,8 +7,9 @@ use std::{future::Future, path::PathBuf, sync::Arc};
 
 use editor::EditorScreen;
 use eframe::{
+    App,
+    CreationContext,
     egui::{
-        scroll_area::ScrollBarVisibility,
         Align2,
         CentralPanel,
         Color32,
@@ -20,9 +21,8 @@ use eframe::{
         Ui,
         WidgetText,
         Window,
+        scroll_area::ScrollBarVisibility,
     },
-    App,
-    CreationContext,
 };
 use indexmap::IndexMap;
 use tokio::{runtime::Runtime, sync::Mutex};
@@ -34,7 +34,7 @@ use crate::{
 
 #[cfg(not(target_family = "wasm"))]
 fn main() {
-    use eframe::{egui::ViewportBuilder, NativeOptions};
+    use eframe::{NativeOptions, egui::ViewportBuilder};
 
     tracing_subscriber::fmt::init();
 

@@ -8,8 +8,6 @@ use std::{
 };
 
 use saphyr::{
-    emitter::EmitError,
-    yaml::LoadError,
     Array,
     Hash as YamlHash,
     ScanError,
@@ -18,6 +16,8 @@ use saphyr::{
     YamlDecoder,
     YamlEmitter,
     YamlLoader,
+    emitter::EmitError,
+    yaml::LoadError,
 };
 
 pub use saphyr;
@@ -470,4 +470,6 @@ macro_rules! ints_yaml {
     };
 }
 
-ints_yaml!(u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32");
+ints_yaml!(
+    u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32"
+);

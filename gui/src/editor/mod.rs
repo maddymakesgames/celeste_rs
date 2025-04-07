@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
 use celeste_rs::saves::{
-    util::{EntityID, FileTime},
     StrawberryCount,
+    util::{EntityID, FileTime},
 };
 use eframe::egui::{
-    scroll_area::ScrollBarVisibility,
     DragValue,
     InnerResponse,
     Response,
@@ -18,6 +17,7 @@ use eframe::egui::{
     Vec2,
     Widget,
     WidgetText,
+    scroll_area::ScrollBarVisibility,
 };
 use egui_extras::{Column, TableBuilder};
 use tokio::{runtime::Runtime, sync::Mutex};
@@ -30,6 +30,7 @@ pub mod stats;
 
 
 use crate::{
+    PopupWindow,
     editor::{
         level_sets::{LevelSetsData, LevelSetsTab},
         metadata::{AssistsTab, MetadataTab},
@@ -39,7 +40,6 @@ use crate::{
     },
     main_menu::LoadableFiles,
     tabbed::TabbedContentWidget,
-    PopupWindow,
 };
 
 pub struct EditorScreen {

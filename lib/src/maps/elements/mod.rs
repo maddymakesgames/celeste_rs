@@ -1,13 +1,13 @@
 use celeste_rs_macros::MapElement;
 
 use crate::maps::{
+    MapElement,
+    MapManager,
     entities::add_entity_parsers,
     level::*,
     style::*,
     triggers::add_trigger_parsers,
     var_types::{Float, Integer},
-    MapElement,
-    MapManager,
 };
 
 pub mod entities;

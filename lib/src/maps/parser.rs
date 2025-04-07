@@ -1,14 +1,14 @@
 use std::{any::Any, collections::HashMap, error::Error, fmt::Display, marker::PhantomData};
 
 use crate::maps::{
-    encoder::MapEncoder,
-    var_types::{EncodedVar, EncodedVarError},
     DynMapElement,
     ErasedMapElement,
     LookupIndex,
     LookupTable,
     MapElement,
     RawMapElement,
+    encoder::MapEncoder,
+    var_types::{EncodedVar, EncodedVarError},
 };
 
 /// Helper to parse [MapElement] implementors from [RawMapElement]s

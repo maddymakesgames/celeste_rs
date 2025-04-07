@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use celeste_rs::saves::{Assists, DashMode, Flags, Poem, VanillaFlags};
-use eframe::egui::{vec2, Color32, ComboBox, DragValue, Frame, Id, RichText, TextEdit, Ui};
+use eframe::egui::{Color32, ComboBox, DragValue, Frame, Id, RichText, TextEdit, Ui, vec2};
 use tokio::{runtime::Runtime, sync::Mutex};
 
 use crate::{
+    PopupWindow,
     editor::{CelesteEditorUiExt, EditorTab, GlobalEditorData},
     main_menu::LoadableFiles,
-    PopupWindow,
 };
 
 pub struct MetadataTab<'a> {

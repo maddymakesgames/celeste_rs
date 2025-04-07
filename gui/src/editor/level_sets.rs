@@ -1,10 +1,10 @@
 use celeste_rs::saves::{
-    everest::LevelSets,
-    util::FileTime,
-    vanilla::{AreaMode, Areas},
     DeathCount,
     Poem,
     StrawberryCount,
+    everest::LevelSets,
+    util::FileTime,
+    vanilla::{AreaMode, Areas},
 };
 use eframe::egui::{
     CentralPanel,
@@ -23,11 +23,11 @@ use eframe::egui::{
 
 use crate::{
     editor::{
+        CelesteEditorUiExt,
+        EditorTab,
         entity_id_list_widget,
         file_time_widget,
         metadata::show_poem,
-        CelesteEditorUiExt,
-        EditorTab,
     },
     main_menu::LoadableFiles,
 };

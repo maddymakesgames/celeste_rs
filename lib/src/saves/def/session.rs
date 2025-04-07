@@ -1,12 +1,12 @@
-use celeste_rs_macros::{root_tag, FromYaml};
+use celeste_rs_macros::{FromYaml, root_tag};
 use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::{deserialize_bool_from_anything, deserialize_number_from_string};
 
 use crate::saves::{
-    def::{util::RespawnPoint, AreaDef, EntityID, FileTime, Modes},
-    vanilla::AreaRef,
     DashCount,
     DeathCount,
+    def::{AreaDef, EntityID, FileTime, Modes, util::RespawnPoint},
+    vanilla::AreaRef,
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

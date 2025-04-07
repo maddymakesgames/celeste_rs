@@ -1,13 +1,13 @@
 use celeste_rs_macros::Entity;
 
 use crate::maps::{
+    MapElement,
+    MapManager,
+    ResolvableString,
     elements::Node,
     encoder::MapEncoder,
     parser::{MapElementParsingError, MapParser},
     var_types::{Character, Float, Integer},
-    MapElement,
-    MapManager,
-    ResolvableString,
 };
 
 use std::{any::Any, fmt::Debug};

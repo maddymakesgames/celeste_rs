@@ -5,21 +5,21 @@ use std::{
 };
 
 use celeste_rs::saves::{
-    mods::{ParsedModSave, ParsedModSession, ParsedModSetting},
     ModSaveData,
     SaveData,
+    mods::{ParsedModSave, ParsedModSession, ParsedModSetting},
 };
 use eframe::egui::{TopBottomPanel, Ui};
 use rfd::AsyncFileDialog;
 use tokio::{
     runtime::Runtime,
     sync::{
-        mpsc::{channel, error::TryRecvError, Receiver, Sender},
         Mutex,
+        mpsc::{Receiver, Sender, channel, error::TryRecvError},
     },
 };
 
-use crate::{spawn, ErrorSeverity, PopupWindow};
+use crate::{ErrorSeverity, PopupWindow, spawn};
 
 #[allow(dead_code)]
 pub enum LoadableFiles {
@@ -174,7 +174,7 @@ async fn handle_folder_picker(
 ) {
     use std::{ffi::OsString, io::BufReader};
 
-    use std::fs::{read_dir, OpenOptions};
+    use std::fs::{OpenOptions, read_dir};
 
     if let Some(dir) = file_dialogue.pick_folder().await {
         match read_dir(dir.path()) {

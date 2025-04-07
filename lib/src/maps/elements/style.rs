@@ -1,12 +1,12 @@
 use celeste_rs_macros::MapElement;
 
 use crate::maps::{
-    var_types::Float,
     MapElement,
     MapElementParsingError,
     MapEncoder,
     MapParser,
     ResolvableString,
+    var_types::Float,
 };
 
 #[derive(Debug, MapElement)]

@@ -1,26 +1,26 @@
 use std::{io::Cursor, sync::Arc};
 
 use celeste_rs::saves::{
-    mods::{ParsedModSave, ParsedModSession, ParsedModSetting},
     ModSaveData,
     SaveData,
+    mods::{ParsedModSave, ParsedModSession, ParsedModSetting},
 };
 use eframe::egui::{ComboBox, RichText, Ui};
 use tokio::{
     runtime::Runtime,
     sync::{
-        oneshot::{error::TryRecvError, Receiver},
         Mutex,
+        oneshot::{Receiver, error::TryRecvError},
     },
 };
 
 use crate::{
-    celeste_save_dir,
-    editor::{CelesteEditorRichTextExt, CelesteEditorUiExt, EditorTab, GlobalEditorData},
-    main_menu::{parse_files_from_reader_and_type, send_error, LoadableFiles},
-    spawn,
     ErrorSeverity,
     PopupWindow,
+    celeste_save_dir,
+    editor::{CelesteEditorRichTextExt, CelesteEditorUiExt, EditorTab, GlobalEditorData},
+    main_menu::{LoadableFiles, parse_files_from_reader_and_type, send_error},
+    spawn,
 };
 
 

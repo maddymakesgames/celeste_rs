@@ -2,15 +2,15 @@ use std::{
     collections::{BTreeMap, HashMap},
     error::Error,
     fmt::{Debug, Display},
-    fs::{read_dir, File},
+    fs::{File, read_dir},
     io::{Read, Result as IoResult, Seek},
     ops::Deref,
     path::{Component, Path, PathBuf},
 };
-use zip::{read::ZipFile, result::ZipError, HasZipMetadata, ZipArchive};
+use zip::{HasZipMetadata, ZipArchive, read::ZipFile, result::ZipError};
 
 use crate::{
-    maps::{parser::MapElementParsingError, reader::MapReadError, MapManager},
+    maps::{MapManager, parser::MapElementParsingError, reader::MapReadError},
     mods::{
         maps::{BundledMap, MapMeta},
         meta::ModMeta,

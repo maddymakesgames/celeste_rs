@@ -7,12 +7,12 @@ use std::{
 
 use crate::{
     maps::{
-        var_types::EncodedVar,
         LookupIndex,
         LookupTable,
         MapAttribute,
         RawMapElement,
         ResolvableString,
+        var_types::EncodedVar,
     },
     utils::binary::BinWriter,
 };

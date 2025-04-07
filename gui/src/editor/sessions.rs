@@ -1,6 +1,5 @@
 use celeste_rs::saves::{session::SavedSession, util::FileTime, vanilla::Modes};
 use eframe::egui::{
-    scroll_area::ScrollBarVisibility,
     CollapsingHeader,
     CollapsingResponse,
     DragValue,
@@ -11,16 +10,17 @@ use eframe::egui::{
     TextStyle,
     Ui,
     Vec2,
+    scroll_area::ScrollBarVisibility,
 };
 
 use crate::{
     editor::{
-        entity_id_list_widget,
-        file_time_widget,
-        level_sets::mode_widget,
         CelesteEditorRichTextExt,
         CelesteEditorUiExt,
         EditorTab,
+        entity_id_list_widget,
+        file_time_widget,
+        level_sets::mode_widget,
     },
     main_menu::LoadableFiles,
     tabbed::TabbedContentWidget,

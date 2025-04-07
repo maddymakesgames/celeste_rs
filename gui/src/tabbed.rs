@@ -1,7 +1,6 @@
 use std::hash::Hash;
 
 use eframe::egui::{
-    scroll_area::ScrollBarVisibility,
     Align,
     Color32,
     CornerRadius,
@@ -17,6 +16,7 @@ use eframe::egui::{
     Ui,
     Vec2,
     WidgetText,
+    scroll_area::ScrollBarVisibility,
 };
 
 
