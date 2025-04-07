@@ -250,7 +250,7 @@ impl<'a> EditorTab<'a> for AssistsTab<'a> {
                     ui.label("Game Speed:");
                     ui.add(
                         DragValue::new(&mut assists.game_speed)
-                            .clamp_range(5 ..= 10)
+                            .range(5 ..= 10)
                             .custom_formatter(|n, _| format!("{}%", (n * 10.0))),
                     );
                 });

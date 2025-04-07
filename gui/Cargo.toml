@@ -1,7 +1,7 @@
 [package]
 name = "celeste_rs_gui"
 version = "0.4.1+0.5.1"
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/maddymakesgames/celeste_rs"
 authors = ["Maddymakesgames (madelinemakesgames@gmail.com)"]
 description = "GUI editor for celeste save files"
@@ -17,10 +17,10 @@ description = "GUI editor for celeste save files"
 
 [dependencies]
 celeste_rs = { path = "../lib" }
-eframe = "0.27"
-egui_extras = "0.27"
+eframe = "0.31.1"
+egui_extras = "0.31.1"
 indexmap = "2.2"
-rfd = "0.14"
+rfd = "0.15.3"
 tokio = { version = "1", features = ["rt", "sync"] }
 
 # native:

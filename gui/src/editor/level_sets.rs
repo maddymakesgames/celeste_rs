@@ -454,7 +454,7 @@ pub fn mode_widget(
         ui.label("Deaths:");
         let deaths = stats.deaths;
         changed |= ui
-            .add(DragValue::new(&mut stats.deaths).clamp_range(0 ..= i64::MAX))
+            .add(DragValue::new(&mut stats.deaths).range(0 ..= i64::MAX))
             .changed();
         if deaths != stats.deaths {
             if deaths > stats.deaths {

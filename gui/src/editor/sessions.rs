@@ -403,7 +403,7 @@ pub fn area_mode_widget(
         for (mode, side_name) in modes.iter_mut().zip(["A-Side", "B-Side", "C-Side"]) {
             let id_name = format!("{name}/{sid}/{side_name}");
             CollapsingHeader::new(RichText::new(side_name))
-                .id_source(id_name)
+                .id_salt(id_name)
                 .show(ui, |ui| {
                     changed |= mode_widget(
                         ui,

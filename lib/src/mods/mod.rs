@@ -214,7 +214,7 @@ impl<T: FileProvider> ModManager<T> {
         Ok(ModManager { provider, mods })
     }
 
-    pub fn get_file<'a>(&'a mut self, path: &Path) -> Result<impl Read + 'a, T::Err> {
+    pub fn get_file<'a>(&'a mut self, path: &Path) -> Result<impl Read + 'a + use<'a, T>, T::Err> {
         self.provider.get_file(path).map_err(|e| e.0)
     }
 
@@ -383,6 +383,7 @@ pub struct Mod {
 }
 
 impl Mod {
+    #[cfg_attr(target_family = "wasm", allow(unused_variables))]
     fn new(meta: ModMeta, root: bool, provider: &mut impl FileProvider) -> Self {
         #[cfg(not(target_family = "wasm"))]
         let dll = if let Some(dll_path) = &meta.dll {

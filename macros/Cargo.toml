@@ -1,7 +1,7 @@
 [package]
 name = "celeste_rs_macros"
 version = "0.2.0"
-edition = "2021"
+edition = "2024"
 repository.workspace = true
 authors.workspace = true
 license.workspace = true

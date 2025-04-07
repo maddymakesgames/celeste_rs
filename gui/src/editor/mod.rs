@@ -13,6 +13,7 @@ use eframe::egui::{
     ScrollArea,
     Sense,
     TextStyle,
+    TextWrapMode,
     Ui,
     Vec2,
     Widget,
@@ -75,7 +76,7 @@ impl EditorScreen {
         ui.horizontal(|ui| {
             ui.label("Loaded Files:");
             ScrollArea::horizontal()
-                .id_source("loaded_files_list")
+                .id_salt("loaded_files_list")
                 .show(ui, |ui| {
                     for file in &self.files {
                         ui.label(file.file_name());
@@ -125,16 +126,12 @@ fn file_time_widget(filetime: &mut FileTime, ui: &mut Ui) -> InnerResponse<bool>
         let (mut hours, mut mins, mut secs, mut millis) = filetime.as_parts();
         changed |= ui.add(DragValue::new(&mut hours)).changed();
         ui.label("hours");
-        changed |= ui
-            .add(DragValue::new(&mut mins).clamp_range(0 ..= 59))
-            .changed();
+        changed |= ui.add(DragValue::new(&mut mins).range(0 ..= 59)).changed();
         ui.label("minutes");
-        changed |= ui
-            .add(DragValue::new(&mut secs).clamp_range(0 ..= 59))
-            .changed();
+        changed |= ui.add(DragValue::new(&mut secs).range(0 ..= 59)).changed();
         ui.label("seconds");
         changed |= ui
-            .add(DragValue::new(&mut millis).clamp_range(0 ..= 999))
+            .add(DragValue::new(&mut millis).range(0 ..= 999))
             .changed();
         ui.label("milliseconds");
 
@@ -169,7 +166,7 @@ fn entity_id_list_widget(
                 body.rows(text_size, entities.len(), |mut row| {
                     let idx = row.index();
                     row.col(|ui| {
-                        ui.style_mut().wrap = Some(false);
+                        ui.style_mut().wrap_mode = Some(TextWrapMode::Truncate);
                         ui.label(&entities[idx].key);
                     });
                     row.col(|ui| {

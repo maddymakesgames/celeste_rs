@@ -110,7 +110,7 @@ impl<T: Write> MapWriter<T> {
             return Err(MapWriteError::ResolvedString);
         }
 
-        self.write_encoded_var(&attr.value).map_err(Into::into)
+        self.write_encoded_var(&attr.value)
     }
 }
 
