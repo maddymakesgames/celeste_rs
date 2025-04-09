@@ -215,7 +215,15 @@ impl RawMapElement {
     }
 
     fn add_attr_value_strs(&self, lookup_table: &mut LookupTable) {
+        if let ResolvableString::String(s) = &self.name {
+            lookup_table.index_string(s);
+        }
+
         for attr in &self.attributes {
+            if let ResolvableString::String(s) = &attr.name {
+                lookup_table.index_string(s);
+            }
+
             if let EncodedVar::String(str) = &attr.value {
                 lookup_table.add_string(str);
             }

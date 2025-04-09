@@ -82,10 +82,11 @@ impl<T: Write> MapWriter<T> {
     }
 
     pub fn write_element(&mut self, element: &RawMapElement) -> Result<(), MapWriteError> {
-        if let ResolvableString::LookupIndex(idx) = &element.name {
-            self.write_lookup_index(*idx)?;
-        } else {
-            return Err(MapWriteError::ResolvedString);
+        match &element.name {
+            ResolvableString::LookupIndex(idx) => {
+                self.write_lookup_index(*idx)?;
+            },
+            ResolvableString::String(s) => return Err(MapWriteError::ResolvedString(s.clone())),
         }
 
         self.write_u8(element.attributes.len() as u8)?;
@@ -104,10 +105,11 @@ impl<T: Write> MapWriter<T> {
     }
 
     pub fn write_attribute(&mut self, attr: &MapAttribute) -> Result<(), MapWriteError> {
-        if let ResolvableString::LookupIndex(idx) = &attr.name {
-            self.write_lookup_index(*idx)?;
-        } else {
-            return Err(MapWriteError::ResolvedString);
+        match &attr.name {
+            ResolvableString::LookupIndex(idx) => {
+                self.write_lookup_index(*idx)?;
+            },
+            ResolvableString::String(s) => return Err(MapWriteError::ResolvedString(s.clone())),
         }
 
         self.write_encoded_var(&attr.value)
@@ -130,16 +132,16 @@ impl<T: Write> DerefMut for MapWriter<T> {
 
 #[derive(Debug)]
 pub enum MapWriteError {
-    ResolvedString,
+    ResolvedString(String),
     IoError(std::io::Error),
 }
 
 impl Display for MapWriteError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MapWriteError::ResolvedString => write!(
+            MapWriteError::ResolvedString(str) => write!(
                 f,
-                "Tried to write map data with lookup strings still resolved"
+                "Tried to write map data with lookup strings still resolved. Resolved string: \"{str}\""
             ),
             MapWriteError::IoError(e) => Display::fmt(e, f),
         }
