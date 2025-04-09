@@ -154,8 +154,8 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
 
     let parsers = fields.iter().map(|(name, field_type)| match field_type {
         FieldType::Normal(expr, _) => quote! {#name: parser.get_attribute(#expr)?,},
-        FieldType::Optional(expr, _) => quote! {#name: parser.get_optional_attribute(#expr),},
-        FieldType::Child(false, true, _) => quote! {#name: parser.parse_element().ok(),},
+        FieldType::Optional(expr, _) => quote! {#name: parser.get_optional_attribute(#expr)?,},
+        FieldType::Child(false, true, _) => quote! {#name: parser.parse_optional_element()?,},
         FieldType::Child(false, false, _) => quote! {#name: parser.parse_element()?,},
         FieldType::Child(true, _, false) => quote! {#name: parser.parse_all_elements()?, },
         FieldType::Child(true, _, true) => quote! {#name: parser.parse_any_element()?, },

@@ -121,7 +121,7 @@ pub(super) fn trigger_derive(input: DeriveInput) -> Result<TokenStream, Error> {
 
     let parsers = fields.iter().map(|(name, field_type)| match field_type {
         FieldType::Normal(expr) => quote! {#name: parser.get_attribute(#expr)?,},
-        FieldType::Optional(expr) => quote! {#name: parser.get_optional_attribute(#expr),},
+        FieldType::Optional(expr) => quote! {#name: parser.get_optional_attribute(#expr)?,},
         FieldType::Node(true, false) => quote! {#name: parser.parse_element().ok(),},
         FieldType::Node(false, false) => quote! {#name: parser.parse_element()?,},
         FieldType::Node(_, true) => quote! {#name: parser.parse_all_elements()?, },
