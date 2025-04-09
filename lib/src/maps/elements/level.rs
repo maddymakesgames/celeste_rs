@@ -68,17 +68,17 @@ pub struct Level {
     #[name = "c"]
     pub c: Integer,
     #[child]
-    pub triggers: Triggers,
+    pub triggers: Option<Triggers>,
     #[child]
-    pub fg_tiles: FGTiles,
+    pub fg_tiles: Option<FGTiles>,
     #[child]
     pub fg_decals: Option<FGDecals>,
     #[child]
     pub solids: Solids,
     #[child]
-    pub entities: Entities,
+    pub entities: Option<Entities>,
     #[child]
-    pub bg_tiles: BGTiles,
+    pub bg_tiles: Option<BGTiles>,
     #[child]
     pub bg_decals: Option<BGDecals>,
     #[child]
@@ -169,9 +169,9 @@ pub struct Decal {
 #[name = "bg"]
 pub struct Background {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[name = "innerText"]
     #[rle]
     pub inner_text: Option<String>,
@@ -181,9 +181,9 @@ pub struct Background {
 #[name = "objtiles"]
 pub struct ObjTiles {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[name = "tileset"]
     pub tileset: ResolvableString,
     #[name = "exportMode"]
@@ -196,9 +196,9 @@ pub struct ObjTiles {
 #[name = "solids"]
 pub struct Solids {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[name = "innerText"]
     #[rle]
     pub inner_text: Option<String>,
@@ -208,9 +208,9 @@ pub struct Solids {
 #[name = "entities"]
 pub struct Entities {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[dyn_child]
     pub entities: Vec<DynMapElement>,
 }

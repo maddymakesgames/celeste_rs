@@ -47,7 +47,7 @@ impl MapManager {
 #[name = "Map"]
 pub struct MapRoot {
     #[child]
-    pub filler: Filler,
+    pub filler: Option<Filler>,
     #[child]
     pub levels: Levels,
     #[child]
