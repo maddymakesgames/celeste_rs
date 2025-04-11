@@ -2,7 +2,9 @@
 
 mod editor;
 mod main_menu;
+mod modal;
 mod tabbed;
+
 use std::{future::Future, path::PathBuf, sync::Arc};
 
 use editor::EditorScreen;
@@ -118,7 +120,6 @@ impl SaveEditor {
             .enable_all()
             .build()
             .expect("Error creating tokio runtime");
-
 
         let mut style = (*cc.egui_ctx.style()).clone();
 
