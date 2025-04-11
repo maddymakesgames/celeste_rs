@@ -85,7 +85,7 @@ impl<T: Write> MapWriter<T> {
         match &element.name {
             ResolvableString::LookupIndex(idx) => {
                 self.write_lookup_index(*idx)?;
-            },
+            }
             ResolvableString::String(s) => return Err(MapWriteError::ResolvedString(s.clone())),
         }
 
@@ -108,7 +108,7 @@ impl<T: Write> MapWriter<T> {
         match &attr.name {
             ResolvableString::LookupIndex(idx) => {
                 self.write_lookup_index(*idx)?;
-            },
+            }
             ResolvableString::String(s) => return Err(MapWriteError::ResolvedString(s.clone())),
         }
 
@@ -141,7 +141,8 @@ impl Display for MapWriteError {
         match self {
             MapWriteError::ResolvedString(str) => write!(
                 f,
-                "Tried to write map data with lookup strings still resolved. Resolved string: \"{str}\""
+                "Tried to write map data with lookup strings still resolved. Resolved string: \
+                 \"{str}\""
             ),
             MapWriteError::IoError(e) => Display::fmt(e, f),
         }

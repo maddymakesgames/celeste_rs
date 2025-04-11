@@ -122,20 +122,23 @@ impl MapParser<'_> {
     }
 
     /// Attempts to parse a child with type `T`, if there is not one, returns `None`.
-    /// 
+    ///
     /// Works the same as [parse_element](MapParser::parse_element), but returns `Ok(None)` instead of `NoMatchingElementFound` when no element of type `T` is found.
-    pub fn parse_optional_element<T: MapElement>(&self) -> Result<Option<T>, MapElementParsingError> {
+    pub fn parse_optional_element<T: MapElement>(
+        &self,
+    ) -> Result<Option<T>, MapElementParsingError> {
         for child in &self.raw.children {
             if child.name.to_string(self.lookup) == T::NAME {
                 if self.verbose_debug {
                     println!("{}", T::NAME);
                 }
-                return T::from_raw(MapParser { 
-                    verbose_debug: self.verbose_debug, 
-                    lookup: self.lookup, 
-                    raw: child, 
-                    parsers: self.parsers 
-                }).map(Some);
+                return T::from_raw(MapParser {
+                    verbose_debug: self.verbose_debug,
+                    lookup: self.lookup,
+                    raw: child,
+                    parsers: self.parsers,
+                })
+                .map(Some);
             }
         }
 
@@ -194,7 +197,7 @@ impl MapParser<'_> {
     }
 
     /// Returns the value attached to the attribute with name `str` if it is there, otherwise returns `None`
-    /// 
+    ///
     /// Works the same as [get_attribute](MapParser::get_attribute) but if there isn't an attribute with the name `str` it returns `Ok(None)` instead of `AttributeMissing`
     pub fn get_optional_attribute<'b, T: TryFrom<&'b EncodedVar, Error = EncodedVarError>>(
         &'b self,
@@ -204,20 +207,17 @@ impl MapParser<'_> {
             println!("Attr({str})");
         }
 
-        match self
-            .raw
-            .attributes
-            .iter()
-            .find_map(|a| {
-                if a.name.to_string(self.lookup) == str {
-                    Some(&a.value)
-                } else {
-                    None
-                }
-            })
-        {
-            Some(t) => T::try_from(t).map_err(MapElementParsingError::EncodedVarError).map(Some),
-            None => Ok(None)
+        match self.raw.attributes.iter().find_map(|a| {
+            if a.name.to_string(self.lookup) == str {
+                Some(&a.value)
+            } else {
+                None
+            }
+        }) {
+            Some(t) => T::try_from(t)
+                .map_err(MapElementParsingError::EncodedVarError)
+                .map(Some),
+            None => Ok(None),
         }
     }
 }
