@@ -142,7 +142,7 @@ impl MapParser<'_> {
             }
         }
 
-        return Ok(None);
+        Ok(None)
     }
 
     /// Get an attribute of type `T` with name `str`.

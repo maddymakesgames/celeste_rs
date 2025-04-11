@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use celeste_rs::saves::{
     DeathCount,
     Poem,
@@ -162,10 +164,10 @@ impl LevelSetsTab<'_> {
             if delete {
                 if let LevelSetModalType::Delete = modal_type {
                     if let Some(selected_idx) = &mut data.selected_level_set {
-                        if *selected_idx > idx {
-                            *selected_idx -= 1;
-                        } else if *selected_idx == idx {
-                            data.selected_level_set = None;
+                        match (*selected_idx).cmp(&idx) {
+                            Ordering::Greater => *selected_idx -= 1,
+                            Ordering::Equal => data.selected_level_set = None,
+                            Ordering::Less => {}
                         }
                     }
 
