@@ -124,6 +124,16 @@ impl AreaStats {
             modes: Default::default(),
         })
     }
+
+    /// Creates an AreaStats for a given `AreaDef`
+    ///
+    /// Is shorthand for making an `AreaStats` with modes being set to the default.
+    pub fn for_def(def: AreaDef) -> AreaStats {
+        AreaStats {
+            def,
+            modes: Default::default(),
+        }
+    }
 }
 
 impl Deref for Modes {
