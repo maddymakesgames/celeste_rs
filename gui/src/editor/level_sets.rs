@@ -4,8 +4,9 @@ use celeste_rs::saves::{
     StrawberryCount,
     everest::LevelSets,
     util::FileTime,
-    vanilla::{AreaMode, Areas},
+    vanilla::{AreaMode, AreaStats, Areas},
 };
+
 use eframe::egui::{
     CentralPanel,
     Color32,
@@ -30,6 +31,7 @@ use crate::{
         metadata::show_poem,
     },
     main_menu::LoadableFiles,
+    modal::Modal,
 };
 
 pub struct LevelSetsTab<'a> {
@@ -117,17 +119,203 @@ impl<'a> EditorTab<'a> for LevelSetsTab<'a> {
     }
 }
 
+enum LevelSetModalType {
+    Delete,
+    Reset,
+}
+
+pub struct LevelSetsData {
+    level_sets_search: String,
+    selected_level_set: Option<usize>,
+    selected_area: Option<usize>,
+    selected_mode: Option<usize>,
+    add_strawberry_buff: String,
+    level_set_modal: Option<Modal<(usize, LevelSetModalType, bool, bool)>>,
+    area_modal: Option<Modal<(usize, bool, bool)>>,
+    mode_modal: Option<Modal<(usize, bool, bool)>>,
+}
+
+impl LevelSetsData {
+    pub fn new() -> Self {
+        LevelSetsData {
+            level_sets_search: String::new(),
+            selected_mode: None,
+            selected_level_set: None,
+            selected_area: None,
+            add_strawberry_buff: String::new(),
+            level_set_modal: None,
+            area_modal: None,
+            mode_modal: None,
+        }
+    }
+}
+
 impl LevelSetsTab<'_> {
     pub fn show_modded(self, ui: &mut Ui, data: &mut LevelSetsData) {
+        if let Some(modal) = &data.level_set_modal {
+            let (idx, modal_type, delete, cancel) = modal.show(ui.ctx()).inner;
+
+            if cancel || delete {
+                data.level_set_modal = None;
+            }
+
+            if delete {
+                if let LevelSetModalType::Delete = modal_type {
+                    if let Some(selected_idx) = &mut data.selected_level_set {
+                        if *selected_idx > idx {
+                            *selected_idx -= 1;
+                        } else if *selected_idx == idx {
+                            data.selected_level_set = None;
+                        }
+                    }
+
+                    if idx > self.modded_sets.len() {
+                        self.modded_sets_recycle_bin
+                            .remove(idx - self.modded_sets.len());
+                    } else {
+                        self.modded_sets.remove(idx);
+                    }
+                } else {
+                    let set = if idx > self.modded_sets.len() {
+                        &mut self.modded_sets_recycle_bin[idx - self.modded_sets.len()]
+                    } else {
+                        &mut self.modded_sets[idx]
+                    };
+
+                    for area in set.areas.iter_mut() {
+                        let mut def = area.def.clone();
+                        def.cassette = false;
+                        *area = AreaStats::for_def(def);
+                    }
+
+                    set.poem = Default::default();
+                    set.total_strawberries = 0;
+                    // TODO: This might have to be 1 instead of 0
+                    set.unlocked_areas = 0;
+                }
+            }
+        }
+
+        if let Some(modal) = &data.area_modal {
+            let (idx, delete, cancel) = modal.show(ui.ctx()).inner;
+
+            if cancel || delete {
+                data.area_modal = None;
+            }
+
+            if delete {
+                if let Some(set_idx) = data.selected_level_set {
+                    let set = if set_idx > self.modded_sets.len() {
+                        &mut self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
+                    } else {
+                        &mut self.modded_sets[set_idx]
+                    };
+
+                    let area = &set.areas[idx];
+                    let mut def = area.def.clone();
+                    def.cassette = false;
+                    set.areas[idx] = AreaStats::for_def(def);
+                    data.selected_mode = None;
+                }
+            }
+        }
+
+        if let Some(modal) = &data.mode_modal {
+            let (idx, delete, cancel) = modal.show(ui.ctx()).inner;
+
+            if cancel || delete {
+                data.mode_modal = None;
+            }
+
+            if delete {
+                if let Some(set_idx) = data.selected_level_set {
+                    let set = if set_idx > self.modded_sets.len() {
+                        &mut self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
+                    } else {
+                        &mut self.modded_sets[set_idx]
+                    };
+
+                    if let Some(area_idx) = data.selected_area {
+                        let area = &mut set.areas[area_idx];
+
+                        area.modes[idx] = AreaMode::default();
+                    }
+                }
+            }
+        }
+
         let row_height = ui.text_style_height(&TextStyle::Body);
 
         let mut total_deaths_buf = 0;
         let mut total_time_buf = FileTime::from_millis(0);
 
         SidePanel::left("level_sets_list_panel").show_inside(ui, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Search for a levelset: ");
-                ui.text_edit_singleline(&mut data.level_sets_search);
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label("Search for a levelset: ");
+                    ui.text_edit_singleline(&mut data.level_sets_search);
+                });
+                ui.horizontal(|ui| {
+                    if ui.button("Delete Selected").clicked() {
+                        if let Some(set_idx) = data.selected_level_set {
+                            let set = if set_idx > self.modded_sets.len() {
+                                &self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
+                            } else {
+                                &self.modded_sets[set_idx]
+                            };
+
+                            data.level_set_modal = Some(Modal::new(
+                                "level_set_modal",
+                                RichText::new(format!("Delete {}?", &set.name)).heading(),
+                                RichText::new(format!(
+                                    "Are you sure you want to delete {}? This is irreversable.",
+                                    &set.name
+                                )),
+                                move |ui| {
+                                    ui.horizontal(|ui| {
+                                        (
+                                            set_idx,
+                                            LevelSetModalType::Delete,
+                                            ui.button("Delete").clicked(),
+                                            ui.button("Cancel").clicked(),
+                                        )
+                                    })
+                                    .inner
+                                },
+                            ));
+                        }
+                    }
+
+                    if ui.button("Reset Selected").clicked() {
+                        if let Some(set_idx) = data.selected_level_set {
+                            let set = if set_idx > self.modded_sets.len() {
+                                &self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
+                            } else {
+                                &self.modded_sets[set_idx]
+                            };
+
+                            data.level_set_modal = Some(Modal::new(
+                                "level_set_modal",
+                                RichText::new(format!("Reset {}?", &set.name)).heading(),
+                                RichText::new(format!(
+                                    "Are you sure you want to reset {}? This is irreversable.",
+                                    &set.name
+                                )),
+                                move |ui| {
+                                    ui.horizontal(|ui| {
+                                        (
+                                            set_idx,
+                                            LevelSetModalType::Reset,
+                                            ui.button("Reset").clicked(),
+                                            ui.button("Cancel").clicked(),
+                                        )
+                                    })
+                                    .inner
+                                },
+                            ));
+                        }
+                    }
+                });
             });
 
             let search_text = data.level_sets_search.to_ascii_lowercase();
@@ -158,7 +346,6 @@ impl LevelSetsTab<'_> {
                         if adjusted_idx > row_range.end {
                             break;
                         }
-
                         if ui
                             .selectable_label(data.selected_level_set == Some(set_idx), level_set)
                             .clicked()
@@ -191,6 +378,32 @@ impl LevelSetsTab<'_> {
             };
 
             SidePanel::left("area_list_panel").show_inside(ui, |ui| {
+                if ui.button("Reset Selected").clicked() {
+                    if let Some(idx) = data.selected_area {
+                        let area = &areas[idx];
+
+                        data.area_modal = Some(Modal::new(
+                            "area_modal",
+                            RichText::new(format!("Reset {}?", area.def.sid())),
+                            RichText::new(format!(
+                                "Are you sure you want to reset stats for {}? This is \
+                                 irreversable.",
+                                area.def.sid()
+                            )),
+                            move |ui| {
+                                ui.horizontal(|ui| {
+                                    (
+                                        idx,
+                                        ui.button("Reset").clicked(),
+                                        ui.button("Cancel").clicked(),
+                                    )
+                                })
+                                .inner
+                            },
+                        ));
+                    }
+                }
+
                 ScrollArea::both().show_rows(ui, row_height, areas.len(), |ui, row_range| {
                     for (idx, area) in areas.iter().enumerate().skip(row_range.start) {
                         if idx > row_range.end {
@@ -213,12 +426,11 @@ impl LevelSetsTab<'_> {
                 })
             });
 
-
             if let Some(area_idx) = data.selected_area {
                 let width = ui
                     .painter()
                     .layout_no_wrap(
-                        "A-Side".to_owned(),
+                        "A-Side    Reset".to_owned(),
                         FontId::proportional(18.0),
                         Color32::BLACK,
                     )
@@ -230,12 +442,35 @@ impl LevelSetsTab<'_> {
                     .resizable(false)
                     .show_inside(ui, |ui| {
                         for (idx, side) in ["A-Side", "B-Side", "C-Side"].iter().enumerate() {
-                            if ui
-                                .selectable_label(data.selected_mode == Some(idx), *side)
-                                .clicked()
-                            {
-                                data.selected_mode = Some(idx);
-                            }
+                            ui.horizontal(|ui| {
+                                if ui
+                                    .selectable_label(data.selected_mode == Some(idx), *side)
+                                    .clicked()
+                                {
+                                    data.selected_mode = Some(idx);
+                                }
+
+                                if ui.button("reset").clicked() {
+                                    data.mode_modal = Some(Modal::new(
+                                        "area_modal",
+                                        RichText::new(format!("Reset the {side}?")),
+                                        RichText::new(format!(
+                                            "Are you sure you want to reset the stats for the \
+                                             {side}? This is irreversable."
+                                        )),
+                                        move |ui| {
+                                            ui.horizontal(|ui| {
+                                                (
+                                                    idx,
+                                                    ui.button("Reset").clicked(),
+                                                    ui.button("Cancel").clicked(),
+                                                )
+                                            })
+                                            .inner
+                                        },
+                                    ));
+                                }
+                            });
                         }
                     });
 
@@ -359,26 +594,6 @@ impl LevelSetsTab<'_> {
                     );
                 });
             }
-        }
-    }
-}
-
-pub struct LevelSetsData {
-    level_sets_search: String,
-    selected_level_set: Option<usize>,
-    selected_area: Option<usize>,
-    selected_mode: Option<usize>,
-    add_strawberry_buff: String,
-}
-
-impl LevelSetsData {
-    pub fn new() -> Self {
-        LevelSetsData {
-            level_sets_search: String::new(),
-            selected_mode: None,
-            selected_level_set: None,
-            selected_area: None,
-            add_strawberry_buff: String::new(),
         }
     }
 }
