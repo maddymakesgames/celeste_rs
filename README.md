@@ -23,5 +23,3 @@ We also include a [nix](https://nixos.org) flake making builds easy if you use t
 Please provide feedback or bug reports via github issues. If you would like to contribute you can make a pull request and I can look over it.
 
 If you would like to contact me directly I am on discord as `@maddymakesgames`.
-
-I also make monthly dev logs on my [cohost](https://cohost.org/mads) under the [#celeste_rs](https://cohost.org/mads/tagged/celeste_rs) tag 
