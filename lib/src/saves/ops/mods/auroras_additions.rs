@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use saphyr::{Hash, Yaml};
+use saphyr::{LoadableYamlNode, Mapping, Yaml, YamlOwned};
 
 use crate::{
     saves::{
@@ -8,21 +8,21 @@ use crate::{
         ops::XML_VERSION_HEADER,
         session::{RootSavedSession, SavedSession},
     },
-    utils::{FromYaml, YamlParseError, YamlWriteError, anyhow::ResultMapIter},
+    utils::{FromYaml, YamlExt, YamlParseError, YamlWriteError, anyhow::ResultMapIter},
 };
 
-impl ModSave for AurorasAdditionsSave {}
+impl ModSave<'_> for AurorasAdditionsSave {}
 
-impl ModFile for AurorasAdditionsSave {
+impl ModFile<'_> for AurorasAdditionsSave {
     const MOD_NAME: &'static str = "AurorasAdditions";
 }
-impl FromYaml for AurorasAdditionsSave {
+impl FromYaml<'_> for AurorasAdditionsSave {
     fn parse_from_yaml(yaml: &Yaml) -> Result<AurorasAdditionsSave, YamlParseError> {
         let mut sessions_per_level = HashMap::new();
 
         let sessions_per_level_map =
             yaml["SessionsPerLevel"]
-                .as_hash()
+                .as_mapping()
                 .ok_or(YamlParseError::custom(
                     "Aurora's Additions save doesn't contain a SessionsPerLevel entry",
                 ))?;
@@ -53,7 +53,7 @@ impl FromYaml for AurorasAdditionsSave {
         let mut mod_sessions_per_level = HashMap::new();
         let mod_sessions_per_level_map =
             yaml["ModSessionsPerLevel"]
-                .as_hash()
+                .as_mapping()
                 .ok_or(YamlParseError::custom(
                     "Aurora's Additions save doesn't have ModSessionsPerLevel entry",
                 ))?;
@@ -69,13 +69,16 @@ impl FromYaml for AurorasAdditionsSave {
                     "Aurora's Additions ModSessionsPerLevel entry has improperly formatted key",
                 ))?;
 
-            mod_sessions_per_level.insert((sid.to_owned(), mode.trim().to_owned()), value.clone());
+            mod_sessions_per_level.insert(
+                (sid.to_owned(), mode.trim().to_owned()),
+                YamlOwned::from_bare_yaml(value.clone()),
+            );
         }
 
         let mut mod_sessions_per_level_binary = HashMap::new();
         let mod_sessions_per_level_map =
             yaml["ModSessionsPerLevelBinary"]
-                .as_hash()
+                .as_mapping()
                 .ok_or(YamlParseError::custom(
                     "Aurora's Additions save doesn't have a ModSessionsPerLevelBinary field",
                 ))?;
@@ -94,7 +97,7 @@ impl FromYaml for AurorasAdditionsSave {
 
             let mut mod_data = HashMap::new();
 
-            for (mod_name, base64) in value.as_hash().ok_or(YamlParseError::custom(
+            for (mod_name, base64) in value.as_mapping().ok_or(YamlParseError::custom(
                 "Aurora's Additions save ModSessionsPerLevelBinary doesn't have a list of mod \
                  sessions",
             ))? {
@@ -117,7 +120,7 @@ impl FromYaml for AurorasAdditionsSave {
 
         let music_volume_memory =
             yaml["MusicVolumeMemory"]
-                .as_i64()
+                .as_integer()
                 .ok_or(YamlParseError::custom(
                     "Aurora's Additions MusicVolumeMemory isn't an int",
                 ))?;
@@ -131,7 +134,7 @@ impl FromYaml for AurorasAdditionsSave {
     }
 
     fn to_yaml(&self) -> Result<saphyr::Yaml, YamlWriteError> {
-        let mut root = Hash::new();
+        let mut root = Mapping::new();
 
         let sessions_per_level = self
             .sessions_per_level
@@ -151,26 +154,27 @@ impl FromYaml for AurorasAdditionsSave {
             })
             .map_result(|((sid, mode), session)| {
                 (
-                    Yaml::String(format!("{sid}, {mode}")),
-                    Yaml::String(session),
+                    Yaml::string(format!("{sid}, {mode}")),
+                    Yaml::string(session),
                 )
             })
-            .collect::<Result<Hash, YamlWriteError>>()?;
+            .collect::<Result<Mapping, YamlWriteError>>()?;
 
         root.insert(
-            Yaml::String("SessionsPerLevel".to_owned()),
-            Yaml::Hash(sessions_per_level),
+            Yaml::string("SessionsPerLevel".to_owned()),
+            Yaml::hash(sessions_per_level),
         );
 
+        // TODO: requires saphyr to make a way to construct Yaml from YamlOwned
         let mod_sessions_per_level = self
             .mod_sessions_per_level
             .iter()
-            .map(|((sid, mode), session)| (Yaml::String(format!("{sid}, {mode}")), session.clone()))
-            .collect::<Hash>();
+            .map(|((sid, mode), session)| (Yaml::string(format!("{sid}, {mode}")), session.clone()))
+            .collect::<Mapping>();
 
         root.insert(
-            Yaml::String("ModSessionsPerLevel".to_owned()),
-            Yaml::Hash(mod_sessions_per_level),
+            Yaml::string("ModSessionsPerLevel".to_owned()),
+            Yaml::hash(mod_sessions_per_level),
         );
 
         let mod_sessions_per_level_binary = self
@@ -178,29 +182,29 @@ impl FromYaml for AurorasAdditionsSave {
             .iter()
             .map(|((sid, mode), session)| {
                 (
-                    Yaml::String(format!("{sid}, {mode}")),
-                    Yaml::Hash(
+                    Yaml::string(format!("{sid}, {mode}")),
+                    Yaml::hash(
                         session
                             .iter()
                             .map(|(mod_id, session)| {
-                                (Yaml::String(mod_id.clone()), Yaml::String(session.clone()))
+                                (Yaml::string(mod_id.clone()), Yaml::string(session.clone()))
                             })
-                            .collect::<Hash>(),
+                            .collect::<Mapping>(),
                     ),
                 )
             })
-            .collect::<Hash>();
+            .collect::<Mapping>();
 
         root.insert(
-            Yaml::String("ModSessionsPerLevelBinary".to_owned()),
-            Yaml::Hash(mod_sessions_per_level_binary),
+            Yaml::string("ModSessionsPerLevelBinary".to_owned()),
+            Yaml::hash(mod_sessions_per_level_binary),
         );
 
         root.insert(
-            Yaml::String("MusicVolumeMemory".to_owned()),
-            Yaml::Integer(self.music_volume_memory as i64),
+            Yaml::string("MusicVolumeMemory".to_owned()),
+            Yaml::int(self.music_volume_memory as i64),
         );
 
-        Ok(Yaml::Hash(root))
+        Ok(Yaml::hash(root))
     }
 }

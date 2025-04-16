@@ -8,7 +8,7 @@
 pub mod auroras_additions;
 pub mod collab_utils2;
 
-use saphyr::Yaml;
+use saphyr::YamlOwned;
 
 use crate::{
     saves::mods::{auroras_additions::AurorasAdditionsSave, collab_utils2::CollabsUtils2Save},
@@ -23,7 +23,7 @@ use crate::{
 /// To implement for a mod file that does not use YAML
 /// make the `parse_from_yaml` body `unreachable!()`
 /// and overwrite `parse_from_str` and `parse_from_reader`
-pub trait ModFile: FromYaml + Sized {
+pub trait ModFile<'a>: FromYaml<'a> + Sized {
     /// The unlocalized name of the mod the file is for.
     ///
     /// This is the third part of the file name and should be used to verify which file you're loading.
@@ -34,24 +34,24 @@ pub trait ModFile: FromYaml + Sized {
 /// A `*-modsave-*.celeste` file.
 ///
 /// These save data across sessions
-pub trait ModSave: ModFile {}
+pub trait ModSave<'a>: ModFile<'a> {}
 
 /// A `*-modsession-*.celeste` file.
 ///
 /// These save data per-session. Usually data is more directly related to gameplay.
 ///
 /// Mods like CollabUtils2 or Aurora's Additions saves these as part of a session.
-pub trait ModSession: ModFile {}
+pub trait ModSession<'a>: ModFile<'a> {}
 
 /// A `modsettings-*.celeste` file
 ///
 /// These store settings for each mod, and are shared among save files
-pub trait ModSettings: ModFile {}
+pub trait ModSettings<'a>: ModFile<'a> {}
 
 /// A generic YAML document that we cannot otherwise parse into a ModFile impl
 ///
 /// String is mod name
-pub struct DynYamlDoc(pub String, pub Yaml);
+pub struct DynYamlDoc(pub String, pub YamlOwned);
 
 #[allow(clippy::large_enum_variant)]
 pub enum ParsedModSave {

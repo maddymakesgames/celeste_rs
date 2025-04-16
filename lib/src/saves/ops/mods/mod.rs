@@ -5,7 +5,7 @@ use crate::{
     utils::{FromYaml, YamlParseError, YamlWriteError},
 };
 use anyhow::{Result, anyhow};
-use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlLoader};
+use saphyr::{LoadableYamlNode, YAMLDecodingTrap, Yaml, YamlDecoder, YamlOwned};
 
 mod auroras_additions;
 mod collab_utils2;
@@ -170,8 +170,11 @@ impl ParsedModSetting {
 
 impl DynYamlDoc {
     pub fn parse_from_str_and_mod_name(str: &str, mod_name: &str) -> Result<Self> {
-        let yaml = YamlLoader::load_from_str(str)?;
-        Ok(Self(mod_name.to_owned(), yaml[0].clone()))
+        let yaml = Yaml::load_from_str(str)?;
+        Ok(Self(
+            mod_name.to_owned(),
+            YamlOwned::from_bare_yaml(y[0].clone()),
+        ))
     }
 
     pub fn parse_from_reader_and_mod_name(reader: impl Read, mod_name: &str) -> Result<Self> {
@@ -179,7 +182,11 @@ impl DynYamlDoc {
             .encoding_trap(YAMLDecodingTrap::Strict)
             .decode();
         match yaml {
-            Ok(y) => Ok(Self(mod_name.to_owned(), y[0].clone())),
+            Ok(y) => Ok(Self(
+                mod_name.to_owned(),
+                YamlOwned::from_bare_yaml(y[0].clone()),
+            )),
+            // TODO: requires saphyr to make LoadError public
             Err(e) => match e {
                 saphyr::yaml::LoadError::IO(e) => Err(Box::new(e).into()),
                 saphyr::yaml::LoadError::Scan(e) => Err(Box::new(e).into()),
@@ -189,7 +196,7 @@ impl DynYamlDoc {
     }
 }
 
-impl FromYaml for DynYamlDoc {
+impl FromYaml<'_> for DynYamlDoc {
     fn parse_from_yaml(_yaml: &Yaml) -> Result<Self, YamlParseError> {
         unimplemented!(
             "Don't call YamlFile::parse_from_yaml on DynYamlDoc, use one of the DynYamlDoc \
@@ -198,14 +205,15 @@ impl FromYaml for DynYamlDoc {
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
+        // TODO: requires saphyr to make a way to construct Yaml from YamlOwned
         Ok(self.1.clone())
     }
 }
 
-impl ModFile for DynYamlDoc {
+impl ModFile<'_> for DynYamlDoc {
     const MOD_NAME: &'static str = "";
 }
 
-impl ModSave for DynYamlDoc {}
-impl ModSession for DynYamlDoc {}
-impl ModSettings for DynYamlDoc {}
+impl ModSave<'_> for DynYamlDoc {}
+impl ModSession<'_> for DynYamlDoc {}
+impl ModSettings<'_> for DynYamlDoc {}
