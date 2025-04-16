@@ -8,6 +8,7 @@ use std::{
 
 use chrono::NaiveDateTime;
 pub use quick_xml::DeError;
+use quick_xml::SeError;
 
 use crate::saves::{
     AreaCount,
@@ -53,15 +54,16 @@ impl SaveData {
         quick_xml::de::from_str(str)
     }
 
-    pub fn to_string(&self) -> Result<String, DeError> {
+    pub fn to_string(&self) -> Result<String, SeError> {
         let mut xml = XML_VERSION_HEADER.to_owned();
         xml.push_str(&quick_xml::se::to_string(&self)?);
         Ok(xml)
     }
 
-    pub fn to_writer(&self, mut writer: impl Write) -> Result<(), DeError> {
+    pub fn to_writer(&self, mut writer: impl Write) -> Result<(), SeError> {
         writer.write_str(XML_VERSION_HEADER)?;
-        quick_xml::se::to_writer(writer, &self)
+        quick_xml::se::to_writer(writer, &self)?;
+        Ok(())
     }
 
     /// Combines all the [LevelSetStats] into one vec,
@@ -447,15 +449,16 @@ impl ModSaveData {
         quick_xml::de::from_str(str)
     }
 
-    pub fn to_string(&self) -> Result<String, DeError> {
+    pub fn to_string(&self) -> Result<String, SeError> {
         let mut xml = XML_VERSION_HEADER.to_owned();
         xml.push_str(&quick_xml::se::to_string(&self)?);
         Ok(xml)
     }
 
-    pub fn to_writer(&self, mut writer: impl Write) -> Result<(), DeError> {
+    pub fn to_writer(&self, mut writer: impl Write) -> Result<(), SeError> {
         writer.write_str(XML_VERSION_HEADER)?;
-        quick_xml::se::to_writer(writer, &self)
+        quick_xml::se::to_writer(writer, &self)?;
+        Ok(())
     }
 
     /// Combines all the [LevelSetStats] into one vec,
