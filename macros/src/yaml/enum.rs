@@ -56,7 +56,7 @@ pub(super) fn yaml_derive_enum(
         if let Ok(string) = yaml.try_as_str() {
             return Ok(match string {
                 #(#unit_branches,)*
-                _ => return Err(#celeste_rs::utils::yaml::YamlParseError::UnknownVariant(#enum_name_str, string.to_owned()))
+                _ => return Err(YamlParseError::UnknownVariant(#enum_name_str, string.to_owned()))
             })
         }
     });
@@ -65,7 +65,7 @@ pub(super) fn yaml_derive_enum(
         let name = &variant.ident;
         let name_str = &variant.ident.to_string();
         writer_branches.push(quote! {
-            #enum_name::#name => #celeste_rs::utils::yaml::saphyr::Yaml::String(#name_str.to_owned())
+            #enum_name::#name => Yaml::string(#name_str.to_owned())
         });
     }
 
@@ -84,18 +84,21 @@ pub(super) fn yaml_derive_enum(
     }
 
     Ok(quote! {
-        impl #celeste_rs::utils::yaml::FromYaml for #enum_name {
+        impl #celeste_rs::utils::yaml::FromYaml<'_> for #enum_name {
             fn parse_from_yaml(yaml: &#celeste_rs::utils::yaml::saphyr::Yaml) -> Result<Self, #celeste_rs::utils::yaml::YamlParseError> {
-                use #celeste_rs::utils::yaml::{YamlExt, HashExt};
+                #[allow(unused_imports)]
+                use #celeste_rs::utils::yaml::{FromYaml, HashExt, YamlExt, YamlParseError, YamlWriteError, saphyr::{Yaml, Scalar, Mapping}};
                 #(#parsers)*
 
-                Err(#celeste_rs::utils::yaml::YamlParseError::Custom(format!("Could not find a matching '{}' variant when parsing", #enum_name_str)))
+                Err(YamlParseError::Custom(format!("Could not find a matching '{}' variant when parsing", #enum_name_str)))
             }
 
             fn to_yaml(&self) -> Result<#celeste_rs::utils::yaml::saphyr::Yaml, #celeste_rs::utils::yaml::YamlWriteError> {
+                #[allow(unused_imports)]
+                use #celeste_rs::utils::yaml::{FromYaml, HashExt, YamlExt, YamlParseError, YamlWriteError, saphyr::{Yaml, Scalar, Mapping}};
                 Ok(match self {
                     #(#writer_branches,)*
-                    _ => return Err(#celeste_rs::utils::yaml::YamlWriteError::Custom("Can't serialize non-unit enum variants right now".to_owned()))
+                    _ => return Err(YamlWriteError::Custom("Can't serialize non-unit enum variants right now".to_owned()))
                 })
             }
         }
