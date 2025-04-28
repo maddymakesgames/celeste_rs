@@ -144,7 +144,7 @@ impl ModMeta {
     }
 }
 
-impl FromYaml<'_> for ModMeta {
+impl FromYaml for ModMeta {
     fn parse_from_yaml(yaml: &saphyr::Yaml) -> Result<ModMeta, YamlParseError> {
         let (name, version) = ModMeta::parse_name_version_from_yaml(yaml)?;
 

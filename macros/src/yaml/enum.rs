@@ -84,7 +84,7 @@ pub(super) fn yaml_derive_enum(
     }
 
     Ok(quote! {
-        impl #celeste_rs::utils::yaml::FromYaml<'_> for #enum_name {
+        impl #celeste_rs::utils::yaml::FromYaml for #enum_name {
             fn parse_from_yaml(yaml: &#celeste_rs::utils::yaml::saphyr::Yaml) -> Result<Self, #celeste_rs::utils::yaml::YamlParseError> {
                 #[allow(unused_imports)]
                 use #celeste_rs::utils::yaml::{FromYaml, HashExt, YamlExt, YamlParseError, YamlWriteError, saphyr::{Yaml, Scalar, Mapping}};

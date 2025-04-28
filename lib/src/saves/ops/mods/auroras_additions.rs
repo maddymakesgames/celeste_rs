@@ -11,12 +11,12 @@ use crate::{
     utils::{FromYaml, YamlExt, YamlParseError, YamlWriteError, anyhow::ResultMapIter},
 };
 
-impl ModSave<'_> for AurorasAdditionsSave {}
+impl ModSave for AurorasAdditionsSave {}
 
-impl ModFile<'_> for AurorasAdditionsSave {
+impl ModFile for AurorasAdditionsSave {
     const MOD_NAME: &'static str = "AurorasAdditions";
 }
-impl FromYaml<'_> for AurorasAdditionsSave {
+impl FromYaml for AurorasAdditionsSave {
     fn parse_from_yaml(yaml: &Yaml) -> Result<AurorasAdditionsSave, YamlParseError> {
         let mut sessions_per_level = HashMap::new();
 
@@ -165,11 +165,10 @@ impl FromYaml<'_> for AurorasAdditionsSave {
             Yaml::hash(sessions_per_level),
         );
 
-        // TODO: requires saphyr to make a way to construct Yaml from YamlOwned
         let mod_sessions_per_level = self
             .mod_sessions_per_level
             .iter()
-            .map(|((sid, mode), session)| (Yaml::string(format!("{sid}, {mode}")), session.clone()))
+            .map(|((sid, mode), session)| (Yaml::string(format!("{sid}, {mode}")), session.into()))
             .collect::<Mapping>();
 
         root.insert(

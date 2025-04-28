@@ -18,12 +18,12 @@ use crate::{
 
 use saphyr::{LoadableYamlNode, Mapping, Yaml, YamlOwned};
 
-impl ModSave<'_> for CollabsUtils2Save {}
+impl ModSave for CollabsUtils2Save {}
 
-impl ModFile<'_> for CollabsUtils2Save {
+impl ModFile for CollabsUtils2Save {
     const MOD_NAME: &'static str = "CollabUtils2";
 }
-impl FromYaml<'_> for CollabsUtils2Save {
+impl FromYaml for CollabsUtils2Save {
     fn parse_from_yaml(yaml: &saphyr::Yaml) -> Result<CollabsUtils2Save, YamlParseError> {
         let mut sessions_per_level = HashMap::new();
 
@@ -245,11 +245,10 @@ impl FromYaml<'_> for CollabsUtils2Save {
             Yaml::hash(sessions_per_level),
         );
 
-        // TODO: requires saphyr to make a way to construct Yaml from YamlOwned
         let mod_sessions_per_level = self
             .mod_sessions_per_level
             .iter()
-            .map(|(sid, session)| (Yaml::string(sid.clone()), session.clone()))
+            .map(|(sid, session)| (Yaml::string(sid.clone()), session.into()))
             .collect::<Mapping>();
 
         root.insert(

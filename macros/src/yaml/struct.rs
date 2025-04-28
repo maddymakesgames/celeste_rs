@@ -94,7 +94,7 @@ pub(super) fn yaml_derive_struct(
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(quote! {
-        impl #celeste_rs::utils::yaml::FromYaml<'_> for #struct_ident {
+        impl #celeste_rs::utils::yaml::FromYaml for #struct_ident {
             fn parse_from_yaml(yaml: &#celeste_rs::utils::yaml::saphyr::Yaml) -> Result<Self, #celeste_rs::utils::yaml::YamlParseError> {
                 #[allow(unused_imports)]
                 use #celeste_rs::utils::yaml::{FromYaml, YamlExt, HashExt, YamlParseError, YamlWriteError, saphyr::{Yaml, Mapping, Scalar}};
