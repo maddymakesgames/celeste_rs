@@ -1,4 +1,4 @@
-use celeste_rs_macros::Entity;
+use celeste_rs_macros::EntityData;
 
 use crate::maps::{
     MapElement,
@@ -17,7 +17,7 @@ use std::{any::Any, fmt::Debug};
 ///
 /// These fields are on every entity element and are
 /// useful even when we cannot resolve the entity itself
-pub struct MapEntity<T: Entity> {
+pub struct MapEntity<T: EntityData> {
     pub id: Integer,
     pub x: Float,
     pub y: Float,
@@ -28,7 +28,7 @@ pub struct MapEntity<T: Entity> {
     pub entity: T,
 }
 
-impl<T: Entity> MapElement for MapEntity<T> {
+impl<T: EntityData> MapElement for MapEntity<T> {
     const NAME: &'static str = T::NAME;
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
@@ -58,7 +58,7 @@ impl<T: Entity> MapElement for MapEntity<T> {
 }
 
 /// Represents an entity, anything that can be stored in [Entities](super::Entities).
-pub trait Entity: Debug + Any {
+pub trait EntityData: Debug + Any {
     /// The name of the entity in the binary file
     const NAME: &'static str;
 
@@ -80,7 +80,7 @@ macro_rules! unit_entities {
             #[derive(Debug, Clone, Copy, Default)]
             pub struct $struct_name;
 
-            impl Entity for $struct_name {
+            impl EntityData for $struct_name {
                 const NAME: &'static str = $name;
 
                 fn from_raw(_parser: MapParser) -> Result<Self, MapElementParsingError>
@@ -206,27 +206,27 @@ pub mod vanilla_entities {
     use super::*;
 
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "spikesUp"]
     pub struct SpikesUp {
         #[name = "type"]
         pub kind: Option<ResolvableString>,
     }
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "spikesDown"]
     pub struct SpikesDown {
         #[name = "type"]
         pub kind: Option<ResolvableString>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "spikesLeft"]
     pub struct SpikesLeft {
         #[name = "type"]
         pub kind: Option<ResolvableString>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "spikesRight"]
     pub struct SpikesRight {
         #[name = "type"]
@@ -234,14 +234,14 @@ pub mod vanilla_entities {
     }
 
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "jumpThru"]
     pub struct JumpThru {
         #[name = "texture"]
         pub texture: Option<ResolvableString>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "wire"]
     pub struct Wire {
         #[name = "above"]
@@ -249,7 +249,7 @@ pub mod vanilla_entities {
         pub to: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "strawberry"]
     pub struct Strawberry {
         #[name = "winged"]
@@ -260,7 +260,7 @@ pub mod vanilla_entities {
         pub order: Option<Integer>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "lightbeam"]
     pub struct Lightbeam {
         #[name = "rotation"]
@@ -269,14 +269,14 @@ pub mod vanilla_entities {
         pub flag: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "cassette"]
     pub struct Cassette {
         #[node]
         pub bubble_points: Vec<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "cassetteBlock"]
     pub struct CassetteBlock {
         #[name = "index"]
@@ -285,7 +285,7 @@ pub mod vanilla_entities {
         pub finished_state: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "dashBlock"]
     pub struct DashBlock {
         #[name = "permanent"]
@@ -297,42 +297,42 @@ pub mod vanilla_entities {
         #[name = "canDash"]
         pub can_dash: bool,
     }
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "bonfire"]
     pub struct Bonfire {
         #[name = "mode"]
         pub mode: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "npc"]
     pub struct NPC {
         #[name = "npc"]
         pub npc: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "coverupWall"]
     pub struct CoverupWall {
         #[name = "tiletype"]
         pub tile_type: Character,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "memorial"]
     pub struct Memorial {
         #[name = "dreaming"]
         pub dreaming: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "birdForsakenCityGem"]
     pub struct BirdForsakenCityGem {
         #[node]
         pub nodes: Vec<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "fallingBlock"]
     pub struct FallingBlock {
         #[name = "tiletype"]
@@ -343,7 +343,7 @@ pub mod vanilla_entities {
         pub climb_fall: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "fakeWall"]
     pub struct FakeWall {
         #[name = "tiletype"]
@@ -352,14 +352,14 @@ pub mod vanilla_entities {
         pub play_transition_reveal: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "spring"]
     pub struct Spring {
         #[name = "playerCanUse"]
         pub player_can_use: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "zipMover"]
     pub struct ZipMover {
         #[name = "theme"]
@@ -367,7 +367,7 @@ pub mod vanilla_entities {
         pub to: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "refill"]
     pub struct Refill {
         #[name = "twoDash"]
@@ -430,7 +430,7 @@ pub mod vanilla_entities {
         HangingLamp, "hanginglamp"
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "tentacles"]
     pub struct Tentacles {
         #[name = "fear_distance"]
@@ -441,7 +441,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "glider"]
     pub struct Glider {
         #[name = "bubble"]
@@ -450,7 +450,7 @@ pub mod vanilla_entities {
         pub tutorial: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "flingBirdIntro"]
     pub struct FlingBirdIntro {
         #[name = "crashes"]
@@ -459,42 +459,42 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "exitBlock"]
     pub struct ExitBlock {
         #[name = "tileType"]
         pub tiletype: Character,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "templeCrackedBlock"]
     pub struct TempleCrackedBlock {
         #[name = "persistent"]
         pub persistent: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "clothesline"]
     pub struct Clothesline {
         #[node]
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "redBlocks"]
     pub struct RedBlocks {
         #[name = "inverted"]
         pub inverted: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "door"]
     pub struct Door {
         #[name = "type"]
         pub kind: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "dashSwitchV"]
     pub struct DashSwitchV {
         #[name = "ceiling"]
@@ -507,14 +507,14 @@ pub mod vanilla_entities {
         pub allgates: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "spinner"]
     pub struct Spinner {
         #[name = "attachToSolid"]
         pub attachtosolid: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "conditionBlock"]
     pub struct ConditionBlock {
         #[name = "tileType"]
@@ -525,7 +525,7 @@ pub mod vanilla_entities {
         pub conditionid: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "floatySpaceBlock"]
     pub struct FloatySpaceBlock {
         #[name = "tiletype"]
@@ -534,14 +534,14 @@ pub mod vanilla_entities {
         pub disablespawnoffset: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "soundSource"]
     pub struct SoundSource {
         #[name = "sound"]
         pub sound: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "lockBlock"]
     pub struct LockBlock {
         #[name = "stepMusicProgress"]
@@ -552,14 +552,14 @@ pub mod vanilla_entities {
         pub unlock_sfx: Option<ResolvableString>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "seeker"]
     pub struct Seeker {
         #[node]
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "dashSwitchH"]
     pub struct DashSwitchH {
         #[name = "leftSide"]
@@ -572,7 +572,7 @@ pub mod vanilla_entities {
         pub allgates: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "summitcheckpoint"]
     pub struct SummitCheckpoint {
         #[name = "number"]
@@ -580,21 +580,21 @@ pub mod vanilla_entities {
     }
 
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "summitgem"]
     pub struct SummitGem {
         #[name = "gem"]
         pub gem: u8,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "summitGemManager"]
     pub struct SummitGemManager {
         #[node]
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "fireBall"]
     pub struct FireBall {
         #[name = "amount"]
@@ -609,7 +609,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "flingBird"]
     pub struct FlingBird {
         #[name = "waiting"]
@@ -618,7 +618,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "coreModeToggle"]
     pub struct CoreModeToggle {
         #[name = "onlyFire"]
@@ -629,7 +629,7 @@ pub mod vanilla_entities {
         pub persistent: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "heartGemDoor"]
     pub struct HeartGemDoor {
         #[name = "requires"]
@@ -640,14 +640,14 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "eyebomb"]
     pub struct Eyebomb {
         #[name = "right"]
         pub right: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "templeGate"]
     pub struct TempleGate {
         #[name = "type"]
@@ -656,7 +656,7 @@ pub mod vanilla_entities {
         pub sprite: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "playbackTutorial"]
     pub struct PlaybackTutorial {
         #[name = "tutorial"]
@@ -665,14 +665,14 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "starJumpBlock"]
     pub struct StarJumpBlock {
         #[name = "sinks"]
         pub sinks: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "seekerStatue"]
     pub struct SeekerStatue {
         #[name = "hatch"]
@@ -681,7 +681,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "finalBoss"]
     pub struct FinalBoss {
         #[name = "patternIndex"]
@@ -698,21 +698,21 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "cloud"]
     pub struct Cloud {
         #[name = "fragile"]
         pub fragile: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "bigWaterfall"]
     pub struct BigWaterfall {
         #[name = "layer"]
         pub layer: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "wallSpringLeft"]
     pub struct WallSpringLeft {
         #[name = "playerCanUse"]
@@ -720,28 +720,28 @@ pub mod vanilla_entities {
     }
 
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "coreMessage"]
     pub struct CoreMessage {
         #[name = "line"]
         pub line: u8,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "introCrusher"]
     pub struct IntroCrusher {
         #[node]
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "key"]
     pub struct Key {
         #[node]
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "hahaha"]
     pub struct HaHaHa {
         #[name = "ifset"]
@@ -752,7 +752,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "badelineBoost"]
     pub struct BadelineBoost {
         #[name = "lockCamera"]
@@ -769,14 +769,14 @@ pub mod vanilla_entities {
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "wallSpringRight"]
     pub struct WallSpringRight {
         #[name = "playerCanUse"]
         pub playercanuse: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "crumbleWallOnRumble"]
     pub struct CrumbleWallOnRumble {
         #[name = "blendin"]
@@ -785,21 +785,21 @@ pub mod vanilla_entities {
         pub persistent: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "risingLava"]
     pub struct RisingLava {
         #[name = "intro"]
         pub intro: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "greenBlocks"]
     pub struct GreenBlocks {
         #[name = "inverted"]
         pub inverted: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "lightningBlock"]
     pub struct LightningBlock {
         #[name = "flag"]
@@ -814,7 +814,7 @@ pub mod vanilla_entities {
         pub flipx: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "birdPath"]
     pub struct BirdPath {
         #[name = "only_once"]
@@ -827,35 +827,35 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "cutsceneNode"]
     pub struct CutsceneNode {
         #[name = "nodeName"]
         pub nodename: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "clutterDoor"]
     pub struct ClutterDoor {
         #[name = "type"]
         pub kind: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "bigSpinner"]
     pub struct BigSpinner {
         #[node]
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "cliffside_flag"]
     pub struct CliffsideFlag {
         #[name = "index"]
         pub index: u8,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "ridgeGate"]
     pub struct RidgeGate {
         #[name = "strawberries"]
@@ -866,7 +866,7 @@ pub mod vanilla_entities {
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "swapBlock"]
     pub struct SwapBlock {
         #[name = "theme"]
@@ -875,14 +875,14 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "movingPlatform"]
     pub struct MovingPlatform {
         #[node]
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "switchGate"]
     pub struct SwitchGate {
         #[name = "persistent"]
@@ -893,7 +893,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "blackGem"]
     pub struct BlackGem {
         #[name = "removeCameraTriggers"]
@@ -902,7 +902,7 @@ pub mod vanilla_entities {
         pub fake: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "SummitBackgroundManager"]
     pub struct SummitBackgroundManager {
         #[name = "index"]
@@ -917,7 +917,7 @@ pub mod vanilla_entities {
         pub ambience: Option<ResolvableString>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "templeMirror"]
     pub struct TempleMirror {
         #[name = "reflectX"]
@@ -926,7 +926,7 @@ pub mod vanilla_entities {
         pub reflecty: u8,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "moveBlock"]
     pub struct MoveBlock {
         #[name = "direction"]
@@ -937,7 +937,7 @@ pub mod vanilla_entities {
         pub fast: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "dreamBlock"]
     pub struct DreamBlock {
         #[name = "fastMoving"]
@@ -950,7 +950,7 @@ pub mod vanilla_entities {
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "wallBooster"]
     pub struct WallBooster {
         #[name = "left"]
@@ -959,7 +959,7 @@ pub mod vanilla_entities {
         pub notcoremode: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "water"]
     pub struct Water {
         #[name = "steamy"]
@@ -968,7 +968,7 @@ pub mod vanilla_entities {
         pub hasbottom: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "lightning"]
     pub struct Lightning {
         #[name = "perLevel"]
@@ -979,14 +979,14 @@ pub mod vanilla_entities {
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "moonCreature"]
     pub struct MoonCreature {
         #[name = "number"]
         pub number: u8,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "finalBossMovingBlock"]
     pub struct FinalBossMovingBlock {
         #[name = "nodeIndex"]
@@ -995,7 +995,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "rotateSpinner"]
     pub struct RotateSpinner {
         #[name = "clockwise"]
@@ -1004,7 +1004,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "booster"]
     pub struct Booster {
         #[name = "red"]
@@ -1013,7 +1013,7 @@ pub mod vanilla_entities {
         pub ch9_hub_booster: Option<bool>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "bird"]
     pub struct Bird {
         #[name = "mode"]
@@ -1026,21 +1026,21 @@ pub mod vanilla_entities {
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "reflectionHeartStatue"]
     pub struct ReflectionHeartStatue {
         #[node]
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "yellowBlocks"]
     pub struct YellowBlocks {
         #[name = "inverted"]
         pub inverted: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "towerviewer"]
     pub struct TowerViewer {
         #[name = "summit"]
@@ -1051,14 +1051,14 @@ pub mod vanilla_entities {
         pub node: Option<Node>,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "cobweb"]
     pub struct Cobweb {
         #[node]
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "infiniteStar"]
     pub struct InfiniteStar {
         #[name = "shielded"]
@@ -1067,35 +1067,35 @@ pub mod vanilla_entities {
         pub singleuse: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "torch"]
     pub struct Torch {
         #[name = "startLit"]
         pub startlit: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "colorSwitch"]
     pub struct ColorSwitch {
         #[name = "type"]
         pub kind: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "cliffflag"]
     pub struct CliffFlag {
         #[node]
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "lamp"]
     pub struct Lamp {
         #[name = "broken"]
         pub broken: bool,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "powerSourceNumber"]
     pub struct PowerSourceNumber {
         #[name = "number"]
@@ -1106,7 +1106,7 @@ pub mod vanilla_entities {
         pub keys: ResolvableString,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "bridge"]
     pub struct Bridge {
         #[node]
@@ -1114,7 +1114,7 @@ pub mod vanilla_entities {
     }
 
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "crushBlock"]
     pub struct CrushBlock {
         #[name = "axes"]
@@ -1124,7 +1124,7 @@ pub mod vanilla_entities {
     }
 
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "trackSpinner"]
     pub struct TrackSpinner {
         #[name = "startCenter"]
@@ -1135,7 +1135,7 @@ pub mod vanilla_entities {
         pub node: Node,
     }
 
-    #[derive(Debug, Entity)]
+    #[derive(Debug, EntityData)]
     #[name = "gondola"]
     pub struct Gondola {
         #[name = "active"]

@@ -19,7 +19,7 @@ pub use lookup::*;
 
 use crate::maps::{
     encoder::MapEncoder,
-    entities::{Entity, MapEntity},
+    entities::{EntityData, MapEntity},
     parser::{ElementParser, ElementParserImpl, MapElementParsingError, MapParser},
     reader::{MapReadError, MapReader},
     triggers::{MapTrigger, Trigger},
@@ -421,7 +421,7 @@ impl MapManager {
     /// Allows the `MapManager` to parse a new type of [Entity]
     ///
     /// Acts the same as (add_parser)[MapManager::add_parser] but for entities
-    pub fn add_entity_parser<T: Entity>(&mut self) {
+    pub fn add_entity_parser<T: EntityData>(&mut self) {
         self.add_parser::<MapEntity<T>>();
     }
 

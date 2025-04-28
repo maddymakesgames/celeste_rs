@@ -275,7 +275,7 @@ pub fn map_element_derive(input: proc_macro::TokenStream) -> proc_macro::TokenSt
     .into()
 }
 
-#[proc_macro_derive(Entity, attributes(node, name))]
+#[proc_macro_derive(EntityData, attributes(node, name))]
 /// Derives the `Entity` trait.
 ///
 /// Every field in the struct needs to be annotated with either `node` or `name`.
