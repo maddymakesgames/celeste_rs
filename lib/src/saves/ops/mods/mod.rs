@@ -5,7 +5,7 @@ use crate::{
     utils::{FromYaml, YamlParseError, YamlWriteError},
 };
 use anyhow::{Result, anyhow};
-use saphyr::{YAMLDecodingTrap, Yaml, YamlDecoder, YamlLoader};
+use saphyr::{LoadError, LoadableYamlNode, YAMLDecodingTrap, Yaml, YamlDecoder, YamlOwned};
 
 mod auroras_additions;
 mod collab_utils2;
@@ -170,20 +170,27 @@ impl ParsedModSetting {
 
 impl DynYamlDoc {
     pub fn parse_from_str_and_mod_name(str: &str, mod_name: &str) -> Result<Self> {
-        let yaml = YamlLoader::load_from_str(str)?;
-        Ok(Self(mod_name.to_owned(), yaml[0].clone()))
+        let yaml = Yaml::load_from_str(str)?;
+        Ok(Self(
+            mod_name.to_owned(),
+            YamlOwned::from_bare_yaml(yaml[0].clone()),
+        ))
     }
 
     pub fn parse_from_reader_and_mod_name(reader: impl Read, mod_name: &str) -> Result<Self> {
-        let yaml = YamlDecoder::read(reader)
-            .encoding_trap(YAMLDecodingTrap::Strict)
-            .decode();
+        let mut yaml = YamlDecoder::read(reader);
+        yaml.encoding_trap(YAMLDecodingTrap::Strict);
+        let yaml = yaml.decode();
+
         match yaml {
-            Ok(y) => Ok(Self(mod_name.to_owned(), y[0].clone())),
+            Ok(y) => Ok(Self(
+                mod_name.to_owned(),
+                YamlOwned::from_bare_yaml(y[0].clone()),
+            )),
             Err(e) => match e {
-                saphyr::yaml::LoadError::IO(e) => Err(Box::new(e).into()),
-                saphyr::yaml::LoadError::Scan(e) => Err(Box::new(e).into()),
-                saphyr::yaml::LoadError::Decode(e) => Err(anyhow::format_err!(e)),
+                LoadError::IO(e) => Err(Box::new(e).into()),
+                LoadError::Scan(e) => Err(Box::new(e).into()),
+                LoadError::Decode(e) => Err(anyhow::format_err!(e)),
             },
         }
     }
@@ -198,7 +205,7 @@ impl FromYaml for DynYamlDoc {
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
-        Ok(self.1.clone())
+        Ok((&self.1).into())
     }
 }
 

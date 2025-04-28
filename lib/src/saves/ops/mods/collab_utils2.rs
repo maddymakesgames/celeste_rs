@@ -9,13 +9,14 @@ use crate::{
     },
     utils::{
         FromYaml,
+        YamlExt,
         YamlParseError,
         YamlWriteError,
         anyhow::{OptionOkOrIter, ResultMapIter},
     },
 };
 
-use saphyr::{Hash, Yaml};
+use saphyr::{LoadableYamlNode, Mapping, Yaml, YamlOwned};
 
 impl ModSave for CollabsUtils2Save {}
 
@@ -28,7 +29,7 @@ impl FromYaml for CollabsUtils2Save {
 
         let sessions_per_level_map =
             yaml["SessionsPerLevel"]
-                .as_hash()
+                .as_mapping()
                 .ok_or(YamlParseError::custom(
                     "CollabUtils2 save doesn't contain a SessionsPerLevel entry",
                 ))?;
@@ -52,7 +53,7 @@ impl FromYaml for CollabsUtils2Save {
         let mut mod_sessions_per_level = HashMap::new();
         let mod_sessions_per_level_map =
             yaml["ModSessionsPerLevel"]
-                .as_hash()
+                .as_mapping()
                 .ok_or(YamlParseError::custom(
                     "CollabUtils2 save doesn't have ModSessionsPerLevel entry",
                 ))?;
@@ -62,16 +63,15 @@ impl FromYaml for CollabsUtils2Save {
                 "CollabUtils2 ModSessionsPerLevel entry doesn't have a string key",
             ))?;
 
-            mod_sessions_per_level.insert(sid.to_owned(), value.clone());
+            mod_sessions_per_level.insert(sid.to_owned(), YamlOwned::from_bare_yaml(value.clone()));
         }
 
         let mut mod_sessions_per_level_binary = HashMap::new();
-        let mod_sessions_per_level_binary_map =
-            yaml["ModSessionsPerLevelBinary"]
-                .as_hash()
-                .ok_or(YamlParseError::custom(
-                    "CollabUtils2 save doesn't have a ModSessionsPerLevelBinary field",
-                ))?;
+        let mod_sessions_per_level_binary_map = yaml["ModSessionsPerLevelBinary"]
+            .as_mapping()
+            .ok_or(YamlParseError::custom(
+                "CollabUtils2 save doesn't have a ModSessionsPerLevelBinary field",
+            ))?;
 
         for (sid, value) in mod_sessions_per_level_binary_map {
             let sid = sid.as_str().ok_or(YamlParseError::custom(
@@ -80,7 +80,7 @@ impl FromYaml for CollabsUtils2Save {
 
             let mut mod_data = HashMap::new();
 
-            for (mod_name, base64) in value.as_hash().ok_or(YamlParseError::custom(
+            for (mod_name, base64) in value.as_mapping().ok_or(YamlParseError::custom(
                 "CollabUtils2 save ModSessionsPerLevelBinary doesn't have a list of mod sessions",
             ))? {
                 let mod_name = mod_name.as_str().ok_or(YamlParseError::custom(
@@ -102,7 +102,7 @@ impl FromYaml for CollabsUtils2Save {
         let mut visited_lobby_positions = HashMap::new();
         let visited_lobby_positions_map =
             yaml["VisitedLobbyPositions"]
-                .as_hash()
+                .as_mapping()
                 .ok_or(YamlParseError::custom(
                     "CollabUtils2 save doesn't have a VisitedLobbyPositions field",
                 ))?;
@@ -147,7 +147,7 @@ impl FromYaml for CollabsUtils2Save {
             .collect::<Result<HashSet<_>, _>>()?;
 
         let speed_berry_pbs = yaml["SpeedBerryPBs"]
-            .as_hash()
+            .as_mapping()
             .ok_or(YamlParseError::custom(
                 "CollabUtils2 save doesn't have a SpeedBerryPBs field",
             ))?
@@ -157,7 +157,7 @@ impl FromYaml for CollabsUtils2Save {
                     sid.as_str().ok_or(YamlParseError::custom(
                         "CollabUtils2 SpeedBerryPBs entry doesn't have string key",
                     )),
-                    val.as_i64().ok_or(YamlParseError::custom(
+                    val.as_integer().ok_or(YamlParseError::custom(
                         "CollabUtils2 SpeedBerryPBs entry doesn't have an integer value",
                     )),
                 )
@@ -219,7 +219,7 @@ impl FromYaml for CollabsUtils2Save {
     }
 
     fn to_yaml(&self) -> Result<saphyr::Yaml, YamlWriteError> {
-        let mut root = Hash::new();
+        let mut root = Mapping::new();
 
         let sessions_per_level = self
             .sessions_per_level
@@ -237,23 +237,23 @@ impl FromYaml for CollabsUtils2Save {
                     ),
                 ))
             })
-            .map_result(|(sid, session)| (Yaml::String(sid.clone()), Yaml::String(session)))
-            .collect::<Result<Hash, _>>()?;
+            .map_result(|(sid, session)| (Yaml::string(sid.clone()), Yaml::string(session)))
+            .collect::<Result<Mapping, _>>()?;
 
         root.insert(
-            Yaml::String("SessionsPerLevel".to_owned()),
-            Yaml::Hash(sessions_per_level),
+            Yaml::string("SessionsPerLevel".to_owned()),
+            Yaml::hash(sessions_per_level),
         );
 
         let mod_sessions_per_level = self
             .mod_sessions_per_level
             .iter()
-            .map(|(sid, session)| (Yaml::String(sid.clone()), session.clone()))
-            .collect::<Hash>();
+            .map(|(sid, session)| (Yaml::string(sid.clone()), session.into()))
+            .collect::<Mapping>();
 
         root.insert(
-            Yaml::String("ModSessionsPerLevel".to_owned()),
-            Yaml::Hash(mod_sessions_per_level),
+            Yaml::string("ModSessionsPerLevel".to_owned()),
+            Yaml::hash(mod_sessions_per_level),
         );
 
         let mod_sessions_per_level_binary = self
@@ -261,22 +261,22 @@ impl FromYaml for CollabsUtils2Save {
             .iter()
             .map(|(sid, session)| {
                 (
-                    Yaml::String(sid.clone()),
-                    Yaml::Hash(
+                    Yaml::string(sid.clone()),
+                    Yaml::hash(
                         session
                             .iter()
                             .map(|(mod_id, session)| {
-                                (Yaml::String(mod_id.clone()), Yaml::String(session.clone()))
+                                (Yaml::string(mod_id.clone()), Yaml::string(session.clone()))
                             })
-                            .collect::<Hash>(),
+                            .collect::<Mapping>(),
                     ),
                 )
             })
-            .collect::<Hash>();
+            .collect::<Mapping>();
 
         root.insert(
-            Yaml::String("ModSessionsPerLevelBinary".to_owned()),
-            Yaml::Hash(mod_sessions_per_level_binary),
+            Yaml::string("ModSessionsPerLevelBinary".to_owned()),
+            Yaml::hash(mod_sessions_per_level_binary),
         );
 
         let visited_lobby_positions = self
@@ -284,84 +284,84 @@ impl FromYaml for CollabsUtils2Save {
             .iter()
             .map(|(sid, base64)| {
                 (
-                    Yaml::String(sid.to_owned()),
-                    Yaml::String(base64.to_owned()),
+                    Yaml::string(sid.to_owned()),
+                    Yaml::string(base64.to_owned()),
                 )
             })
-            .collect::<Hash>();
+            .collect::<Mapping>();
 
         root.insert(
-            Yaml::String("VisitedLobbyPositions".to_owned()),
-            Yaml::Hash(visited_lobby_positions),
+            Yaml::string("VisitedLobbyPositions".to_owned()),
+            Yaml::hash(visited_lobby_positions),
         );
 
         let opened_mini_heart_doors = self
             .opened_mini_heart_doors
             .iter()
             .cloned()
-            .map(Yaml::String)
+            .map(Yaml::string)
             .collect::<Vec<_>>();
 
         root.insert(
-            Yaml::String("OpenedMiniHeartDoors".to_owned()),
-            Yaml::Array(opened_mini_heart_doors),
+            Yaml::string("OpenedMiniHeartDoors".to_owned()),
+            Yaml::seq(opened_mini_heart_doors),
         );
 
         let combined_rainbow_berries = self
             .combined_rainbow_berries
             .iter()
             .cloned()
-            .map(Yaml::String)
+            .map(Yaml::string)
             .collect::<Vec<_>>();
 
         root.insert(
-            Yaml::String("CombinedRainbowBerries".to_owned()),
-            Yaml::Array(combined_rainbow_berries),
+            Yaml::string("CombinedRainbowBerries".to_owned()),
+            Yaml::seq(combined_rainbow_berries),
         );
 
         let speed_berry_pbs = self
             .speed_berry_pbs
             .iter()
-            .map(|(sid, time)| (Yaml::String(sid.clone()), Yaml::Integer(time.0 as i64)))
-            .collect::<Hash>();
+            .map(|(sid, time)| (Yaml::string(sid.clone()), Yaml::int(time.0 as i64)))
+            .collect::<Mapping>();
 
         root.insert(
-            Yaml::String("SpeedBerryPBs".to_owned()),
-            Yaml::Hash(speed_berry_pbs),
+            Yaml::string("SpeedBerryPBs".to_owned()),
+            Yaml::Mapping(speed_berry_pbs),
         );
 
         root.insert(
-            Yaml::String("SpeedberryOptionMessageShown".to_owned()),
-            Yaml::Boolean(self.speed_berry_option_message_shown),
+            Yaml::string("SpeedberryOptionMessageShown".to_owned()),
+            Yaml::bool(self.speed_berry_option_message_shown),
         );
 
         let completed_warp_pedestal_sids = self
             .completed_warp_pedestal_sids
             .iter()
             .cloned()
-            .map(Yaml::String)
+            .map(Yaml::string)
             .collect::<Vec<_>>();
 
         root.insert(
-            Yaml::String("CompletedWarpPedestalSIDs".to_owned()),
-            Yaml::Array(completed_warp_pedestal_sids),
+            Yaml::string("CompletedWarpPedestalSIDs".to_owned()),
+            Yaml::seq(completed_warp_pedestal_sids),
         );
 
         root.insert(
-            Yaml::String("RevealMap".to_owned()),
-            Yaml::Boolean(self.reveal_map),
+            Yaml::string("RevealMap".to_owned()),
+            Yaml::bool(self.reveal_map),
         );
 
         root.insert(
-            Yaml::String("PauseVisitingPoints".to_owned()),
-            Yaml::Boolean(self.pause_visiting_points),
+            Yaml::string("PauseVisitingPoints".to_owned()),
+            Yaml::bool(self.pause_visiting_points),
         );
 
         root.insert(
-            Yaml::String("ShowVisitedPoints".to_owned()),
-            Yaml::Boolean(self.show_visited_points),
+            Yaml::string("ShowVisitedPoints".to_owned()),
+            Yaml::bool(self.show_visited_points),
         );
 
-        Ok(Yaml::Hash(root))
+        Ok(Yaml::hash(root))
     }
 }

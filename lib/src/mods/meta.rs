@@ -1,8 +1,8 @@
 use std::{cmp::Ordering, fmt::Display};
 
-use saphyr::{Hash, Yaml};
+use saphyr::{Mapping, Yaml};
 
-use crate::utils::{FromYaml, YamlParseError, YamlWriteError};
+use crate::utils::{FromYaml, YamlExt, YamlParseError, YamlWriteError};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 /// A (Semantic Versioning)[https://semver.org/]-respecting version number
@@ -132,14 +132,14 @@ impl ModMeta {
         }))
     }
 
-    fn name_version_to_yaml(name: &str, version: &Version, hash: &mut Hash) {
+    fn name_version_to_yaml(name: &str, version: &Version, hash: &mut Mapping) {
         hash.insert(
-            Yaml::String("Name".to_owned()),
-            Yaml::String(name.to_owned()),
+            Yaml::string("Name".to_owned()),
+            Yaml::string(name.to_owned()),
         );
         hash.insert(
-            Yaml::String("Version".to_owned()),
-            Yaml::String(version.to_string()),
+            Yaml::string("Version".to_owned()),
+            Yaml::string(version.to_string()),
         );
     }
 }
@@ -180,21 +180,21 @@ impl FromYaml for ModMeta {
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
-        let mut hash = Hash::new();
+        let mut hash = Mapping::new();
         ModMeta::name_version_to_yaml(&self.name, &self.version, &mut hash);
 
-        let mut dep_hash = Hash::new();
+        let mut dep_hash = Mapping::new();
 
         for (dep_name, dep_version) in &self.dependencies {
             ModMeta::name_version_to_yaml(dep_name, dep_version, &mut dep_hash);
         }
 
         hash.insert(
-            Yaml::String("Dependencies".to_owned()),
-            Yaml::Hash(dep_hash),
+            Yaml::string("Dependencies".to_owned()),
+            Yaml::hash(dep_hash),
         );
 
-        let mut opt_dep_hash = Hash::new();
+        let mut opt_dep_hash = Mapping::new();
 
         if let Some(optional_deps) = &self.optional_dependencies {
             for (dep_name, dep_version) in optional_deps {
@@ -203,14 +203,14 @@ impl FromYaml for ModMeta {
         }
 
         hash.insert(
-            Yaml::String("OptionalDependencies".to_owned()),
-            Yaml::Hash(opt_dep_hash),
+            Yaml::string("OptionalDependencies".to_owned()),
+            Yaml::hash(opt_dep_hash),
         );
 
         if let Some(dll) = &self.dll {
-            hash.insert(Yaml::String("DLL".to_owned()), Yaml::String(dll.to_owned()));
+            hash.insert(Yaml::string("DLL".to_owned()), Yaml::string(dll.to_owned()));
         }
 
-        Ok(Yaml::Hash(hash))
+        Ok(Yaml::hash(hash))
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use saphyr::Yaml;
+use saphyr::YamlOwned;
 
 use crate::saves::{session::SavedSession, util::FileTime};
 
@@ -13,7 +13,7 @@ pub struct CollabsUtils2Save {
     /// Each session is paired with the SID of the level it is for
     ///
     /// Apparently saved in yaml format
-    pub mod_sessions_per_level: HashMap<String, Yaml>,
+    pub mod_sessions_per_level: HashMap<String, YamlOwned>,
     /// Saved modded sessions for mods that support the async ser/de api
     ///
     /// Each SID has a collection of mods that saved their sessions and the saved mod sessions

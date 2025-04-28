@@ -8,7 +8,7 @@
 pub mod auroras_additions;
 pub mod collab_utils2;
 
-use saphyr::Yaml;
+use saphyr::YamlOwned;
 
 use crate::{
     saves::mods::{auroras_additions::AurorasAdditionsSave, collab_utils2::CollabsUtils2Save},
@@ -51,7 +51,7 @@ pub trait ModSettings: ModFile {}
 /// A generic YAML document that we cannot otherwise parse into a ModFile impl
 ///
 /// String is mod name
-pub struct DynYamlDoc(pub String, pub Yaml);
+pub struct DynYamlDoc(pub String, pub YamlOwned);
 
 #[allow(clippy::large_enum_variant)]
 pub enum ParsedModSave {

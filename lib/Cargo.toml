@@ -10,6 +10,8 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+saphyr = { version = "0.0.4", git = "https://github.com/saphyr-rs/saphyr.git", rev = "374d8920ff47c92504fd9b28be6994f7693386a6" }
+zip = { version = "2.2", default-features = false }
 anyhow = "1"
 aliasable = "0.1"
 celeste_rs_macros = { version = "0.2", path = "../macros" }
@@ -17,8 +19,6 @@ chrono = { version = "0.4", features = ["serde"] }
 quick-xml = { version = "0.37.4", features = ["serialize"] }
 serde = { version = "1", features = ["derive"] }
 serde-aux = "4.4"
-saphyr = "0.0.1"
-zip = { version = "2.2", default-features = false }
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 dotnetdll = "0.0.4"
