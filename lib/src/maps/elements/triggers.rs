@@ -20,8 +20,8 @@ pub struct MapTrigger<T: Trigger> {
     pub y: Float,
     pub width: Option<Integer>,
     pub height: Option<Integer>,
-    pub origin_x: Float,
-    pub origin_y: Float,
+    pub origin_x: Option<Float>,
+    pub origin_y: Option<Float>,
     pub entity: T,
 }
 
@@ -36,8 +36,8 @@ impl<T: Trigger> MapElement for MapTrigger<T> {
             y: parser.get_attribute("y")?,
             width: parser.get_optional_attribute("width")?,
             height: parser.get_optional_attribute("height")?,
-            origin_x: parser.get_attribute("originX")?,
-            origin_y: parser.get_attribute("originY")?,
+            origin_x: parser.get_optional_attribute("originX")?,
+            origin_y: parser.get_optional_attribute("originY")?,
             entity: T::from_raw(parser)?,
         })
     }
@@ -48,8 +48,8 @@ impl<T: Trigger> MapElement for MapTrigger<T> {
         encoder.attribute("y", self.y);
         encoder.optional_attribute("width", &self.width);
         encoder.optional_attribute("height", &self.height);
-        encoder.attribute("originX", self.origin_x);
-        encoder.attribute("originY", self.origin_y);
+        encoder.optional_attribute("originX", &self.origin_x);
+        encoder.optional_attribute("originY", &self.origin_y);
         self.entity.to_raw(encoder);
     }
 }

@@ -92,9 +92,9 @@ pub struct Level {
 #[name = "triggers"]
 pub struct Triggers {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[dyn_child]
     pub triggers: Vec<DynMapElement>,
 }
@@ -103,13 +103,13 @@ pub struct Triggers {
 #[name = "fgtiles"]
 pub struct FGTiles {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[name = "tileset"]
     pub tileset: ResolvableString,
     #[name = "exportMode"]
-    pub export_mode: Integer,
+    pub export_mode: Option<Integer>,
     #[name = "innerText"]
     pub inner_text: Option<String>,
 }
@@ -118,22 +118,22 @@ pub struct FGTiles {
 #[name = "bgtiles"]
 pub struct BGTiles {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[name = "tileset"]
     pub tileset: ResolvableString,
     #[name = "exportMode"]
-    pub export_mode: Integer,
+    pub export_mode: Option<Integer>,
 }
 
 #[derive(Debug, MapElement)]
 #[name = "bgdecals"]
 pub struct BGDecals {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[child]
     pub decals: Vec<Decal>,
 }
@@ -143,9 +143,9 @@ pub struct BGDecals {
 #[name = "fgdecals"]
 pub struct FGDecals {
     #[name = "offsetX"]
-    pub offset_x: Float,
+    pub offset_x: Option<Float>,
     #[name = "offsetY"]
-    pub offset_y: Float,
+    pub offset_y: Option<Float>,
     #[child]
     pub decals: Vec<Decal>,
 }
@@ -187,9 +187,9 @@ pub struct ObjTiles {
     #[name = "offsetY"]
     pub offset_y: Option<Float>,
     #[name = "tileset"]
-    pub tileset: ResolvableString,
+    pub tileset: Option<ResolvableString>,
     #[name = "exportMode"]
-    pub export_mode: Integer,
+    pub export_mode: Option<Integer>,
     #[name = "innerText"]
     pub inner_text: Option<String>,
 }
