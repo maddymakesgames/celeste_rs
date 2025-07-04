@@ -11,6 +11,8 @@ use crate::maps::{
     var_types::{EncodedVar, EncodedVarError},
 };
 
+use super::elements::entities::{Entity, ErasedEntity};
+
 /// Helper to parse [MapElement] implementors from [RawMapElement]s
 pub struct MapParser<'a> {
     pub(crate) verbose_debug: bool,
@@ -98,6 +100,56 @@ impl MapParser<'_> {
                     .map_err(|e| (parser.element_name().to_owned(), e))
             } else {
                 Ok(Box::new(raw.clone()) as DynMapElement)
+            }
+        });
+
+        // Preallocate only enough for 1/4 of the possible errors
+        // child lists can be long so we don't really want to preallocate the entire
+        // length twice
+        let mut errors = Vec::with_capacity(self.raw.children.len() / 4);
+        let mut parsed = Vec::with_capacity(self.raw.children.len());
+
+        for element in parsed_elements {
+            match element {
+                Ok(p) => parsed.push(p),
+                Err(e) => errors.push(e),
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(parsed)
+        } else {
+            Err(MapElementParsingError::MultiError { errors })
+        }
+    }
+
+    /// Parse all the children of the current elements as [`DynEntity`](super::elements::entities::DynEntity) if they are entities.
+    ///
+    /// This detects if something is an entity by using [`ElementParserImpl::is_entity`].
+    /// Realistically this means a type registered via [`MapManager::add_entity`](super::MapManager::add_entity_parser).
+    pub fn parse_any_entity(&self) -> Result<Vec<Box<dyn ErasedEntity>>, MapElementParsingError> {
+        let parsed_elements = self.raw.children.iter().filter_map(|raw| {
+            if let Some(parser) = self.parsers.get(raw.name.to_string(self.lookup)) {
+                if parser.is_entity() {
+                    if self.verbose_debug {
+                        println!("{}", parser.element_name());
+                    }
+
+                    parser
+                        .element_from_raw(MapParser {
+                            verbose_debug: self.verbose_debug,
+                            lookup: self.lookup,
+                            raw,
+                            parsers: self.parsers,
+                        })
+                        .map(|d| parser.cast_to_entity(d))
+                        .map_err(|e| (parser.element_name().to_owned(), e))
+                        .transpose()
+                } else {
+                    None
+                }
+            } else {
+                None
             }
         });
 
@@ -303,12 +355,13 @@ impl From<EncodedVarError> for MapElementParsingError {
 
 /// Represents something that can parse elements.
 ///
-/// This shouldn't really be implemented by users, the only real use for this is
-/// in [MapManager](super::MapManager) with [ElementParser]s.
+/// The only reason to manually implement this is if you need more type erasure
 pub trait ElementParserImpl: Any {
     fn element_name(&self) -> &'static str;
     fn element_from_raw(&self, parser: MapParser) -> Result<DynMapElement, MapElementParsingError>;
     fn element_to_raw(&self, element: &dyn ErasedMapElement, encoder: &mut MapEncoder);
+    fn is_entity(&self) -> bool;
+    fn cast_to_entity(&self, element: Box<dyn ErasedMapElement>) -> Option<Box<dyn ErasedEntity>>;
 }
 
 /// A parser of [MapElement]s
@@ -338,5 +391,54 @@ impl<T: MapElement> ElementParserImpl for ElementParser<T> {
     fn element_to_raw(&self, element: &dyn ErasedMapElement, encoder: &mut MapEncoder) {
         let element = unsafe { &*(element as *const dyn ErasedMapElement as *const T) };
         element.to_raw(encoder)
+    }
+
+    fn is_entity(&self) -> bool {
+        false
+    }
+
+    fn cast_to_entity(&self, _element: Box<dyn ErasedMapElement>) -> Option<Box<dyn ErasedEntity>> {
+        None
+    }
+}
+
+/// A parser of [MapEntities](super::entities::MapEntity)
+pub struct EntityParser<T: Entity>(PhantomData<T>);
+
+impl<T: Entity> EntityParser<T> {
+    pub fn new() -> Self {
+        Self(PhantomData)
+    }
+}
+
+impl<T: Entity> Default for EntityParser<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T: Entity> ElementParserImpl for EntityParser<T> {
+    fn element_name(&self) -> &'static str {
+        T::NAME
+    }
+
+    fn element_from_raw(&self, parser: MapParser) -> Result<DynMapElement, MapElementParsingError> {
+        T::from_raw(parser).map(|e| Box::new(e) as DynMapElement)
+    }
+
+    fn element_to_raw(&self, element: &dyn ErasedMapElement, encoder: &mut MapEncoder) {
+        let element = unsafe { &*(element as *const dyn ErasedMapElement as *const T) };
+        element.to_raw(encoder)
+    }
+
+    fn is_entity(&self) -> bool {
+        true
+    }
+
+    fn cast_to_entity(&self, element: Box<dyn ErasedMapElement>) -> Option<Box<dyn ErasedEntity>> {
+        (element as Box<dyn Any>)
+            .downcast::<T>()
+            .ok()
+            .map(|d| d as Box<dyn ErasedEntity>)
     }
 }

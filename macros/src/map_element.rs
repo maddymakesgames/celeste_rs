@@ -5,7 +5,12 @@ use syn::{Data, DeriveInput, Error, Expr, Meta, Type, spanned::Spanned};
 enum FieldType {
     Normal(Expr, bool),
     Optional(Expr, bool),
-    Child(bool, bool, bool),
+    Child {
+        is_vec: bool,
+        is_optional: bool,
+        is_dyn: bool,
+        is_entity: bool,
+    },
 }
 
 pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Error> {
@@ -92,10 +97,12 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
                             false
                         };
 
-                        fields.push((
-                            field.ident.clone().unwrap(),
-                            FieldType::Child(is_vec, is_optional, false),
-                        ));
+                        fields.push((field.ident.clone().unwrap(), FieldType::Child {
+                            is_vec,
+                            is_optional,
+                            is_dyn: false,
+                            is_entity: false,
+                        }));
                     } else if path.is_ident("dyn_child") {
                         if found_child {
                             return Err(Error::new(
@@ -115,10 +122,37 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
                         found_child = true;
                         found_dyn_child = true;
 
-                        fields.push((
-                            field.ident.clone().unwrap(),
-                            FieldType::Child(true, false, true),
-                        ));
+                        fields.push((field.ident.clone().unwrap(), FieldType::Child {
+                            is_vec: true,
+                            is_optional: false,
+                            is_dyn: true,
+                            is_entity: false,
+                        }));
+                    } else if path.is_ident("dyn_entities") {
+                        if found_child {
+                            return Err(Error::new(
+                                path.span(),
+                                "dyn_entities field must be the only child field",
+                            ));
+                        }
+
+                        if found_rle {
+                            return Err(Error::new(
+                                path.span(),
+                                "Can't have both rle and dyn_entities on a field",
+                            ));
+                        }
+
+                        found_attr = true;
+                        found_child = true;
+                        found_dyn_child = true;
+
+                        fields.push((field.ident.clone().unwrap(), FieldType::Child {
+                            is_vec: true,
+                            is_optional: false,
+                            is_dyn: true,
+                            is_entity: true,
+                        }));
                     },
                 Meta::NameValue(name_value) =>
                     if name_value.path.is_ident("name") {
@@ -155,10 +189,36 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
     let parsers = fields.iter().map(|(name, field_type)| match field_type {
         FieldType::Normal(expr, _) => quote! {#name: parser.get_attribute(#expr)?,},
         FieldType::Optional(expr, _) => quote! {#name: parser.get_optional_attribute(#expr)?,},
-        FieldType::Child(false, true, _) => quote! {#name: parser.parse_optional_element()?,},
-        FieldType::Child(false, false, _) => quote! {#name: parser.parse_element()?,},
-        FieldType::Child(true, _, false) => quote! {#name: parser.parse_all_elements()?, },
-        FieldType::Child(true, _, true) => quote! {#name: parser.parse_any_element()?, },
+        FieldType::Child {
+            is_vec: false,
+            is_optional: true,
+            is_dyn: _,
+            is_entity: _,
+        } => quote! {#name: parser.parse_optional_element()?,},
+        FieldType::Child {
+            is_vec: false,
+            is_optional: false,
+            is_dyn: _,
+            is_entity: _,
+        } => quote! {#name: parser.parse_element()?,},
+        FieldType::Child {
+            is_vec: true,
+            is_optional: _,
+            is_dyn: false,
+            is_entity: _,
+        } => quote! {#name: parser.parse_all_elements()?, },
+        FieldType::Child {
+            is_vec: true,
+            is_optional: _,
+            is_dyn: true,
+            is_entity: false,
+        } => quote! {#name: parser.parse_any_element()?, },
+        FieldType::Child {
+            is_vec: true,
+            is_optional: _,
+            is_dyn: true,
+            is_entity: true,
+        } => quote! {#name: parser.parse_any_entity()?, },
     });
 
     let encoders = fields.iter().map(|(name, field_type)| match field_type {
@@ -166,9 +226,10 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
         FieldType::Normal(expr, true) => quote! {encoder.attribute(#expr, #celeste_rs::maps::EncodedVar::new_rle_str(&self.#name))},
         FieldType::Optional(expr, false) => quote! {encoder.optional_attribute(#expr, &self.#name)},
         FieldType::Optional(expr, true) => quote! {encoder.optional_attribute(#expr, &self.#name.as_ref().map(#celeste_rs::maps::EncodedVar::new_rle_str))},
-        FieldType::Child(false, false, _) => quote! {encoder.child(&self.#name)},
-        FieldType::Child(false, true, _) => quote! {if let Some(v) = &self.#name {encoder.child(v);}},
-        FieldType::Child(true, ..) => quote! {encoder.children(&self.#name)},
+        FieldType::Child{is_vec: false, is_optional: false, .. } => quote! {encoder.child(&self.#name)},
+        FieldType::Child{is_vec: false, is_optional: true, .. } => quote! {if let Some(v) = &self.#name {encoder.child(v);}},
+        FieldType::Child{is_vec: true, is_dyn: true, ..} => quote! {for e in &self.#name {encoder.dyn_child(e.as_ref())}},
+        FieldType::Child{is_vec: true, ..} => quote! {encoder.children(&self.#name)},
     });
 
     Ok(quote! {

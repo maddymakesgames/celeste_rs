@@ -192,7 +192,7 @@ pub fn root_tag(
     .into()
 }
 
-#[proc_macro_derive(MapElement, attributes(child, name, dyn_child, rle))]
+#[proc_macro_derive(MapElement, attributes(child, name, dyn_child, rle, dyn_entities))]
 /// Derives the `MapElement` trait.
 ///
 /// Every field in the struct needs to be annotated with either `child`, `name`, or `dyn_child`.

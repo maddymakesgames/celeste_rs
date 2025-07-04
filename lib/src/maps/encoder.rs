@@ -52,6 +52,20 @@ impl MapEncoder<'_> {
         self.children.push(child);
     }
 
+    /// Pushes a new child [MapElement](crate::maps::MapElement) onto the raw element
+    ///
+    /// This is separate from [child](MapEncoder::child) because trait upcasting doesn't work well unless its to an explicit trait object.
+    pub fn dyn_child(&mut self, child: &dyn ErasedMapElement) {
+        let child_name = self.lookup.index_string(child.name());
+        let mut fork = self.fork(child_name);
+
+        child.to_raw(&mut fork);
+
+        let child = fork.resolve();
+
+        self.children.push(child);
+    }
+
     /// Pushes all the [MapElement](crate::maps::MapElement)s in the list as children on the raw elements
     pub fn children<T: ErasedMapElement>(&mut self, children: impl AsRef<[T]>) {
         let children = children.as_ref();

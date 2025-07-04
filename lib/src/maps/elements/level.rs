@@ -7,6 +7,8 @@ use crate::maps::{
     var_types::{Float, Integer},
 };
 
+use super::entities::DynEntity;
+
 #[derive(Debug, MapElement)]
 #[name = "levels"]
 pub struct Levels {
@@ -211,6 +213,6 @@ pub struct Entities {
     pub offset_x: Option<Float>,
     #[name = "offsetY"]
     pub offset_y: Option<Float>,
-    #[dyn_child]
-    pub entities: Vec<DynMapElement>,
+    #[dyn_entities]
+    pub entities: Vec<DynEntity>,
 }

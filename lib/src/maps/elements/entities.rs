@@ -1,6 +1,7 @@
 use celeste_rs_macros::EntityData;
 
 use crate::maps::{
+    ErasedMapElement,
     MapElement,
     MapManager,
     ResolvableString,
@@ -11,6 +12,62 @@ use crate::maps::{
 };
 
 use std::{any::Any, fmt::Debug};
+
+pub trait Entity: MapElement {
+    fn id(&self) -> Integer;
+    fn x(&self) -> Float;
+    fn y(&self) -> Float;
+    fn width(&self) -> Option<Integer>;
+    fn height(&self) -> Option<Integer>;
+    fn origin_x(&self) -> Float;
+    fn origin_y(&self) -> Float;
+    fn kind(&self) -> &'static str;
+}
+
+pub trait ErasedEntity: ErasedMapElement {
+    fn id(&self) -> Integer;
+    fn x(&self) -> Float;
+    fn y(&self) -> Float;
+    fn width(&self) -> Option<Integer>;
+    fn height(&self) -> Option<Integer>;
+    fn origin_x(&self) -> Float;
+    fn origin_y(&self) -> Float;
+    fn kind(&self) -> &'static str;
+}
+
+impl<T: Entity> ErasedEntity for T {
+    fn id(&self) -> Integer {
+        self.id()
+    }
+
+    fn x(&self) -> Float {
+        self.x()
+    }
+
+    fn y(&self) -> Float {
+        self.y()
+    }
+
+    fn width(&self) -> Option<Integer> {
+        self.width()
+    }
+
+    fn height(&self) -> Option<Integer> {
+        self.height()
+    }
+
+    fn origin_x(&self) -> Float {
+        self.origin_x()
+    }
+
+    fn origin_y(&self) -> Float {
+        self.origin_y()
+    }
+
+    fn kind(&self) -> &'static str {
+        self.kind()
+    }
+}
 
 #[derive(Debug)]
 /// The full struct of an [Entity] implementaiton
@@ -27,6 +84,7 @@ pub struct MapEntity<T: EntityData> {
     pub origin_y: Float,
     pub entity: T,
 }
+
 
 impl<T: EntityData> MapElement for MapEntity<T> {
     const NAME: &'static str = T::NAME;
@@ -57,9 +115,74 @@ impl<T: EntityData> MapElement for MapEntity<T> {
     }
 }
 
+impl<E: EntityData> Entity for MapEntity<E> {
+    fn id(&self) -> Integer {
+        self.id
+    }
+
+    fn x(&self) -> Float {
+        self.x
+    }
+
+    fn y(&self) -> Float {
+        self.y
+    }
+
+    fn width(&self) -> Option<Integer> {
+        self.width
+    }
+
+    fn height(&self) -> Option<Integer> {
+        self.height
+    }
+
+    fn origin_x(&self) -> Float {
+        self.origin_x
+    }
+
+    fn origin_y(&self) -> Float {
+        self.origin_y
+    }
+
+    fn kind(&self) -> &'static str {
+        E::NAME
+    }
+}
+
+impl dyn ErasedEntity {
+    pub fn downcast<T: EntityData>(&self) -> Option<&MapEntity<T>> {
+        // Runtime check that this is a T
+        if std::any::TypeId::of::<T>() == (*self).type_id() {
+            // EntityData NAMEs are *required* to be unique
+            // as long as that holds this is safe
+            // I seriously doubt this will be broken but its documented in EntityData
+            unsafe { Some(&*(self as *const dyn ErasedEntity as *const MapEntity<T>)) }
+        } else {
+            None
+        }
+    }
+
+    pub fn downcast_mut<T: EntityData>(&mut self) -> Option<&mut MapEntity<T>> {
+        // Runtime check that this is a T
+        if std::any::TypeId::of::<T>() == (*self).type_id() {
+            // EntityData NAMEs are *required* to be unique
+            // as long as that holds this is safe
+            // I seriously doubt this will be broken but its documented in EntityData
+            unsafe { Some(&mut *(self as *mut dyn ErasedEntity as *mut MapEntity<T>)) }
+        } else {
+            None
+        }
+    }
+}
+
+pub type DynEntity = Box<dyn ErasedEntity>;
+
 /// Represents an entity, anything that can be stored in [Entities](super::Entities).
 pub trait EntityData: Debug + Any {
     /// The name of the entity in the binary file
+    ///
+    /// This has to be unique or else downcasting [`dyn ErasedEntity`](ErasedEntity) will be unsound.<br>
+    /// Despite this, the trait is not marked as unsafe as there is a runtime check against this case when using [`MapManager`] which is the main case this library supports.
     const NAME: &'static str;
 
     fn from_raw(parser: MapParser) -> Result<Self, MapElementParsingError>
