@@ -297,6 +297,16 @@ impl Debug for Integer {
     }
 }
 
+impl Display for Integer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::U8(arg0) => write!(f, "{arg0}"),
+            Self::I16(arg0) => write!(f, "{arg0}"),
+            Self::I32(arg0) => write!(f, "{arg0}"),
+        }
+    }
+}
+
 impl From<u8> for Integer {
     fn from(value: u8) -> Self {
         Integer::U8(value)
@@ -456,6 +466,17 @@ impl Debug for Float {
             Self::I16(arg0) => write!(f, "{arg0}_i16"),
             Self::I32(arg0) => write!(f, "{arg0}_i32"),
             Self::F32(arg0) => write!(f, "{arg0}_f32"),
+        }
+    }
+}
+
+impl Display for Float {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::U8(arg0) => write!(f, "{arg0}"),
+            Self::I16(arg0) => write!(f, "{arg0}"),
+            Self::I32(arg0) => write!(f, "{arg0}"),
+            Self::F32(arg0) => write!(f, "{arg0}"),
         }
     }
 }
