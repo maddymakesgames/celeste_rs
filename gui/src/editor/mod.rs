@@ -232,7 +232,7 @@ enum EditorTabData {
     Metadata(()),
     Stats(()),
     Assists(()),
-    LevelSets(LevelSetsData),
+    LevelSets(Box<LevelSetsData>),
     Sessions(SessionsData),
     Operations(OperationsData),
 }
@@ -243,7 +243,7 @@ impl EditorTabData {
             EditorTabData::Metadata(()),
             EditorTabData::Stats(()),
             EditorTabData::Assists(()),
-            EditorTabData::LevelSets(LevelSetsData::new()),
+            EditorTabData::LevelSets(Box::new(LevelSetsData::new())),
             EditorTabData::Sessions(SessionsData::new()),
             EditorTabData::Operations(OperationsData::new()),
         ]

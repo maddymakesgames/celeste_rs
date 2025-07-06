@@ -155,7 +155,7 @@ impl From<MapWriteError> for std::io::Error {
     fn from(val: MapWriteError) -> std::io::Error {
         match val {
             MapWriteError::IoError(e) => e,
-            c => std::io::Error::new(std::io::ErrorKind::Other, Box::new(c)),
+            c => std::io::Error::other(Box::new(c)),
         }
     }
 }

@@ -22,6 +22,8 @@ use tokio::{
 use crate::{ErrorSeverity, PopupWindow, spawn};
 
 #[allow(dead_code)]
+// TODO: box ParsedModSave, its annoying so I'm not doing it rn
+#[allow(clippy::large_enum_variant)]
 pub enum LoadableFiles {
     SaveData(String, Box<SaveData>),
     ModSaveData(String, ModSaveData),

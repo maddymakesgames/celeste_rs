@@ -327,8 +327,8 @@ impl Display for MapElementParsingError {
             MapElementParsingError::Custom(e) => Display::fmt(e, f),
             MapElementParsingError::NoMatchingElementFound { expected, found } => write!(
                 f,
-                "No element of type \"{}\" was found in the children of a \"{}\" element",
-                expected, found
+                "No element of type \"{expected}\" was found in the children of a \"{found}\" \
+                 element"
             ),
             MapElementParsingError::AttributeMissing { name } =>
                 write!(f, "Missing attribute \"{name}\""),
