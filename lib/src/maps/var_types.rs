@@ -361,6 +361,38 @@ impl Add for Integer {
     }
 }
 
+macro_rules! ops {
+    ($($type_name: ident [$($num_ty: ty),*] $op_traits: tt, $assign_traits: tt),*) => {
+        $(
+            $(
+                ops!{inner $type_name $num_ty, $op_traits}
+                ops!{assign $type_name $num_ty, $assign_traits}
+            )*
+        )*
+    };
+    (inner $type_name: ident $num_ty: ty, ($(($op_trait: ident, $func_name: ident)),*)) => {
+        $(impl $op_trait<$num_ty> for $type_name {
+            type Output = $type_name;
+
+            fn $func_name(self, rhs: $num_ty) -> Self::Output {
+                self.$func_name($type_name::from(rhs))
+            }
+        })*
+    };
+    (assign $type_name: ident $num_ty: ty, ($(($op_trait: ident, $func_name: ident)),*)) => {
+        $(impl $op_trait<$num_ty> for $type_name {
+            fn $func_name(&mut self, rhs: $num_ty) {
+                self.$func_name($type_name::from(rhs));
+            }
+        })*
+    };
+}
+
+ops! {
+    Integer [u8, i16, i32] ((Add, add), (Sub, sub), (Mul, mul), (Div, div)), ((AddAssign, add_assign), (SubAssign, sub_assign), (MulAssign, mul_assign), (DivAssign, div_assign)),
+    Float [u8, i16, i32, f32] ((Add, add), (Sub, sub), (Mul, mul), (Div, div)), ((AddAssign, add_assign), (SubAssign, sub_assign), (MulAssign, mul_assign), (DivAssign, div_assign))
+}
+
 impl AddAssign for Integer {
     fn add_assign(&mut self, rhs: Self) {
         *self = *self + rhs;
@@ -496,6 +528,12 @@ impl From<i16> for Float {
 impl From<i32> for Float {
     fn from(value: i32) -> Self {
         Float::I32(value)
+    }
+}
+
+impl From<f32> for Float {
+    fn from(value: f32) -> Self {
+        Float::F32(value)
     }
 }
 
