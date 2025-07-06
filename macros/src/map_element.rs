@@ -56,11 +56,11 @@ pub(super) fn map_element_derive(input: DeriveInput) -> Result<TokenStream, Erro
         let mut found_attr = false;
 
         for attr in &field.attrs {
-            if let Meta::Path(path) = &attr.meta {
-                if path.is_ident("rle") {
-                    found_attr = true;
-                    found_rle = true;
-                }
+            if let Meta::Path(path) = &attr.meta
+                && path.is_ident("rle")
+            {
+                found_attr = true;
+                found_rle = true;
             }
         }
 

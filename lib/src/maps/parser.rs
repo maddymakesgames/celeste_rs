@@ -129,25 +129,23 @@ impl MapParser<'_> {
     /// Realistically this means a type registered via [`MapManager::add_entity`](super::MapManager::add_entity_parser).
     pub fn parse_any_entity(&self) -> Result<Vec<Box<dyn ErasedEntity>>, MapElementParsingError> {
         let parsed_elements = self.raw.children.iter().filter_map(|raw| {
-            if let Some(parser) = self.parsers.get(raw.name.to_string(self.lookup)) {
-                if parser.is_entity() {
-                    if self.verbose_debug {
-                        println!("{}", parser.element_name());
-                    }
-
-                    parser
-                        .element_from_raw(MapParser {
-                            verbose_debug: self.verbose_debug,
-                            lookup: self.lookup,
-                            raw,
-                            parsers: self.parsers,
-                        })
-                        .map(|d| parser.cast_to_entity(d))
-                        .map_err(|e| (parser.element_name().to_owned(), e))
-                        .transpose()
-                } else {
-                    None
+            if let Some(parser) = self.parsers.get(raw.name.to_string(self.lookup))
+                && parser.is_entity()
+            {
+                if self.verbose_debug {
+                    println!("{}", parser.element_name());
                 }
+
+                parser
+                    .element_from_raw(MapParser {
+                        verbose_debug: self.verbose_debug,
+                        lookup: self.lookup,
+                        raw,
+                        parsers: self.parsers,
+                    })
+                    .map(|d| parser.cast_to_entity(d))
+                    .map_err(|e| (parser.element_name().to_owned(), e))
+                    .transpose()
             } else {
                 None
             }

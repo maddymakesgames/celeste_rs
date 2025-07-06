@@ -162,13 +162,13 @@ impl LevelSetsTab<'_> {
             }
 
             if delete {
-                if let LevelSetModalType::Delete = modal_type {
-                    if let Some(selected_idx) = &mut data.selected_level_set {
-                        match (*selected_idx).cmp(&idx) {
-                            Ordering::Greater => *selected_idx -= 1,
-                            Ordering::Equal => data.selected_level_set = None,
-                            Ordering::Less => {}
-                        }
+                if let LevelSetModalType::Delete = modal_type
+                    && let Some(selected_idx) = &mut data.selected_level_set
+                {
+                    match (*selected_idx).cmp(&idx) {
+                        Ordering::Greater => *selected_idx -= 1,
+                        Ordering::Equal => data.selected_level_set = None,
+                        Ordering::Less => {}
                     }
 
                     if idx > self.modded_sets.len() {
@@ -205,20 +205,18 @@ impl LevelSetsTab<'_> {
                 data.area_modal = None;
             }
 
-            if delete {
-                if let Some(set_idx) = data.selected_level_set {
-                    let set = if set_idx > self.modded_sets.len() {
-                        &mut self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
-                    } else {
-                        &mut self.modded_sets[set_idx]
-                    };
+            if delete && let Some(set_idx) = data.selected_level_set {
+                let set = if set_idx > self.modded_sets.len() {
+                    &mut self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
+                } else {
+                    &mut self.modded_sets[set_idx]
+                };
 
-                    let area = &set.areas[idx];
-                    let mut def = area.def.clone();
-                    def.cassette = false;
-                    set.areas[idx] = AreaStats::for_def(def);
-                    data.selected_mode = None;
-                }
+                let area = &set.areas[idx];
+                let mut def = area.def.clone();
+                def.cassette = false;
+                set.areas[idx] = AreaStats::for_def(def);
+                data.selected_mode = None;
             }
         }
 
@@ -229,19 +227,17 @@ impl LevelSetsTab<'_> {
                 data.mode_modal = None;
             }
 
-            if delete {
-                if let Some(set_idx) = data.selected_level_set {
-                    let set = if set_idx > self.modded_sets.len() {
-                        &mut self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
-                    } else {
-                        &mut self.modded_sets[set_idx]
-                    };
+            if delete && let Some(set_idx) = data.selected_level_set {
+                let set = if set_idx > self.modded_sets.len() {
+                    &mut self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
+                } else {
+                    &mut self.modded_sets[set_idx]
+                };
 
-                    if let Some(area_idx) = data.selected_area {
-                        let area = &mut set.areas[area_idx];
+                if let Some(area_idx) = data.selected_area {
+                    let area = &mut set.areas[area_idx];
 
-                        area.modes[idx] = AreaMode::default();
-                    }
+                    area.modes[idx] = AreaMode::default();
                 }
             }
         }
@@ -258,64 +254,64 @@ impl LevelSetsTab<'_> {
                     ui.text_edit_singleline(&mut data.level_sets_search);
                 });
                 ui.horizontal(|ui| {
-                    if ui.button("Delete Selected").clicked() {
-                        if let Some(set_idx) = data.selected_level_set {
-                            let set = if set_idx > self.modded_sets.len() {
-                                &self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
-                            } else {
-                                &self.modded_sets[set_idx]
-                            };
+                    if ui.button("Delete Selected").clicked()
+                        && let Some(set_idx) = data.selected_level_set
+                    {
+                        let set = if set_idx > self.modded_sets.len() {
+                            &self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
+                        } else {
+                            &self.modded_sets[set_idx]
+                        };
 
-                            data.level_set_modal = Some(Modal::new(
-                                "level_set_modal",
-                                RichText::new(format!("Delete {}?", &set.name)).heading(),
-                                RichText::new(format!(
-                                    "Are you sure you want to delete {}? This is irreversable.",
-                                    &set.name
-                                )),
-                                move |ui| {
-                                    ui.horizontal(|ui| {
-                                        (
-                                            set_idx,
-                                            LevelSetModalType::Delete,
-                                            ui.button("Delete").clicked(),
-                                            ui.button("Cancel").clicked(),
-                                        )
-                                    })
-                                    .inner
-                                },
-                            ));
-                        }
+                        data.level_set_modal = Some(Modal::new(
+                            "level_set_modal",
+                            RichText::new(format!("Delete {}?", &set.name)).heading(),
+                            RichText::new(format!(
+                                "Are you sure you want to delete {}? This is irreversable.",
+                                &set.name
+                            )),
+                            move |ui| {
+                                ui.horizontal(|ui| {
+                                    (
+                                        set_idx,
+                                        LevelSetModalType::Delete,
+                                        ui.button("Delete").clicked(),
+                                        ui.button("Cancel").clicked(),
+                                    )
+                                })
+                                .inner
+                            },
+                        ));
                     }
 
-                    if ui.button("Reset Selected").clicked() {
-                        if let Some(set_idx) = data.selected_level_set {
-                            let set = if set_idx > self.modded_sets.len() {
-                                &self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
-                            } else {
-                                &self.modded_sets[set_idx]
-                            };
+                    if ui.button("Reset Selected").clicked()
+                        && let Some(set_idx) = data.selected_level_set
+                    {
+                        let set = if set_idx > self.modded_sets.len() {
+                            &self.modded_sets_recycle_bin[set_idx - self.modded_sets.len()]
+                        } else {
+                            &self.modded_sets[set_idx]
+                        };
 
-                            data.level_set_modal = Some(Modal::new(
-                                "level_set_modal",
-                                RichText::new(format!("Reset {}?", &set.name)).heading(),
-                                RichText::new(format!(
-                                    "Are you sure you want to reset {}? This is irreversable.",
-                                    &set.name
-                                )),
-                                move |ui| {
-                                    ui.horizontal(|ui| {
-                                        (
-                                            set_idx,
-                                            LevelSetModalType::Reset,
-                                            ui.button("Reset").clicked(),
-                                            ui.button("Cancel").clicked(),
-                                        )
-                                    })
-                                    .inner
-                                },
-                            ));
-                        }
+                        data.level_set_modal = Some(Modal::new(
+                            "level_set_modal",
+                            RichText::new(format!("Reset {}?", &set.name)).heading(),
+                            RichText::new(format!(
+                                "Are you sure you want to reset {}? This is irreversable.",
+                                &set.name
+                            )),
+                            move |ui| {
+                                ui.horizontal(|ui| {
+                                    (
+                                        set_idx,
+                                        LevelSetModalType::Reset,
+                                        ui.button("Reset").clicked(),
+                                        ui.button("Cancel").clicked(),
+                                    )
+                                })
+                                .inner
+                            },
+                        ));
                     }
                 });
             });

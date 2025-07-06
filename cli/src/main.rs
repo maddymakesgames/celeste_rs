@@ -34,10 +34,10 @@ fn main() {
     }
 
     for arg in args {
-        if let Some(opt) = arg.strip_prefix("--") {
-            if let "verbose" = opt {
-                verbose = true
-            }
+        if let Some(opt) = arg.strip_prefix("--")
+            && "verbose" == opt
+        {
+            verbose = true
         } else {
             arguments.push(arg);
         }
@@ -118,12 +118,7 @@ fn print_stats(args: Vec<String>, verbose: bool) -> Option<()> {
     if args.len() == 2 {
         let search_sid = &args[1];
         if let Some(area) = save_file.find_area_by_sid(search_sid) {
-            println!(
-                r#"SID: {}
-ID: {}"#,
-                area.def.sid(),
-                area.def.id
-            );
+            println!("SID: {}\nID: {}", area.def.sid(), area.def.id);
 
             for (i, mode) in area.modes.iter().enumerate() {
                 let checkpoints = mode.checkpoints.len();

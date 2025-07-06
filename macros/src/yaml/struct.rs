@@ -299,12 +299,10 @@ fn get_nested_ty(ty: &Type) -> Option<&Type> {
     if let Type::Path(TypePath { path, .. }) = ty {
         let segment = path.segments.first()?;
 
-        if let PathArguments::AngleBracketed(args) = &segment.arguments {
-            if let GenericArgument::Type(t) = &args.args.first()? {
-                Some(t)
-            } else {
-                None
-            }
+        if let PathArguments::AngleBracketed(args) = &segment.arguments
+            && let GenericArgument::Type(t) = &args.args.first()?
+        {
+            Some(t)
         } else {
             None
         }

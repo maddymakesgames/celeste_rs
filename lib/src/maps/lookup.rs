@@ -44,11 +44,11 @@ impl LookupTable {
     pub fn add_string(&mut self, str: impl AsRef<str>) -> ResolvableString {
         let str = str.as_ref();
         if !self.lookup_contains(str) {
-            if let Some(index) = self.strings_to_add.iter().position(|s| s == str) {
-                if let Err(idx) = self.binary_search(str) {
-                    let str = self.strings_to_add.swap_remove(index);
-                    self.lookup_strings.insert(idx, str);
-                }
+            if let Some(index) = self.strings_to_add.iter().position(|s| s == str)
+                && let Err(idx) = self.binary_search(str)
+            {
+                let str = self.strings_to_add.swap_remove(index);
+                self.lookup_strings.insert(idx, str);
             } else {
                 self.strings_to_add.push(str.to_owned());
             }

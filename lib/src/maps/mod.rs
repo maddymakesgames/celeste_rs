@@ -240,10 +240,10 @@ impl RawMapElement {
         for attr in &mut self.attributes {
             attr.name.to_index(lookup_table);
 
-            if let EncodedVar::String(str) = &attr.value {
-                if let Some(idx) = lookup_table.lookup_string(str) {
-                    attr.value = EncodedVar::LookupIndex(idx);
-                }
+            if let EncodedVar::String(str) = &attr.value
+                && let Some(idx) = lookup_table.lookup_string(str)
+            {
+                attr.value = EncodedVar::LookupIndex(idx);
             }
         }
 

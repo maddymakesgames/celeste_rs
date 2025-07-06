@@ -101,14 +101,13 @@ pub(super) fn trigger_derive(input: DeriveInput) -> Result<TokenStream, Error> {
             }
         }
 
-        if !found_attr {
-            if let Type::Path(p) = &field.ty {
-                if p.path.segments.last().is_some_and(|p| p.ident == "Node") {
-                    found_attr = true;
-                    found_node = true;
-                    fields.push((field.ident.clone().unwrap(), FieldType::Node(false, false)));
-                }
-            }
+        if !found_attr
+            && let Type::Path(p) = &field.ty
+            && p.path.segments.last().is_some_and(|p| p.ident == "Node")
+        {
+            found_attr = true;
+            found_node = true;
+            fields.push((field.ident.clone().unwrap(), FieldType::Node(false, false)));
         }
 
         if !found_attr {

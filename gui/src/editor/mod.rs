@@ -178,11 +178,11 @@ fn entity_id_list_widget(
                 })
             });
 
-        if let Some(idx) = to_remove {
-            if let Some(counter) = total_entity_count {
-                entities.remove(idx);
-                *counter -= 1;
-            }
+        if let Some(idx) = to_remove
+            && let Some(counter) = total_entity_count
+        {
+            entities.remove(idx);
+            *counter -= 1;
         }
     });
     ui.horizontal(|ui| {

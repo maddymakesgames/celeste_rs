@@ -191,10 +191,10 @@ impl App for SaveEditor {
             if add_empty_tab {
                 let mut max_file = 0;
                 for (name, _) in &self.screens {
-                    if let Ok(num) = name.parse::<i32>() {
-                        if num >= max_file {
-                            max_file = num + 1;
-                        }
+                    if let Ok(num) = name.parse::<i32>()
+                        && num >= max_file
+                    {
+                        max_file = num + 1;
                     }
                 }
 

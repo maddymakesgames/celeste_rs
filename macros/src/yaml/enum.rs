@@ -28,18 +28,16 @@ pub(super) fn yaml_derive_enum(
             let mut name_str = v.ident.to_string();
 
             for attr in &v.attrs {
-                if let Meta::NameValue(mnv) = &attr.meta {
-                    if mnv.path.is_ident("rename") {
-                        if let Expr::Lit(ExprLit {
-                            lit: Lit::Str(lit_str),
-                            ..
-                        }) = &mnv.value
-                        {
-                            name_str = lit_str.value();
-                            // We don't want to allow mutliple renames
-                            break;
-                        }
-                    }
+                if let Meta::NameValue(mnv) = &attr.meta
+                    && mnv.path.is_ident("rename")
+                    && let Expr::Lit(ExprLit {
+                        lit: Lit::Str(lit_str),
+                        ..
+                    }) = &mnv.value
+                {
+                    name_str = lit_str.value();
+                    // We don't want to allow mutliple renames
+                    break;
                 }
             }
 
