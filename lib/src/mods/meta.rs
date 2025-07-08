@@ -141,7 +141,7 @@ impl ModMeta {
                 Yaml::Value(Scalar::FloatingPoint(f)) => Version::from_str(&f.to_string())
                     .map_err(|e| YamlParseError::Custom(e.to_string()))?,
                 Yaml::Value(Scalar::String(s)) =>
-                    Version::from_str(&s).map_err(|e| YamlParseError::Custom(e.to_string()))?,
+                    Version::from_str(s).map_err(|e| YamlParseError::Custom(e.to_string()))?,
                 _ => Err(YamlParseError::Custom(
                     "everest.yaml Version isn't a string or a float".to_owned(),
                 ))?,
