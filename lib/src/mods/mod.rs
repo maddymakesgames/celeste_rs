@@ -69,7 +69,7 @@ pub trait FileProvider {
     ) -> Result<Vec<u8>, FileProviderError<Self::Err>>;
 }
 
-struct ZipBuf<R: Read + Seek> {
+pub struct ZipBuf<R: Read + Seek> {
     zip: ZipArchive<R>,
 }
 
@@ -111,7 +111,7 @@ impl<R: Read + Seek> FileProvider for ZipBuf<R> {
     }
 }
 
-struct DirBuf {
+pub struct DirBuf {
     paths: Vec<PathBuf>,
     root: PathBuf,
     opened_files: BTreeMap<PathBuf, File>,
