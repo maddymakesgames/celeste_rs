@@ -225,6 +225,14 @@ impl<T: FileProvider> ModManager<T> {
     pub fn mods_mut(&mut self) -> &mut Vec<Mod> {
         self.mods.mods_mut()
     }
+
+    pub fn collection(&self) -> &ModCollection {
+        &self.mods
+    }
+
+    pub fn collection_mut(&mut self) -> &mut ModCollection {
+        &mut self.mods
+    }
 }
 
 pub struct ModCollection {
