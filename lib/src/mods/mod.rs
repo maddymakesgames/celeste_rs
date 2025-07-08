@@ -1,6 +1,7 @@
 use std::{
     collections::{BTreeMap, HashMap},
     error::Error,
+    ffi::OsStr,
     fmt::{Debug, Display},
     fs::{File, read_dir},
     io::{Read, Result as IoResult, Seek},
@@ -323,7 +324,12 @@ impl ModCollection {
                 }
             }
 
-            if top_level_dir == "Tutorials" {
+            if top_level_dir == "Tutorials"
+                && path
+                    .extension()
+                    .and_then(OsStr::to_str)
+                    .is_some_and(|s| s == "bin")
+            {
                 let mut file = provider.get_file(&path)?;
 
                 let tutorial = Playback::from_reader(&mut file)?;
@@ -332,7 +338,7 @@ impl ModCollection {
             } else if top_level_dir == "Maps" {
                 let mut file = provider.get_file(&path)?;
                 // Doesn't panic since we check starts_with
-                let path = path.strip_prefix("Mods").unwrap();
+                let path = path.strip_prefix("Maps").unwrap();
                 // We checked that extension returns Some so this will work
                 let path_str = path.to_str().unwrap();
 
@@ -340,18 +346,23 @@ impl ModCollection {
                 let index_of_dot = path_str.find('.').unwrap();
 
                 let sid = &path_str[.. index_of_dot];
+                let extension = &path_str[index_of_dot ..];
 
-
-                if path.ends_with(".bin") {
-                    let mut mm = MapManager::new(&mut file)?;
-                    mm.default_parsers();
-                    let map = mm.parse_map()?;
-                    // Safe since we check we can convert to String
-                    map_bins.insert(sid.to_owned(), map);
-                } else if path.ends_with(".altsideshelper.meta.yaml") {
-                    // TODO: altsides helper stuff
-                } else if path.ends_with(".meta.yaml") {
-                    map_metas.insert(sid.to_owned(), MapMeta::parse_from_reader(&mut file)?);
+                match extension {
+                    ".bin" => {
+                        let mut mm = MapManager::new(&mut file)?;
+                        mm.default_parsers();
+                        let map = mm.parse_map()?;
+                        // Safe since we check we can convert to String
+                        map_bins.insert(sid.to_owned(), map);
+                    }
+                    ".altsideshelper.meta.yaml" => {
+                        // TODO: altsides helper stuff
+                    }
+                    ".meta.yaml" => {
+                        map_metas.insert(sid.to_owned(), MapMeta::parse_from_reader(&mut file)?);
+                    }
+                    _ => {}
                 }
             }
         }
