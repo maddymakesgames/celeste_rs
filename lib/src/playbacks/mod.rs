@@ -42,7 +42,6 @@ impl Playback {
         }
 
         let frames = reader.read_i32()?;
-        println!("frames: {frames}");
         let mut buf = Vec::with_capacity(frames as usize);
 
         for _ in 0 .. frames {
