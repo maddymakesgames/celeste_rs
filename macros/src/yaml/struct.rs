@@ -149,9 +149,13 @@ fn gen_type_parse(name: &str, ty: &Type) -> Result<TokenStream, Error> {
 fn gen_path_parser(name: &str, ty: &Type) -> Result<TokenStream, Error> {
     Ok(if let Some(ty) = get_option_ty(ty) {
         let parser = gen_type_parse(name, ty)?;
-        quote! {Ok({#parser}.ok())}
+        quote! {match {#parser} {
+            Ok(v) => Ok(Some(v)),
+            Err(YamlParseError::MissingField(_)) => Ok(None),
+            Err(e) => Err(e)
+        }}
     } else {
-        quote! {<#ty as FromYaml>::parse_from_yaml(&yaml[#name])}
+        quote! {yaml.as_mapping_get(#name).ok_or(YamlParseError::MissingField(#name)).and_then(<#ty as FromYaml>::parse_from_yaml)}
     })
 }
 
@@ -164,7 +168,7 @@ fn gen_array_parser(name: &str, ty: &Type, len: &Expr) -> Result<TokenStream, Er
     };
 
     let header = quote! {
-        let arr = yaml[#name].try_as_vec()?;
+        let arr = yaml.as_mapping_get(#name).ok_or(YamlParseError::MissingField(#name))?.try_as_vec()?;
         let mut output = #output_dec;
         let mut i = 0;
     };

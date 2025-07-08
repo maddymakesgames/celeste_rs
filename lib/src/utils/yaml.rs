@@ -267,6 +267,7 @@ pub enum YamlParseError {
     TypeMismatch(&'static str, &'static str),
     ArrayLenMismatch(&'static str, usize, usize),
     UnknownVariant(&'static str, String),
+    MissingField(&'static str),
     ScanError(ScanError),
     IoError(Arc<std::io::Error>),
     Custom(String),
@@ -291,6 +292,8 @@ impl Display for YamlParseError {
                 f,
                 "Found unknown enum variant \"{found}\" when parsing {enum_name}"
             ),
+            YamlParseError::MissingField(field) =>
+                write!(f, "Expected '{field}' but was not found"),
         }
     }
 }
