@@ -1,6 +1,6 @@
-use std::{cmp::Ordering, fmt::Display};
+use std::{cmp::Ordering, error::Error, fmt::Display, num::ParseIntError, str::FromStr};
 
-use saphyr::{Mapping, Yaml};
+use saphyr::{Mapping, Scalar, Yaml};
 
 use crate::utils::{FromYaml, YamlExt, YamlParseError, YamlWriteError};
 
@@ -23,6 +23,65 @@ impl Version {
         self.major == other.major
             && (other.minor.is_none() || self.minor >= other.minor)
             && (other.patch.is_none() || self.patch >= other.patch)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum VersionParseError {
+    WildcardMajor,
+    NoMajorVersion,
+    NoMinorVersion,
+    InvalidInt(ParseIntError),
+}
+
+impl Error for VersionParseError {}
+
+impl Display for VersionParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            VersionParseError::WildcardMajor => write!(
+                f,
+                "Version parse error: Wildcard not allowed for major version"
+            ),
+            VersionParseError::NoMajorVersion =>
+                write!(f, "Version parse error: No major version found"),
+            VersionParseError::NoMinorVersion =>
+                write!(f, "Version parse error: No minor version found"),
+            VersionParseError::InvalidInt(parse_int_error) =>
+                write!(f, "Version parse error: {parse_int_error}"),
+        }
+    }
+}
+
+impl FromStr for Version {
+    type Err = VersionParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut parts = s.split('.');
+
+        let major = match parts.next() {
+            Some("*") => return Err(VersionParseError::WildcardMajor),
+            Some(str) => str.parse::<u16>().map_err(VersionParseError::InvalidInt)?,
+            None => return Err(VersionParseError::NoMajorVersion),
+        };
+
+        let minor = match parts.next() {
+            Some("*") => None,
+            Some(str) => Some(str.parse::<u16>().map_err(VersionParseError::InvalidInt)?),
+            None => return Err(VersionParseError::NoMinorVersion),
+        };
+
+        let patch = match parts.next() {
+            Some("*") => None,
+            Some(str) => Some(str.parse::<u16>().map_err(VersionParseError::InvalidInt)?),
+            None => Some(0),
+        };
+
+        Ok(Version {
+            major,
+            minor,
+            patch,
+        })
     }
 }
 
@@ -77,59 +136,23 @@ impl ModMeta {
                 "everest.yaml mod definition found without a name".to_string(),
             ))?;
 
-        let mut version_parts = yaml["Version"]
-            .as_str()
-            .ok_or(YamlParseError::Custom(
-                "everest.yaml mod definition found without a version".to_string(),
+        let version = if let Some(y) = yaml.as_mapping_get("Version") {
+            match y {
+                Yaml::Value(Scalar::FloatingPoint(f)) => Version::from_str(&f.to_string())
+                    .map_err(|e| YamlParseError::Custom(e.to_string()))?,
+                Yaml::Value(Scalar::String(s)) =>
+                    Version::from_str(&s).map_err(|e| YamlParseError::Custom(e.to_string()))?,
+                _ => Err(YamlParseError::Custom(
+                    "everest.yaml Version isn't a string or a float".to_owned(),
+                ))?,
+            }
+        } else {
+            Err(YamlParseError::Custom(
+                "everest.yaml entry doesn't contain a version".to_owned(),
             ))?
-            .split('.');
-
-        let major = match version_parts.next() {
-            Some("*") =>
-                return Err(YamlParseError::Custom(
-                    "mod version isn't allowed to have '*' for major number".to_string(),
-                )),
-            Some(str) => str
-                .parse::<u16>()
-                .map_err(|e| e.to_string())
-                .map_err(YamlParseError::Custom)?,
-            None =>
-                return Err(YamlParseError::Custom(
-                    "mod version found with no major version number".to_string(),
-                )),
         };
 
-        let minor = match version_parts.next() {
-            Some("*") => None,
-            Some(str) => Some(
-                str.parse::<u16>()
-                    .map_err(|e| e.to_string())
-                    .map_err(YamlParseError::Custom)?,
-            ),
-            None =>
-                return Err(YamlParseError::Custom(
-                    "mod version found with no minor version number".to_string(),
-                )),
-        };
-
-        let patch = match version_parts.next() {
-            Some("*") => None,
-            Some(str) => Some(
-                str.parse::<u16>()
-                    .map_err(|e| e.to_string())
-                    .map_err(YamlParseError::Custom)?,
-            ),
-            None =>
-                return Err(YamlParseError::Custom(
-                    "mod version found with no patch version number".to_string(),
-                )),
-        };
-
-        Ok((name, Version {
-            major,
-            minor,
-            patch,
-        }))
+        Ok((name, version))
     }
 
     fn name_version_to_yaml(name: &str, version: &Version, hash: &mut Mapping) {
@@ -148,21 +171,29 @@ impl FromYaml for ModMeta {
     fn parse_from_yaml(yaml: &saphyr::Yaml) -> Result<ModMeta, YamlParseError> {
         let (name, version) = ModMeta::parse_name_version_from_yaml(yaml)?;
 
-        let dll = yaml["dll"].as_str().map(ToOwned::to_owned);
+        let dll = yaml
+            .as_mapping_get("dll")
+            .and_then(Yaml::as_str)
+            .map(ToOwned::to_owned);
 
-        let dependencies = yaml["Dependencies"]
-            .as_vec()
-            .ok_or(YamlParseError::Custom(
-                "No dependencies declared in everest.yaml".to_string(),
-            ))?
-            .iter()
-            .map(ModMeta::parse_name_version_from_yaml)
-            .collect::<Result<Vec<_>, _>>()?;
+        let dependencies = if yaml.contains_mapping_key("Dependencies") {
+            yaml["Dependencies"]
+                .as_vec()
+                .ok_or(YamlParseError::Custom(
+                    "Dependencies isn't a vec in everest.yaml".to_string(),
+                ))?
+                .iter()
+                .map(ModMeta::parse_name_version_from_yaml)
+                .collect::<Result<Vec<_>, _>>()?
+        } else {
+            Vec::new()
+        };
 
         // OptionalDependencies is an optional field so we don't error if its None
         // I'm sure theres a better way to write this but I'm so tired
-        let optional_dependencies = yaml["OptionalDependencies"]
-            .as_vec()
+        let optional_dependencies = yaml
+            .as_mapping_get("OptionalDependencies")
+            .and_then(Yaml::as_vec)
             .map(|v| {
                 v.iter()
                     .map(ModMeta::parse_name_version_from_yaml)
