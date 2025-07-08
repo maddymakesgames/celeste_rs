@@ -2,16 +2,18 @@ use std::{any::Any, fmt::Debug};
 
 use celeste_rs_macros::Trigger;
 
-use crate::maps::{
-    MapElement,
-    MapManager,
-    Node,
-    ResolvableString,
-    encoder::MapEncoder,
-    parser::{MapElementParsingError, MapParser},
-    var_types::{Character, Float, Integer},
+use crate::{
+    maps::{
+        MapElement,
+        MapManager,
+        Node,
+        ResolvableString,
+        encoder::MapEncoder,
+        parser::{MapElementParsingError, MapParser},
+        var_types::Character,
+    },
+    utils::num::{Float, Integer},
 };
-
 #[derive(Debug)]
 /// The metadata related to all triggers
 pub struct MapTrigger<T: Trigger> {

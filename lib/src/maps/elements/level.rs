@@ -1,10 +1,8 @@
 use celeste_rs_macros::MapElement;
 
-use crate::maps::{
-    DynMapElement,
-    MapElement,
-    ResolvableString,
-    var_types::{Float, Integer},
+use crate::{
+    maps::{DynMapElement, MapElement, ResolvableString},
+    utils::num::{Float, Integer},
 };
 
 use super::entities::DynEntity;

@@ -1,14 +1,17 @@
 use celeste_rs_macros::EntityData;
 
-use crate::maps::{
-    ErasedMapElement,
-    MapElement,
-    MapManager,
-    ResolvableString,
-    elements::Node,
-    encoder::MapEncoder,
-    parser::{MapElementParsingError, MapParser},
-    var_types::{Character, Float, Integer},
+use crate::{
+    maps::{
+        ErasedMapElement,
+        MapElement,
+        MapManager,
+        ResolvableString,
+        elements::Node,
+        encoder::MapEncoder,
+        parser::{MapElementParsingError, MapParser},
+        var_types::Character,
+    },
+    utils::num::{Float, Integer},
 };
 
 use std::{any::Any, fmt::Debug};
