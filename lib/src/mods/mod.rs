@@ -82,8 +82,8 @@ impl<R: Read + Seek> ZipBuf<R> {
 impl<R: Read + Seek> FileProvider for ZipBuf<R> {
     type Err = ZipError;
     type Reader<'a>
-        = ZipFile<'a>
-    where R: 'a;
+        = ZipFile<'a, R>
+    where R: 'a + Read;
 
     fn get_file(
         &mut self,

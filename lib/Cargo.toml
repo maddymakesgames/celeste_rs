@@ -11,7 +11,7 @@ license = "MIT"
 
 [dependencies]
 saphyr = { version = "0.0.4", git = "https://github.com/saphyr-rs/saphyr.git", rev = "374d8920ff47c92504fd9b28be6994f7693386a6" }
-zip = { version = "2.2", default-features = false }
+zip = { version = "4.2" }
 anyhow = "1"
 aliasable = "0.1"
 celeste_rs_macros = { version = "0.2", path = "../macros" }
