@@ -411,6 +411,7 @@ impl Mod {
     }
 }
 
+#[derive(Debug)]
 pub enum ModReadError<T: Error> {
     ProviderError(T),
     #[cfg(not(target_family = "wasm"))]
@@ -421,6 +422,8 @@ pub enum ModReadError<T: Error> {
     PlaybackError(PlaybackReadError),
     YamlReadError(YamlReadError),
 }
+
+impl<T: Error> Error for ModReadError<T> {}
 
 impl<T: Error> Display for ModReadError<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
