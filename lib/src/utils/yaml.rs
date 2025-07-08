@@ -206,10 +206,20 @@ impl<T: FromYaml> FromYaml for Vec<T> {
         let mut decoder = YamlDecoder::read(reader);
         let yaml = decoder.encoding_trap(YAMLDecodingTrap::Strict).decode()?;
 
-        yaml.iter()
-            .map(T::parse_from_yaml)
-            .map(|t| t.map_err(YamlReadError::ParseError))
-            .collect()
+        // If there is only 1 yaml doc and the root is a sequence we assume parsing that sequence as Vec<T> is desired
+        if yaml.len() == 1
+            && let Some(seq) = yaml[0].as_sequence()
+        {
+            seq.iter()
+                .map(T::parse_from_yaml)
+                .map(|t| t.map_err(YamlReadError::ParseError))
+                .collect()
+        } else {
+            yaml.iter()
+                .map(T::parse_from_yaml)
+                .map(|t| t.map_err(YamlReadError::ParseError))
+                .collect()
+        }
     }
 
     fn parse_from_yaml(yaml: &Yaml) -> Result<Vec<T>, YamlParseError> {
