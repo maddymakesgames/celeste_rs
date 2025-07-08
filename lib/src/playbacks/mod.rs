@@ -29,20 +29,20 @@ impl Playback {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, PlaybackReadError> {
         let mut reader = BinReader::new(bytes);
 
-        let mut skip_scale = 1;
+        let mut skip_scale = true;
 
         let header = reader.read_string();
 
         // We use is_ok_and because the varint length of the string could
         // be invalid and we don't want to cancel reading because of that
         if header.is_ok_and(|h| h == "TIMELINE") {
-            skip_scale = reader.read_i32()?;
+            skip_scale = reader.read_i32()? == 1;
         } else {
             reader.restart();
         }
 
         let frames = reader.read_i32()?;
-
+        println!("frames: {frames}");
         let mut buf = Vec::with_capacity(frames as usize);
 
         for _ in 0 .. frames {
@@ -103,7 +103,7 @@ pub struct PlaybackFrame {
 }
 
 impl PlaybackFrame {
-    fn from_reader(reader: &mut BinReader, skip_scale: i32) -> Result<Self, BinReadError> {
+    fn from_reader(reader: &mut BinReader, skip_scale: bool) -> Result<Self, BinReadError> {
         let position = [reader.read_f32()?, reader.read_f32()?];
         let timestamp = reader.read_f32()?;
         let animation = reader.read_string()?;
@@ -116,7 +116,7 @@ impl PlaybackFrame {
         let scale;
         let dash_direction;
 
-        if skip_scale == 1 {
+        if skip_scale {
             scale = [(facing as i32) as f32, 1.0];
             dash_direction = [0.0, 0.0];
         } else {
