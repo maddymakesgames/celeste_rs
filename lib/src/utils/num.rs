@@ -3,11 +3,17 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign},
 };
 
+/// A generic integer type, supports `u8`, `i16`, `i32`, and `i64`.
+///
+/// Note: when used as the type of a [MapElement](crate::maps::MapElement)'s attribute
+/// [I64](Integer::I64) will be truncated down to an `i32` because the map format does not
+/// support longs.
 #[derive(Clone, Copy)]
 pub enum Integer {
     U8(u8),
     I16(i16),
     I32(i32),
+    I64(i64),
 }
 
 impl Debug for Integer {
@@ -16,6 +22,7 @@ impl Debug for Integer {
             Self::U8(arg0) => write!(f, "{arg0}_u8"),
             Self::I16(arg0) => write!(f, "{arg0}_i16"),
             Self::I32(arg0) => write!(f, "{arg0}_i32"),
+            Self::I64(arg0) => write!(f, "{arg0}_i64"),
         }
     }
 }
@@ -26,6 +33,7 @@ impl Display for Integer {
             Self::U8(arg0) => write!(f, "{arg0}"),
             Self::I16(arg0) => write!(f, "{arg0}"),
             Self::I32(arg0) => write!(f, "{arg0}"),
+            Self::I64(arg0) => write!(f, "{arg0}"),
         }
     }
 }
@@ -48,6 +56,12 @@ impl From<i32> for Integer {
     }
 }
 
+impl From<i64> for Integer {
+    fn from(value: i64) -> Self {
+        Integer::I64(value)
+    }
+}
+
 impl Add for Integer {
     type Output = Integer;
 
@@ -56,12 +70,19 @@ impl Add for Integer {
             (Integer::U8(b1), Integer::U8(b2)) => Integer::U8(b1 + b2),
             (Integer::U8(b1), Integer::I16(s2)) => Integer::I16(b1 as i16 + s2),
             (Integer::U8(b1), Integer::I32(i2)) => Integer::I32(b1 as i32 + i2),
+            (Integer::U8(b1), Integer::I64(l2)) => Integer::I64(b1 as i64 + l2),
             (Integer::I16(s1), Integer::U8(b2)) => Integer::I16(s1 + b2 as i16),
             (Integer::I16(s1), Integer::I16(s2)) => Integer::I16(s1 + s2),
             (Integer::I16(s1), Integer::I32(i2)) => Integer::I32(s1 as i32 + i2),
+            (Integer::I16(s1), Integer::I64(l2)) => Integer::I64(s1 as i64 + l2),
             (Integer::I32(i1), Integer::U8(b2)) => Integer::I32(i1 + b2 as i32),
             (Integer::I32(i1), Integer::I16(s2)) => Integer::I32(i1 + s2 as i32),
             (Integer::I32(i1), Integer::I32(i2)) => Integer::I32(i1 + i2),
+            (Integer::I32(i1), Integer::I64(l2)) => Integer::I64(i1 as i64 + l2),
+            (Integer::I64(l1), Integer::U8(b2)) => Integer::I64(l1 + b2 as i64),
+            (Integer::I64(l1), Integer::I16(s2)) => Integer::I64(l1 + s2 as i64),
+            (Integer::I64(l1), Integer::I32(i2)) => Integer::I64(l1 + i2 as i64),
+            (Integer::I64(l1), Integer::I64(l2)) => Integer::I64(l1 + l2),
         }
     }
 }
@@ -94,7 +115,7 @@ macro_rules! ops {
 }
 
 ops! {
-    Integer [u8, i16, i32] ((Add, add), (Sub, sub), (Mul, mul), (Div, div)), ((AddAssign, add_assign), (SubAssign, sub_assign), (MulAssign, mul_assign), (DivAssign, div_assign)),
+    Integer [u8, i16, i32, i64] ((Add, add), (Sub, sub), (Mul, mul), (Div, div)), ((AddAssign, add_assign), (SubAssign, sub_assign), (MulAssign, mul_assign), (DivAssign, div_assign)),
     Float [u8, i16, i32, f32] ((Add, add), (Sub, sub), (Mul, mul), (Div, div)), ((AddAssign, add_assign), (SubAssign, sub_assign), (MulAssign, mul_assign), (DivAssign, div_assign))
 }
 
@@ -112,12 +133,19 @@ impl Sub for Integer {
             (Integer::U8(b1), Integer::U8(b2)) => Integer::U8(b1 - b2),
             (Integer::U8(b1), Integer::I16(s2)) => Integer::I16(b1 as i16 - s2),
             (Integer::U8(b1), Integer::I32(i2)) => Integer::I32(b1 as i32 - i2),
+            (Integer::U8(b1), Integer::I64(l2)) => Integer::I64(b1 as i64 - l2),
             (Integer::I16(s1), Integer::U8(b2)) => Integer::I16(s1 - b2 as i16),
             (Integer::I16(s1), Integer::I16(s2)) => Integer::I16(s1 - s2),
             (Integer::I16(s1), Integer::I32(i2)) => Integer::I32(s1 as i32 - i2),
+            (Integer::I16(s1), Integer::I64(l2)) => Integer::I64(s1 as i64 - l2),
             (Integer::I32(i1), Integer::U8(b2)) => Integer::I32(i1 - b2 as i32),
             (Integer::I32(i1), Integer::I16(s2)) => Integer::I32(i1 - s2 as i32),
             (Integer::I32(i1), Integer::I32(i2)) => Integer::I32(i1 - i2),
+            (Integer::I32(i1), Integer::I64(l2)) => Integer::I64(i1 as i64 - l2),
+            (Integer::I64(l1), Integer::U8(b2)) => Integer::I64(l1 - b2 as i64),
+            (Integer::I64(l1), Integer::I16(s2)) => Integer::I64(l1 - s2 as i64),
+            (Integer::I64(l1), Integer::I32(i2)) => Integer::I64(l1 - i2 as i64),
+            (Integer::I64(l1), Integer::I64(l2)) => Integer::I64(l1 - l2),
         }
     }
 }
@@ -136,12 +164,19 @@ impl Mul for Integer {
             (Integer::U8(b1), Integer::U8(b2)) => Integer::U8(b1 * b2),
             (Integer::U8(b1), Integer::I16(s2)) => Integer::I16(b1 as i16 * s2),
             (Integer::U8(b1), Integer::I32(i2)) => Integer::I32(b1 as i32 * i2),
+            (Integer::U8(b1), Integer::I64(l2)) => Integer::I64(b1 as i64 * l2),
             (Integer::I16(s1), Integer::U8(b2)) => Integer::I16(s1 * b2 as i16),
             (Integer::I16(s1), Integer::I16(s2)) => Integer::I16(s1 * s2),
             (Integer::I16(s1), Integer::I32(i2)) => Integer::I32(s1 as i32 * i2),
+            (Integer::I16(s1), Integer::I64(l2)) => Integer::I64(s1 as i64 * l2),
             (Integer::I32(i1), Integer::U8(b2)) => Integer::I32(i1 * b2 as i32),
             (Integer::I32(i1), Integer::I16(s2)) => Integer::I32(i1 * s2 as i32),
             (Integer::I32(i1), Integer::I32(i2)) => Integer::I32(i1 * i2),
+            (Integer::I32(i1), Integer::I64(l2)) => Integer::I64(i1 as i64 * l2),
+            (Integer::I64(l1), Integer::U8(b2)) => Integer::I64(l1 * b2 as i64),
+            (Integer::I64(l1), Integer::I16(s2)) => Integer::I64(l1 * s2 as i64),
+            (Integer::I64(l1), Integer::I32(i2)) => Integer::I64(l1 * i2 as i64),
+            (Integer::I64(l1), Integer::I64(l2)) => Integer::I64(l1 * l2),
         }
     }
 }
@@ -160,12 +195,19 @@ impl Div for Integer {
             (Integer::U8(b1), Integer::U8(b2)) => Integer::U8(b1 / b2),
             (Integer::U8(b1), Integer::I16(s2)) => Integer::I16(b1 as i16 / s2),
             (Integer::U8(b1), Integer::I32(i2)) => Integer::I32(b1 as i32 / i2),
+            (Integer::U8(b1), Integer::I64(l2)) => Integer::I64(b1 as i64 / l2),
             (Integer::I16(s1), Integer::U8(b2)) => Integer::I16(s1 / b2 as i16),
             (Integer::I16(s1), Integer::I16(s2)) => Integer::I16(s1 / s2),
             (Integer::I16(s1), Integer::I32(i2)) => Integer::I32(s1 as i32 / i2),
+            (Integer::I16(s1), Integer::I64(l2)) => Integer::I64(s1 as i64 / l2),
             (Integer::I32(i1), Integer::U8(b2)) => Integer::I32(i1 / b2 as i32),
             (Integer::I32(i1), Integer::I16(s2)) => Integer::I32(i1 / s2 as i32),
             (Integer::I32(i1), Integer::I32(i2)) => Integer::I32(i1 / i2),
+            (Integer::I32(i1), Integer::I64(l2)) => Integer::I64(i1 as i64 / l2),
+            (Integer::I64(l1), Integer::U8(b2)) => Integer::I64(l1 / b2 as i64),
+            (Integer::I64(l1), Integer::I16(s2)) => Integer::I64(l1 / s2 as i64),
+            (Integer::I64(l1), Integer::I32(i2)) => Integer::I64(l1 / i2 as i64),
+            (Integer::I64(l1), Integer::I64(l2)) => Integer::I64(l1 / l2),
         }
     }
 }
@@ -248,6 +290,7 @@ impl From<Integer> for Float {
             Integer::U8(b) => Float::U8(b),
             Integer::I16(s) => Float::I16(s),
             Integer::I32(i) => Float::I32(i),
+            Integer::I64(l) => Float::I32(l as i32),
         }
     }
 }

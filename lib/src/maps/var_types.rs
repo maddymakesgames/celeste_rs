@@ -430,6 +430,8 @@ impl From<Integer> for EncodedVar {
             Integer::U8(b) => EncodedVar::Byte(b),
             Integer::I16(s) => EncodedVar::Short(s),
             Integer::I32(i) => EncodedVar::Int(i),
+            // Truncate because map format doesn't support i64s
+            Integer::I64(l) => EncodedVar::Int(l as i32),
         }
     }
 }
