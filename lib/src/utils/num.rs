@@ -218,24 +218,19 @@ impl DivAssign for Integer {
     }
 }
 
-
+/// A generic Float type, supports `u8`, `i16`, `i32`, `i64`, `f32`, and `f64`.
+///
+/// Note: when used as the type of a [MapElement](crate::maps::MapElement)'s attribute
+/// [I64](Float::I64) and [F64](Float::F64) will be truncated down to their 32-bit counterparts because the map format does not
+/// support 64-bit numbers.
 #[derive(Clone, Copy)]
 pub enum Float {
     U8(u8),
     I16(i16),
     I32(i32),
+    I64(i64),
     F32(f32),
-}
-
-impl Float {
-    pub fn as_f32(&self) -> f32 {
-        match *self {
-            Float::U8(b) => b as f32,
-            Float::I16(s) => s as f32,
-            Float::I32(i) => i as f32,
-            Float::F32(f) => f,
-        }
-    }
+    F64(f64),
 }
 
 impl Debug for Float {
@@ -244,7 +239,9 @@ impl Debug for Float {
             Self::U8(arg0) => write!(f, "{arg0}_u8"),
             Self::I16(arg0) => write!(f, "{arg0}_i16"),
             Self::I32(arg0) => write!(f, "{arg0}_i32"),
+            Self::I64(arg0) => write!(f, "{arg0}_i64"),
             Self::F32(arg0) => write!(f, "{arg0}_f32"),
+            Self::F64(arg0) => write!(f, "{arg0}_f64"),
         }
     }
 }
@@ -255,7 +252,9 @@ impl Display for Float {
             Self::U8(arg0) => write!(f, "{arg0}"),
             Self::I16(arg0) => write!(f, "{arg0}"),
             Self::I32(arg0) => write!(f, "{arg0}"),
+            Self::I64(arg0) => write!(f, "{arg0}"),
             Self::F32(arg0) => write!(f, "{arg0}"),
+            Self::F64(arg0) => write!(f, "{arg0}"),
         }
     }
 }
@@ -278,9 +277,21 @@ impl From<i32> for Float {
     }
 }
 
+impl From<i64> for Float {
+    fn from(value: i64) -> Self {
+        Float::I64(value)
+    }
+}
+
 impl From<f32> for Float {
     fn from(value: f32) -> Self {
         Float::F32(value)
+    }
+}
+
+impl From<f64> for Float {
+    fn from(value: f64) -> Self {
+        Float::F64(value)
     }
 }
 
@@ -290,7 +301,7 @@ impl From<Integer> for Float {
             Integer::U8(b) => Float::U8(b),
             Integer::I16(s) => Float::I16(s),
             Integer::I32(i) => Float::I32(i),
-            Integer::I64(l) => Float::I32(l as i32),
+            Integer::I64(l) => Float::I64(l),
         }
     }
 }
@@ -303,19 +314,39 @@ impl Add for Float {
             (Float::U8(b1), Float::U8(b2)) => Float::U8(b1 + b2),
             (Float::U8(b1), Float::I16(s2)) => Float::I16(b1 as i16 + s2),
             (Float::U8(b1), Float::I32(i2)) => Float::I32(b1 as i32 + i2),
+            (Float::U8(b1), Float::I64(l2)) => Float::I64(b1 as i64 + l2),
             (Float::U8(b1), Float::F32(f2)) => Float::F32(b1 as f32 + f2),
+            (Float::U8(b1), Float::F64(d2)) => Float::F64(b1 as f64 + d2),
             (Float::I16(s1), Float::U8(b2)) => Float::I16(s1 + b2 as i16),
             (Float::I16(s1), Float::I16(s2)) => Float::I16(s1 + s2),
             (Float::I16(s1), Float::I32(i2)) => Float::I32(s1 as i32 + i2),
+            (Float::I16(s1), Float::I64(l2)) => Float::I64(s1 as i64 + l2),
             (Float::I16(s1), Float::F32(f2)) => Float::F32(s1 as f32 + f2),
+            (Float::I16(s1), Float::F64(d2)) => Float::F64(s1 as f64 + d2),
             (Float::I32(i1), Float::U8(b2)) => Float::I32(i1 + b2 as i32),
             (Float::I32(i1), Float::I16(s2)) => Float::I32(i1 + s2 as i32),
             (Float::I32(i1), Float::I32(i2)) => Float::I32(i1 + i2),
+            (Float::I32(i1), Float::I64(l2)) => Float::I64(i1 as i64 + l2),
             (Float::I32(i1), Float::F32(f2)) => Float::F32(i1 as f32 + f2),
+            (Float::I32(i1), Float::F64(d2)) => Float::F64(i1 as f64 + d2),
+            (Float::I64(l1), Float::U8(b2)) => Float::I64(l1 + b2 as i64),
+            (Float::I64(l1), Float::I16(s2)) => Float::I64(l1 + s2 as i64),
+            (Float::I64(l1), Float::I32(i2)) => Float::I64(l1 + i2 as i64),
+            (Float::I64(l1), Float::I64(l2)) => Float::I64(l1 + l2),
+            (Float::I64(l1), Float::F32(f2)) => Float::F32(l1 as f32 + f2),
+            (Float::I64(l1), Float::F64(d2)) => Float::F64(l1 as f64 + d2),
             (Float::F32(f1), Float::U8(b2)) => Float::F32(f1 + b2 as f32),
             (Float::F32(f1), Float::I16(s2)) => Float::F32(f1 + s2 as f32),
             (Float::F32(f1), Float::I32(i2)) => Float::F32(f1 + i2 as f32),
+            (Float::F32(f1), Float::I64(l2)) => Float::F32(f1 + l2 as f32),
             (Float::F32(f1), Float::F32(f2)) => Float::F32(f1 + f2),
+            (Float::F32(f1), Float::F64(d2)) => Float::F64(f1 as f64 + d2),
+            (Float::F64(d1), Float::U8(b2)) => Float::F64(d1 + b2 as f64),
+            (Float::F64(d1), Float::I16(s2)) => Float::F64(d1 + s2 as f64),
+            (Float::F64(d1), Float::I32(i2)) => Float::F64(d1 + i2 as f64),
+            (Float::F64(d1), Float::I64(l2)) => Float::F64(d1 + l2 as f64),
+            (Float::F64(d1), Float::F32(f2)) => Float::F64(d1 + f2 as f64),
+            (Float::F64(d1), Float::F64(d2)) => Float::F64(d1 + d2),
         }
     }
 }
@@ -359,19 +390,39 @@ impl Sub for Float {
             (Float::U8(b1), Float::U8(b2)) => Float::U8(b1 - b2),
             (Float::U8(b1), Float::I16(s2)) => Float::I16(b1 as i16 - s2),
             (Float::U8(b1), Float::I32(i2)) => Float::I32(b1 as i32 - i2),
+            (Float::U8(b1), Float::I64(l2)) => Float::I64(b1 as i64 - l2),
             (Float::U8(b1), Float::F32(f2)) => Float::F32(b1 as f32 - f2),
+            (Float::U8(b1), Float::F64(d2)) => Float::F64(b1 as f64 - d2),
             (Float::I16(s1), Float::U8(b2)) => Float::I16(s1 - b2 as i16),
             (Float::I16(s1), Float::I16(s2)) => Float::I16(s1 - s2),
             (Float::I16(s1), Float::I32(i2)) => Float::I32(s1 as i32 - i2),
+            (Float::I16(s1), Float::I64(l2)) => Float::I64(s1 as i64 - l2),
             (Float::I16(s1), Float::F32(f2)) => Float::F32(s1 as f32 - f2),
+            (Float::I16(s1), Float::F64(d2)) => Float::F64(s1 as f64 - d2),
             (Float::I32(i1), Float::U8(b2)) => Float::I32(i1 - b2 as i32),
             (Float::I32(i1), Float::I16(s2)) => Float::I32(i1 - s2 as i32),
             (Float::I32(i1), Float::I32(i2)) => Float::I32(i1 - i2),
+            (Float::I32(i1), Float::I64(l2)) => Float::I64(i1 as i64 - l2),
             (Float::I32(i1), Float::F32(f2)) => Float::F32(i1 as f32 - f2),
+            (Float::I32(i1), Float::F64(d2)) => Float::F64(i1 as f64 - d2),
+            (Float::I64(l1), Float::U8(b2)) => Float::I64(l1 - b2 as i64),
+            (Float::I64(l1), Float::I16(s2)) => Float::I64(l1 - s2 as i64),
+            (Float::I64(l1), Float::I32(i2)) => Float::I64(l1 - i2 as i64),
+            (Float::I64(l1), Float::I64(l2)) => Float::I64(l1 - l2),
+            (Float::I64(l1), Float::F32(f2)) => Float::F32(l1 as f32 - f2),
+            (Float::I64(l1), Float::F64(d2)) => Float::F64(l1 as f64 - d2),
             (Float::F32(f1), Float::U8(b2)) => Float::F32(f1 - b2 as f32),
             (Float::F32(f1), Float::I16(s2)) => Float::F32(f1 - s2 as f32),
             (Float::F32(f1), Float::I32(i2)) => Float::F32(f1 - i2 as f32),
+            (Float::F32(f1), Float::I64(l2)) => Float::F32(f1 - l2 as f32),
             (Float::F32(f1), Float::F32(f2)) => Float::F32(f1 - f2),
+            (Float::F32(f1), Float::F64(d2)) => Float::F64(f1 as f64 - d2),
+            (Float::F64(d1), Float::U8(b2)) => Float::F64(d1 - b2 as f64),
+            (Float::F64(d1), Float::I16(s2)) => Float::F64(d1 - s2 as f64),
+            (Float::F64(d1), Float::I32(i2)) => Float::F64(d1 - i2 as f64),
+            (Float::F64(d1), Float::I64(l2)) => Float::F64(d1 - l2 as f64),
+            (Float::F64(d1), Float::F32(f2)) => Float::F64(d1 - f2 as f64),
+            (Float::F64(d1), Float::F64(d2)) => Float::F64(d1 - d2),
         }
     }
 }
@@ -416,19 +467,39 @@ impl Mul for Float {
             (Float::U8(b1), Float::U8(b2)) => Float::U8(b1 * b2),
             (Float::U8(b1), Float::I16(s2)) => Float::I16(b1 as i16 * s2),
             (Float::U8(b1), Float::I32(i2)) => Float::I32(b1 as i32 * i2),
+            (Float::U8(b1), Float::I64(l2)) => Float::I64(b1 as i64 * l2),
             (Float::U8(b1), Float::F32(f2)) => Float::F32(b1 as f32 * f2),
+            (Float::U8(b1), Float::F64(d2)) => Float::F64(b1 as f64 * d2),
             (Float::I16(s1), Float::U8(b2)) => Float::I16(s1 * b2 as i16),
             (Float::I16(s1), Float::I16(s2)) => Float::I16(s1 * s2),
             (Float::I16(s1), Float::I32(i2)) => Float::I32(s1 as i32 * i2),
+            (Float::I16(s1), Float::I64(l2)) => Float::I64(s1 as i64 * l2),
             (Float::I16(s1), Float::F32(f2)) => Float::F32(s1 as f32 * f2),
+            (Float::I16(s1), Float::F64(d2)) => Float::F64(s1 as f64 * d2),
             (Float::I32(i1), Float::U8(b2)) => Float::I32(i1 * b2 as i32),
             (Float::I32(i1), Float::I16(s2)) => Float::I32(i1 * s2 as i32),
             (Float::I32(i1), Float::I32(i2)) => Float::I32(i1 * i2),
+            (Float::I32(i1), Float::I64(l2)) => Float::I64(i1 as i64 * l2),
             (Float::I32(i1), Float::F32(f2)) => Float::F32(i1 as f32 * f2),
+            (Float::I32(i1), Float::F64(d2)) => Float::F64(i1 as f64 * d2),
+            (Float::I64(l1), Float::U8(b2)) => Float::I64(l1 * b2 as i64),
+            (Float::I64(l1), Float::I16(s2)) => Float::I64(l1 * s2 as i64),
+            (Float::I64(l1), Float::I32(i2)) => Float::I64(l1 * i2 as i64),
+            (Float::I64(l1), Float::I64(l2)) => Float::I64(l1 * l2),
+            (Float::I64(l1), Float::F32(f2)) => Float::F32(l1 as f32 * f2),
+            (Float::I64(l1), Float::F64(d2)) => Float::F64(l1 as f64 * d2),
             (Float::F32(f1), Float::U8(b2)) => Float::F32(f1 * b2 as f32),
             (Float::F32(f1), Float::I16(s2)) => Float::F32(f1 * s2 as f32),
             (Float::F32(f1), Float::I32(i2)) => Float::F32(f1 * i2 as f32),
+            (Float::F32(f1), Float::I64(l2)) => Float::F32(f1 * l2 as f32),
             (Float::F32(f1), Float::F32(f2)) => Float::F32(f1 * f2),
+            (Float::F32(f1), Float::F64(d2)) => Float::F64(f1 as f64 * d2),
+            (Float::F64(d1), Float::U8(b2)) => Float::F64(d1 * b2 as f64),
+            (Float::F64(d1), Float::I16(s2)) => Float::F64(d1 * s2 as f64),
+            (Float::F64(d1), Float::I32(i2)) => Float::F64(d1 * i2 as f64),
+            (Float::F64(d1), Float::I64(l2)) => Float::F64(d1 * l2 as f64),
+            (Float::F64(d1), Float::F32(f2)) => Float::F64(d1 * f2 as f64),
+            (Float::F64(d1), Float::F64(d2)) => Float::F64(d1 * d2),
         }
     }
 }
@@ -473,19 +544,39 @@ impl Div for Float {
             (Float::U8(b1), Float::U8(b2)) => Float::U8(b1 / b2),
             (Float::U8(b1), Float::I16(s2)) => Float::I16(b1 as i16 / s2),
             (Float::U8(b1), Float::I32(i2)) => Float::I32(b1 as i32 / i2),
+            (Float::U8(b1), Float::I64(l2)) => Float::I64(b1 as i64 / l2),
             (Float::U8(b1), Float::F32(f2)) => Float::F32(b1 as f32 / f2),
+            (Float::U8(b1), Float::F64(d2)) => Float::F64(b1 as f64 / d2),
             (Float::I16(s1), Float::U8(b2)) => Float::I16(s1 / b2 as i16),
             (Float::I16(s1), Float::I16(s2)) => Float::I16(s1 / s2),
             (Float::I16(s1), Float::I32(i2)) => Float::I32(s1 as i32 / i2),
+            (Float::I16(s1), Float::I64(l2)) => Float::I64(s1 as i64 / l2),
             (Float::I16(s1), Float::F32(f2)) => Float::F32(s1 as f32 / f2),
+            (Float::I16(s1), Float::F64(d2)) => Float::F64(s1 as f64 / d2),
             (Float::I32(i1), Float::U8(b2)) => Float::I32(i1 / b2 as i32),
             (Float::I32(i1), Float::I16(s2)) => Float::I32(i1 / s2 as i32),
             (Float::I32(i1), Float::I32(i2)) => Float::I32(i1 / i2),
+            (Float::I32(i1), Float::I64(l2)) => Float::I64(i1 as i64 / l2),
             (Float::I32(i1), Float::F32(f2)) => Float::F32(i1 as f32 / f2),
+            (Float::I32(i1), Float::F64(d2)) => Float::F64(i1 as f64 / d2),
+            (Float::I64(l1), Float::U8(b2)) => Float::I64(l1 / b2 as i64),
+            (Float::I64(l1), Float::I16(s2)) => Float::I64(l1 / s2 as i64),
+            (Float::I64(l1), Float::I32(i2)) => Float::I64(l1 / i2 as i64),
+            (Float::I64(l1), Float::I64(l2)) => Float::I64(l1 / l2),
+            (Float::I64(l1), Float::F32(f2)) => Float::F32(l1 as f32 / f2),
+            (Float::I64(l1), Float::F64(d2)) => Float::F64(l1 as f64 / d2),
             (Float::F32(f1), Float::U8(b2)) => Float::F32(f1 / b2 as f32),
             (Float::F32(f1), Float::I16(s2)) => Float::F32(f1 / s2 as f32),
             (Float::F32(f1), Float::I32(i2)) => Float::F32(f1 / i2 as f32),
+            (Float::F32(f1), Float::I64(l2)) => Float::F32(f1 / l2 as f32),
             (Float::F32(f1), Float::F32(f2)) => Float::F32(f1 / f2),
+            (Float::F32(f1), Float::F64(d2)) => Float::F64(f1 as f64 / d2),
+            (Float::F64(d1), Float::U8(b2)) => Float::F64(d1 / b2 as f64),
+            (Float::F64(d1), Float::I16(s2)) => Float::F64(d1 / s2 as f64),
+            (Float::F64(d1), Float::I32(i2)) => Float::F64(d1 / i2 as f64),
+            (Float::F64(d1), Float::I64(l2)) => Float::F64(d1 / l2 as f64),
+            (Float::F64(d1), Float::F32(f2)) => Float::F64(d1 / f2 as f64),
+            (Float::F64(d1), Float::F64(d2)) => Float::F64(d1 / d2),
         }
     }
 }

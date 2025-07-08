@@ -451,6 +451,9 @@ impl From<Float> for EncodedVar {
             Float::I16(s) => EncodedVar::Short(s),
             Float::I32(i) => EncodedVar::Int(i),
             Float::F32(f) => EncodedVar::Float(f),
+            // Truncate because map format doesn't support them
+            Float::I64(l) => EncodedVar::Int(l as i32),
+            Float::F64(d) => EncodedVar::Float(d as f32),
         }
     }
 }
