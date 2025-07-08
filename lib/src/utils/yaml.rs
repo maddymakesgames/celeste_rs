@@ -24,7 +24,7 @@ use saphyr::{
 
 pub use saphyr;
 
-use crate::utils::num::Integer;
+use crate::utils::num::{Float, Integer};
 
 pub trait YamlExt<'a> {
     fn string(str: String) -> Self;
@@ -538,5 +538,24 @@ impl FromYaml for Integer {
             Integer::I32(i) => i as i64,
             Integer::I64(l) => l,
         })))
+    }
+}
+
+impl FromYaml for Float {
+    fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
+        yaml.try_as_i64()
+            .map(Float::I64)
+            .or_else(|_| yaml.try_as_f64().map(Float::F64))
+    }
+
+    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
+        Ok(Yaml::Value(match *self {
+            Float::U8(b) => Scalar::Integer(b as i64),
+            Float::I16(s) => Scalar::Integer(s as i64),
+            Float::I32(i) => Scalar::Integer(i as i64),
+            Float::I64(l) => Scalar::Integer(l),
+            Float::F32(f) => Scalar::FloatingPoint((f as f64).into()),
+            Float::F64(d) => Scalar::FloatingPoint(d.into()),
+        }))
     }
 }
