@@ -24,6 +24,8 @@ use saphyr::{
 
 pub use saphyr;
 
+use crate::utils::num::Integer;
+
 pub trait YamlExt<'a> {
     fn string(str: String) -> Self;
     fn str(str: &'a str) -> Self;
@@ -523,3 +525,18 @@ macro_rules! ints_yaml {
 ints_yaml!(
     u8, "u8", u16, "u16", u32, "u32", u64, "u64", i8, "i8", i16, "i16", i32, "i32"
 );
+
+impl FromYaml for Integer {
+    fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
+        yaml.try_as_i64().map(Integer::I64)
+    }
+
+    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
+        Ok(Yaml::Value(Scalar::Integer(match *self {
+            Integer::U8(b) => b as i64,
+            Integer::I16(s) => s as i64,
+            Integer::I32(i) => i as i64,
+            Integer::I64(l) => l,
+        })))
+    }
+}
