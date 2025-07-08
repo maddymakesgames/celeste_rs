@@ -111,9 +111,9 @@ pub mod vanilla_triggers {
         #[name = "track"]
         pub track: ResolvableString,
         #[name = "resetFade"]
-        pub resetfade: bool,
+        pub resetfade: Option<bool>,
         #[name = "setInSession"]
-        pub setinsession: bool,
+        pub setinsession: Option<bool>,
         #[name = "resetOnLeave"]
         pub resetonleave: bool,
         #[name = "progress"]
@@ -207,9 +207,9 @@ pub mod vanilla_triggers {
         #[name = "direction"]
         pub direction: ResolvableString,
         #[name = "fadeA"]
-        pub fadea: u8,
+        pub fadea: Float,
         #[name = "fadeB"]
-        pub fadeb: u8,
+        pub fadeb: Float,
         #[name = "parameter"]
         pub parameter: Option<ResolvableString>,
     }
@@ -221,9 +221,9 @@ pub mod vanilla_triggers {
     #[name = "cameraAdvanceTargetTrigger"]
     pub struct CameraAdvanceTargetTrigger {
         #[name = "lerpStrengthX"]
-        pub lerpstrengthx: u8,
+        pub lerpstrengthx: Float,
         #[name = "lerpStrengthY"]
-        pub lerpstrengthy: u8,
+        pub lerpstrengthy: Float,
         #[name = "positionModeX"]
         pub positionmodex: ResolvableString,
         #[name = "positionModeY"]

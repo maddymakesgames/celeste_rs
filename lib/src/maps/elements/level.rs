@@ -107,7 +107,7 @@ pub struct FGTiles {
     #[name = "offsetY"]
     pub offset_y: Option<Float>,
     #[name = "tileset"]
-    pub tileset: ResolvableString,
+    pub tileset: Option<ResolvableString>,
     #[name = "exportMode"]
     pub export_mode: Option<Integer>,
     #[name = "innerText"]
@@ -122,7 +122,7 @@ pub struct BGTiles {
     #[name = "offsetY"]
     pub offset_y: Option<Float>,
     #[name = "tileset"]
-    pub tileset: ResolvableString,
+    pub tileset: Option<ResolvableString>,
     #[name = "exportMode"]
     pub export_mode: Option<Integer>,
 }
