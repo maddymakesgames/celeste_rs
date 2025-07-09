@@ -139,7 +139,7 @@ impl ModMeta {
             ))?;
         let version = if let Some(y) = yaml.as_mapping_get("Version") {
             Some(match y {
-                Yaml::Value(Scalar::FloatingPoint(f)) => Version::from_str(&f.to_string())
+                Yaml::Value(Scalar::FloatingPoint(f)) => Version::from_str(&format!("{f:.1}"))
                     .map_err(|e| YamlParseError::Custom(e.to_string()))?,
                 Yaml::Value(Scalar::String(s)) =>
                     Version::from_str(s).map_err(|e| YamlParseError::Custom(e.to_string()))?,
