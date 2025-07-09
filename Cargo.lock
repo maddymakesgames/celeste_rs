@@ -735,7 +735,7 @@ dependencies = [
  "celeste_rs_macros",
  "chrono",
  "dotnetdll",
- "quick-xml 0.37.5",
+ "quick-xml 0.38.0",
  "saphyr",
  "serde",
  "serde-aux",
@@ -2962,6 +2962,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "331e97a1af0bf59823e6eadffe373d7b27f485be8748f71471c662c1f269b7fb"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.38.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8927b0664f5c5a98265138b7e3f90aa19a6b21353182469ace36d4ac527b7b1b"
+dependencies = [
+ "memchr",
  "serde",
 ]
 
@@ -3175,8 +3184,9 @@ dependencies = [
 
 [[package]]
 name = "saphyr"
-version = "0.0.4"
-source = "git+https://github.com/saphyr-rs/saphyr.git?rev=374d8920ff47c92504fd9b28be6994f7693386a6#374d8920ff47c92504fd9b28be6994f7693386a6"
+version = "0.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3767dfe8889ebb55a21409df2b6f36e66abfbe1eb92d64ff76ae799d3f91016"
 dependencies = [
  "arraydeque",
  "encoding_rs",
@@ -3187,8 +3197,9 @@ dependencies = [
 
 [[package]]
 name = "saphyr-parser"
-version = "0.0.4"
-source = "git+https://github.com/saphyr-rs/saphyr.git?rev=374d8920ff47c92504fd9b28be6994f7693386a6#374d8920ff47c92504fd9b28be6994f7693386a6"
+version = "0.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fb771b59f6b1985d1406325ec28f97cfb14256abcec4fdfb37b36a1766d6af7"
 dependencies = [
  "arraydeque",
  "hashlink",
