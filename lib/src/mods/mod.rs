@@ -353,7 +353,6 @@ impl ModCollection {
                         let mut mm = MapManager::new(&mut file)?;
                         mm.default_parsers();
                         let map = mm.parse_map()?;
-                        // Safe since we check we can convert to String
                         map_bins.insert(sid.to_owned(), map);
                     }
                     ".altsideshelper.meta.yaml" => {
@@ -368,8 +367,8 @@ impl ModCollection {
         }
 
         let mut maps = HashMap::new();
-        for (sid, map_meta) in map_metas {
-            let map_bin = map_bins.remove(&sid).unwrap();
+        for (sid, map_bin) in map_bins {
+            let map_meta = map_metas.remove(&sid);
             maps.insert(sid.to_owned(), BundledMap {
                 meta: map_meta,
                 altsides_meta: None,

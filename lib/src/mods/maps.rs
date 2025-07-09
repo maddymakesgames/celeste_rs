@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use celeste_rs_macros::FromYaml;
 
-use crate::{maps::elements::MapRoot, saves::session::CoreModes};
+use crate::{maps::elements::MapRoot, saves::session::CoreModes, utils::num::Float};
 
 pub struct BundledMap {
-    pub meta: MapMeta,
+    pub meta: Option<MapMeta>,
     pub altsides_meta: Option<AltSidesMeta>,
     pub map: MapRoot,
 }
@@ -13,10 +13,10 @@ pub struct BundledMap {
 #[derive(FromYaml)]
 pub struct MapMeta {
     #[name = "Parent"]
-    pub parent: String,
+    pub parent: Option<String>,
 
     #[name = "Icon"]
-    pub icon: String,
+    pub icon: Option<String>,
 
     #[name = "Interlude"]
     pub interlude: Option<bool>,
@@ -25,11 +25,11 @@ pub struct MapMeta {
     pub cassette_checkpoint_idx: Option<i32>,
 
     #[name = "TitleBaseColor"]
-    pub title_base_color: String,
+    pub title_base_color: Option<String>,
     #[name = "TitleAccentColor"]
-    pub title_accent_color: String,
+    pub title_accent_color: Option<String>,
     #[name = "TitleTextColor"]
-    pub title_text_color: String,
+    pub title_text_color: Option<String>,
 
     #[name = "IntroType"]
     pub intro_type: Option<IntroTypes>,
@@ -38,10 +38,10 @@ pub struct MapMeta {
     pub dreaming: Option<bool>,
 
     #[name = "ColorGrade"]
-    pub color_grade: String,
+    pub color_grade: Option<String>,
 
     #[name = "Wipe"]
-    pub wipe: String,
+    pub wipe: Option<String>,
 
     #[name = "DarknessAlpha"]
     pub darkness_alpha: Option<f32>,
@@ -51,49 +51,49 @@ pub struct MapMeta {
     pub bloom_strength: Option<f32>,
 
     #[name = "JumpThru"]
-    pub jump_thru: String,
+    pub jump_thru: Option<String>,
 
     #[name = "CoreMode"]
     pub core_mode: Option<CoreModes>,
 
     #[name = "CassetteNoteColor"]
-    pub cassette_note_color: String,
+    pub cassette_note_color: Option<String>,
     #[name = "CassetteSong"]
-    pub cassette_song: String,
+    pub cassette_song: Option<String>,
 
     #[name = "PostcardSoundID"]
-    pub postcard_sound_id: String,
+    pub postcard_sound_id: Option<String>,
 
     #[name = "ForegroundTiles"]
-    pub foreground_tiles: String,
+    pub foreground_tiles: Option<String>,
     #[name = "BackgroundTiles"]
-    pub background_tile: String,
+    pub background_tile: Option<String>,
     #[name = "AnimatedTiles"]
-    pub animated_tiles: String,
+    pub animated_tiles: Option<String>,
     #[name = "Sprites"]
-    pub sprites: String,
+    pub sprites: Option<String>,
     #[name = "Portraits"]
-    pub portraits: String,
+    pub portraits: Option<String>,
 
     #[name = "OverrideASideMeta"]
     pub override_a_side_meta: Option<bool>,
 
     #[name = "Modes"]
-    pub map_meta_mode_properties: Vec<MapMetaModeProperty>,
+    pub map_meta_mode_properties: Option<Vec<MapMetaModeProperty>>,
 
     #[name = "Mountain"]
-    pub mountain: MountainData,
+    pub mountain: Option<MountainData>,
 
     #[name = "CompleteScreen"]
-    pub complete_screen: CompleteScreen,
+    pub complete_screen: Option<CompleteScreen>,
     #[name = "LoadingVignetteScreen"]
-    pub loding_vignette_screen: CompleteScreen,
+    pub loding_vignette_screen: Option<CompleteScreen>,
 
     #[name = "LoadingVignetteText"]
-    pub loading_vignette_text: TextVignette,
+    pub loading_vignette_text: Option<TextVignette>,
 
     #[name = "CassetteModifier"]
-    pub cassette_modifier: CassetteModifier,
+    pub cassette_modifier: Option<CassetteModifier>,
 }
 
 #[derive(FromYaml)]
@@ -164,11 +164,11 @@ pub struct MountainData {
     #[name = "StarFogColor"]
     pub star_fog_color: Option<String>,
     #[name = "StarStreamColors"]
-    pub star_stream_colors: Vec<u32>,
+    pub star_stream_colors: Option<Vec<u32>>,
     #[name = "StarBeltColors1"]
-    pub star_belt_colors1: Vec<u32>,
+    pub star_belt_colors1: Option<Vec<u32>>,
     #[name = "StarBeltColors2"]
-    pub start_belt_colors2: Vec<u32>,
+    pub start_belt_colors2: Option<Vec<u32>>,
     #[name = "Idle"]
     pub idle: Option<MountainPosition>,
     #[name = "Select"]
@@ -176,13 +176,13 @@ pub struct MountainData {
     #[name = "Zoom"]
     pub zoom: Option<MountainPosition>,
     #[name = "Cursor"]
-    pub cursor: Option<[f32; 3]>,
+    pub cursor: Option<[Float; 3]>,
     #[name = "State"]
     pub state: u32,
     #[name = "Rotate"]
     pub rotate: bool,
     #[name = "ShowCore"]
-    pub show_core: bool,
+    pub show_core: Option<bool>,
     #[name = "ShowSnow"]
     pub show_snow: bool,
 }
@@ -192,11 +192,11 @@ pub struct CompleteScreen {
     #[name = "Atlas"]
     pub atlas: String,
     #[name = "Start"]
-    pub start: [f32; 2],
+    pub start: [Float; 2],
     #[name = "Center"]
-    pub center: [f32; 2],
+    pub center: [Float; 2],
     #[name = "Offset"]
-    pub offset: [f32; 2],
+    pub offset: [Float; 2],
     #[name = "Layers"]
     pub layers: Vec<CompleteScreenLayer>,
     #[name = "MusicBySide"]
@@ -210,21 +210,21 @@ pub struct CompleteScreenLayer {
     #[name = "Type"]
     pub kind: String,
     #[name = "Images"]
-    pub images: Vec<String>,
+    pub images: Option<Vec<String>>,
     #[name = "Position"]
-    pub position: [f32; 2],
+    pub position: Option<[Float; 2]>,
     #[name = "Scroll"]
-    pub scroll: [f32; 2],
+    pub scroll: Option<[f32; 1]>,
     #[name = "FrameRate"]
-    pub frame_rate: f32,
+    pub frame_rate: Option<Float>,
     #[name = "Alpha"]
-    pub alpha: f32,
+    pub alpha: Option<f32>,
     #[name = "Speed"]
-    pub speed: [f32; 2],
+    pub speed: Option<[f32; 2]>,
     #[name = "Scale"]
-    pub scale: f32,
+    pub scale: Option<Float>,
     #[name = "Loop"]
-    pub loop_frame: bool,
+    pub loop_frame: Option<bool>,
 }
 
 #[derive(FromYaml)]
@@ -232,9 +232,9 @@ pub struct CompleteScreenTitle {
     #[name = "ASide"]
     pub a_side: String,
     #[name = "BSide"]
-    pub b_side: String,
+    pub b_side: Option<String>,
     #[name = "CSide"]
-    pub c_side: String,
+    pub c_side: Option<String>,
     #[name = "FullClear"]
     pub full_clear: String,
 }
@@ -256,23 +256,23 @@ pub struct TextVignette {
 #[derive(FromYaml)]
 pub struct CassetteModifier {
     #[name = "TempoMul"]
-    pub tempo_mult: i32,
+    pub tempo_mult: Option<i32>,
     #[name = "LeadBeats"]
-    pub lead_beats: i32,
+    pub lead_beats: Option<i32>,
     #[name = "BeatsPerTick"]
-    pub beats_per_tick: i32,
+    pub beats_per_tick: Option<i32>,
     #[name = "TicksPerSwap"]
-    pub ticks_per_swap: i32,
+    pub ticks_per_swap: Option<i32>,
     #[name = "Blocks"]
-    pub blocks: i32,
+    pub blocks: Option<i32>,
     #[name = "BeatsMax"]
-    pub beats_max: i32,
+    pub beats_max: Option<i32>,
     #[name = "BeatIndexOffset"]
-    pub beat_index_offset: i32,
+    pub beat_index_offset: Option<i32>,
     #[name = "ActiveDuringTransitions"]
-    pub active_during_transitions: bool,
+    pub active_during_transitions: Option<bool>,
     #[name = "OldBehavior"]
-    pub old_behavior: bool,
+    pub old_behavior: Option<bool>,
 }
 
 #[derive(FromYaml)]
