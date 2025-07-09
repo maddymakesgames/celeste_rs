@@ -20,7 +20,7 @@ serde = { version = "1", features = ["derive"] }
 serde-aux = "4.4"
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-dotnetdll = "0.0.4"
+dotnetdll = "0.0.6"
 zip = "4.2"
 
 [target.'cfg(target_family = "wasm")'.dependencies]
