@@ -37,6 +37,7 @@ pub trait YamlExt<'a> {
     fn try_as_bool(&self) -> Result<bool, YamlParseError>;
     fn try_as_i64(&self) -> Result<i64, YamlParseError>;
     fn try_as_f64(&self) -> Result<f64, YamlParseError>;
+    fn try_as_float(&self) -> Result<Float, YamlParseError>;
     fn try_as_str(&self) -> Result<&str, YamlParseError>;
     fn try_as_hash(&self) -> Result<&Mapping<'a>, YamlParseError>;
     fn try_as_vec(&self) -> Result<&Sequence<'a>, YamlParseError>;
@@ -59,6 +60,13 @@ impl<'a> YamlExt<'a> for Yaml<'a> {
     fn try_as_f64(&self) -> Result<f64, YamlParseError> {
         self.as_floating_point()
             .ok_or(YamlParseError::TypeMismatch("f64", self.type_name()))
+    }
+
+    fn try_as_float(&self) -> Result<Float, YamlParseError> {
+        self.as_integer()
+            .map(Float::I64)
+            .or(self.as_floating_point().map(Float::F64))
+            .ok_or(YamlParseError::TypeMismatch("i64 or f64", self.type_name()))
     }
 
     fn try_as_str(&self) -> Result<&str, YamlParseError> {
@@ -543,9 +551,7 @@ impl FromYaml for Integer {
 
 impl FromYaml for Float {
     fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
-        yaml.try_as_i64()
-            .map(Float::I64)
-            .or_else(|_| yaml.try_as_f64().map(Float::F64))
+        yaml.try_as_float()
     }
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
