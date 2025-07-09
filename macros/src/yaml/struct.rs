@@ -1,5 +1,5 @@
 use proc_macro2::TokenStream;
-use quote::quote;
+use quote::{format_ident, quote};
 use syn::{
     DataStruct,
     DeriveInput,
@@ -151,7 +151,7 @@ fn gen_path_parser(name: &str, ty: &Type) -> Result<TokenStream, Error> {
         let parser = gen_type_parse(name, ty)?;
         quote! {match {#parser} {
             Ok(v) => Ok(Some(v)),
-            Err(YamlParseError::MissingField(_)) => Ok(None),
+            Err(YamlParseError::MissingField(#name)) => Ok(None),
             Err(e) => Err(e)
         }}
     } else {
@@ -211,17 +211,22 @@ fn gen_array_parser(name: &str, ty: &Type, len: &Expr) -> Result<TokenStream, Er
         }
     };
 
+    let inner_func = format_ident!("__{name}_parser_internal");
     Ok(quote! {
-        #header
-        #len_check
+        fn #inner_func(yaml: &Yaml) -> Result<[#ty; #len], YamlParseError> {
+            #header
+            #len_check
 
-        for i in 0..arr.len() {
-            let ele = &arr[i];
-            #parser
+            for i in 0..arr.len() {
+                let ele = &arr[i];
+                #parser
+            }
+
+            #unsafe_cast
+            Ok::<[#ty; #len], YamlParseError>(output)
         }
 
-        #unsafe_cast
-        Ok::<[#ty; #len], YamlParseError>(output)
+        #inner_func(yaml)
     })
 }
 
@@ -253,15 +258,35 @@ fn gen_field_writer(field: &Field) -> Result<TokenStream, Error> {
 
 fn gen_type_writer(name: &str, ident: &Ident, ty: &Type) -> Result<TokenStream, Error> {
     match &ty {
-        Type::Array(_) => Ok(quote! {
-                Ok(Yaml::Sequence(val.iter().map(FromYaml::to_yaml).collect::<Result<Vec<_>,_>>()?))
-        }),
+        Type::Array(TypeArray { elem, .. }) => Ok(gen_array_writer(elem)),
         Type::Paren(type_paren) => gen_type_writer(name, ident, &type_paren.elem),
         Type::Path(_) => gen_path_writer(name, ident, ty),
         t => Err(Error::new(
             t.span(),
             format!("Field of type {t:?} is not allowed in FromYaml derive"),
         )),
+    }
+}
+
+fn gen_array_writer(ty: &Type) -> TokenStream {
+    if is_option_type(ty) {
+        quote! {
+            Ok(
+                Yaml::Sequence(
+                    val.iter()
+                       .filter_map(|v| if let Some(v) = &v {
+                            Some(FromYaml::to_yaml(v))
+                       } else {
+                            None
+                       })
+                       .collect::<Result<Vec<_>,_>>()?
+                )
+            )
+        }
+    } else {
+        quote! {
+                Ok(Yaml::Sequence(val.iter().map(FromYaml::to_yaml).collect::<Result<Vec<_>,_>>()?))
+        }
     }
 }
 
