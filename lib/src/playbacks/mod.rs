@@ -31,14 +31,16 @@ impl Playback {
 
         let mut skip_scale = true;
 
-        let header = reader.read_string();
-
-        // We use is_ok_and because the varint length of the string could
-        // be invalid and we don't want to cancel reading because of that
-        if header.is_ok_and(|h| h == "TIMELINE") {
-            skip_scale = reader.read_i32()? == 1;
-        } else {
-            reader.restart();
+        match reader.read_string().as_deref() {
+            Ok("TIMELINE") => {
+                skip_scale = reader.read_i32()? == 1;
+            }
+            // Okay so I'm not sure why I thought this
+            // but apparently the varint could be invalid while the rest is readable
+            // so we restart and just keep reading
+            // Can't find the documentation for PlaybackData rn so leaving it
+            Ok(_header) => reader.restart(),
+            Err(_) => Err(PlaybackReadError::InvalidHeader)?,
         }
 
         let frames = reader.read_i32()?;
@@ -182,6 +184,7 @@ impl PlaybackFacing {
 pub enum PlaybackReadError {
     BinError(BinReadError),
     IoError(std::io::Error),
+    InvalidHeader,
 }
 
 impl Display for PlaybackReadError {
@@ -189,6 +192,7 @@ impl Display for PlaybackReadError {
         match self {
             PlaybackReadError::BinError(bin_read_error) => bin_read_error.fmt(f),
             PlaybackReadError::IoError(error) => error.fmt(f),
+            PlaybackReadError::InvalidHeader => write!(f, "Invalid Playback header"),
         }
     }
 }

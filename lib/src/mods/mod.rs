@@ -331,10 +331,16 @@ impl ModCollection {
                     .is_some_and(|s| s == "bin")
             {
                 let mut file = provider.get_file(&path)?;
+                let tutorial = Playback::from_reader(&mut file);
 
-                let tutorial = Playback::from_reader(&mut file)?;
+                // Needed because people *love* fucking putting random shit
+                // in the Tutorials Folder
+                // Looking at you P2P Conlab
+                if let Err(PlaybackReadError::InvalidHeader) = &tutorial {
+                    continue;
+                }
                 // Safe since we check we can convert to String
-                tutorials.insert(path.to_str().unwrap().to_owned(), tutorial);
+                tutorials.insert(path.to_str().unwrap().to_owned(), tutorial?);
             } else if top_level_dir == "Maps" {
                 let mut file = provider.get_file(&path)?;
                 // Doesn't panic since we check starts_with
