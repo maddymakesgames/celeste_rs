@@ -2,7 +2,7 @@ use std::{cmp::Ordering, error::Error, fmt::Display, num::ParseIntError, str::Fr
 
 use saphyr::{Mapping, Scalar, Yaml};
 
-use crate::utils::{FromYaml, YamlExt, YamlParseError, YamlWriteError};
+use crate::utils::{FromYaml, YamlExt, YamlParseError, YamlString, YamlWriteError};
 
 #[derive(PartialEq, Eq, Clone, Copy)]
 /// A (Semantic Versioning)[https://semver.org/]-respecting version number
@@ -131,12 +131,12 @@ impl ModMeta {
     fn parse_name_version_from_yaml(
         yaml: &Yaml,
     ) -> Result<(String, Option<Version>), YamlParseError> {
-        let name = yaml["Name"]
-            .as_str()
-            .map(ToString::to_string)
-            .ok_or(YamlParseError::Custom(
-                "everest.yaml mod definition found without a name".to_string(),
-            ))?;
+        let name = yaml.as_mapping_get("Name").ok_or(YamlParseError::Custom(
+            "everest.yaml entry without a Name".to_owned(),
+        ))?;
+
+        let name = YamlString::parse_from_yaml(name)?.0;
+
         let version = if let Some(y) = yaml.as_mapping_get("Version") {
             Some(match y {
                 Yaml::Value(Scalar::FloatingPoint(f)) => Version::from_str(&format!("{f:.1}"))
