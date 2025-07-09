@@ -176,7 +176,7 @@ impl FromYaml for ModMeta {
         )))?;
 
         let dll = yaml
-            .as_mapping_get("dll")
+            .as_mapping_get("DLL")
             .and_then(Yaml::as_str)
             .map(ToOwned::to_owned);
 
