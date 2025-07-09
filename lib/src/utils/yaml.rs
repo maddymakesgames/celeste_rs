@@ -49,6 +49,12 @@ pub trait YamlExt<'a> {
 impl<'a> YamlExt<'a> for Yaml<'a> {
     fn try_as_bool(&self) -> Result<bool, YamlParseError> {
         self.as_bool()
+            // Try to parse "True" and "False" (and technically "tRue" and similar) as bools
+            // This is needed because Everest's YAML parser is more lenient than the spec
+            .or_else(|| {
+                self.as_str()
+                    .and_then(|s| s.to_ascii_lowercase().parse().ok())
+            })
             .ok_or(YamlParseError::TypeMismatch("bool", self.type_name()))
     }
 
@@ -599,5 +605,54 @@ impl FromYaml for YamlString {
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
         Ok(Yaml::Value(Scalar::String(Cow::Owned(self.0.clone()))))
+    }
+}
+
+impl<T: FromYaml> FromYaml for Vec<Option<T>> {
+    fn parse_from_str(str: &str) -> Result<Vec<Option<T>>, YamlParseError> {
+        let yaml = Yaml::load_from_str(str)?;
+
+        let mut output = Vec::new();
+        for y in &yaml {
+            output.extend(Vec::<Option<T>>::parse_from_yaml(y)?.into_iter());
+        }
+
+        Ok(output)
+    }
+
+    fn parse_from_reader(reader: impl Read) -> Result<Vec<Option<T>>, YamlReadError> {
+        let mut decoder = YamlDecoder::read(reader);
+        let yaml = decoder.encoding_trap(YAMLDecodingTrap::Strict).decode()?;
+
+        let mut output = Vec::new();
+        for y in &yaml {
+            output.extend(Vec::<Option<T>>::parse_from_yaml(y)?.into_iter());
+        }
+
+        Ok(output)
+    }
+
+    fn parse_from_yaml(yaml: &Yaml) -> Result<Vec<Option<T>>, YamlParseError> {
+        // Vec<Option<T>> means a Vec<T> that can have null elements
+        // We don't throw away any errors after the null check
+        yaml.try_as_vec()?
+            .iter()
+            .map(|y| {
+                if let Yaml::Value(Scalar::Null) = y {
+                    None
+                } else {
+                    Some(T::parse_from_yaml(yaml))
+                }
+            })
+            .map(Option::transpose)
+            .collect()
+    }
+
+    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
+        Ok(Yaml::Sequence(
+            self.iter()
+                .filter_map(|v| v.as_ref().map(T::to_yaml))
+                .collect::<Result<Vec<_>, _>>()?,
+        ))
     }
 }
