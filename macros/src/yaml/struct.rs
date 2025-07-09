@@ -149,11 +149,18 @@ fn gen_type_parse(name: &str, ty: &Type) -> Result<TokenStream, Error> {
 fn gen_path_parser(name: &str, ty: &Type) -> Result<TokenStream, Error> {
     Ok(if let Some(ty) = get_option_ty(ty) {
         let parser = gen_type_parse(name, ty)?;
-        quote! {match {#parser} {
-            Ok(v) => Ok(Some(v)),
-            Err(YamlParseError::MissingField(#name)) => Ok(None),
-            Err(e) => Err(e)
-        }}
+        quote! {
+            if let Yaml::Value(Scalar::Null) = yaml {
+                Ok(None)
+            } else {
+                match {#parser} {
+                    Ok(v) => Ok(Some(v)),
+                    Err(YamlParseError::MissingField(#name)) => Ok(None),
+                    Err(e) => Err(e)
+                }
+            }
+
+        }
     } else {
         quote! {yaml.as_mapping_get(#name).ok_or(YamlParseError::MissingField(#name)).and_then(<#ty as FromYaml>::parse_from_yaml)}
     })
