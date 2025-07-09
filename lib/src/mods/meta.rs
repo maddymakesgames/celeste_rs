@@ -123,21 +123,22 @@ pub struct ModMeta {
     pub name: String,
     pub version: Version,
     pub dll: Option<String>,
-    pub dependencies: Vec<(String, Version)>,
-    pub optional_dependencies: Option<Vec<(String, Version)>>,
+    pub dependencies: Vec<(String, Option<Version>)>,
+    pub optional_dependencies: Option<Vec<(String, Option<Version>)>>,
 }
 
 impl ModMeta {
-    fn parse_name_version_from_yaml(yaml: &Yaml) -> Result<(String, Version), YamlParseError> {
+    fn parse_name_version_from_yaml(
+        yaml: &Yaml,
+    ) -> Result<(String, Option<Version>), YamlParseError> {
         let name = yaml["Name"]
             .as_str()
             .map(ToString::to_string)
             .ok_or(YamlParseError::Custom(
                 "everest.yaml mod definition found without a name".to_string(),
             ))?;
-
         let version = if let Some(y) = yaml.as_mapping_get("Version") {
-            match y {
+            Some(match y {
                 Yaml::Value(Scalar::FloatingPoint(f)) => Version::from_str(&f.to_string())
                     .map_err(|e| YamlParseError::Custom(e.to_string()))?,
                 Yaml::Value(Scalar::String(s)) =>
@@ -145,31 +146,34 @@ impl ModMeta {
                 _ => Err(YamlParseError::Custom(
                     "everest.yaml Version isn't a string or a float".to_owned(),
                 ))?,
-            }
+            })
         } else {
-            Err(YamlParseError::Custom(
-                "everest.yaml entry doesn't contain a version".to_owned(),
-            ))?
+            None
         };
 
         Ok((name, version))
     }
 
-    fn name_version_to_yaml(name: &str, version: &Version, hash: &mut Mapping) {
+    fn name_version_to_yaml(name: &str, version: &Option<Version>, hash: &mut Mapping) {
         hash.insert(
             Yaml::string("Name".to_owned()),
             Yaml::string(name.to_owned()),
         );
-        hash.insert(
-            Yaml::string("Version".to_owned()),
-            Yaml::string(version.to_string()),
-        );
+        if let Some(v) = version {
+            hash.insert(
+                Yaml::string("Version".to_owned()),
+                Yaml::string(v.to_string()),
+            );
+        }
     }
 }
 
 impl FromYaml for ModMeta {
     fn parse_from_yaml(yaml: &saphyr::Yaml) -> Result<ModMeta, YamlParseError> {
         let (name, version) = ModMeta::parse_name_version_from_yaml(yaml)?;
+        let version = version.ok_or(YamlParseError::Custom(format!(
+            "Mod '{name}' is missing version in everest.yaml"
+        )))?;
 
         let dll = yaml
             .as_mapping_get("dll")
@@ -212,7 +216,7 @@ impl FromYaml for ModMeta {
 
     fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
         let mut hash = Mapping::new();
-        ModMeta::name_version_to_yaml(&self.name, &self.version, &mut hash);
+        ModMeta::name_version_to_yaml(&self.name, &Some(self.version), &mut hash);
 
         let mut dep_hash = Mapping::new();
 
