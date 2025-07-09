@@ -565,3 +565,39 @@ impl FromYaml for Float {
         }))
     }
 }
+
+/// A [`String`] that accepts any [`Scalar`] and converts it into a string.
+///
+/// This does not convert [`Mapping`] or [`Sequences`](Sequence) and will return [`TypeMismatch`](YamlParseError::TypeMismatch) if they are encountered.
+#[repr(transparent)]
+#[derive(Clone)]
+pub struct YamlString(pub String);
+
+impl AsRef<String> for YamlString {
+    fn as_ref(&self) -> &String {
+        &self.0
+    }
+}
+
+impl AsMut<String> for YamlString {
+    fn as_mut(&mut self) -> &mut String {
+        &mut self.0
+    }
+}
+
+impl FromYaml for YamlString {
+    fn parse_from_yaml(yaml: &Yaml) -> Result<Self, YamlParseError> {
+        Ok(match yaml {
+            Yaml::Value(Scalar::Boolean(b)) => YamlString(b.to_string()),
+            Yaml::Value(Scalar::FloatingPoint(f)) => YamlString(f.to_string()),
+            Yaml::Value(Scalar::Integer(i)) => YamlString(i.to_string()),
+            Yaml::Value(Scalar::Null) => YamlString("Null".to_owned()),
+            Yaml::Value(Scalar::String(s)) => YamlString(s.to_string()),
+            _ => Err(YamlParseError::TypeMismatch("Value", yaml.type_name()))?,
+        })
+    }
+
+    fn to_yaml(&self) -> Result<Yaml, YamlWriteError> {
+        Ok(Yaml::Value(Scalar::String(Cow::Owned(self.0.clone()))))
+    }
+}
