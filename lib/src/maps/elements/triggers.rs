@@ -119,7 +119,7 @@ pub mod vanilla_triggers {
         #[name = "resetOnLeave"]
         pub resetonleave: bool,
         #[name = "progress"]
-        pub progress: u8,
+        pub progress: Option<u8>,
     }
     #[derive(Debug, Trigger, Default, Clone, Copy, PartialEq, Eq)]
     #[name = "birdPathTrigger"]
