@@ -2,7 +2,11 @@ use std::collections::HashMap;
 
 use celeste_rs_macros::FromYaml;
 
-use crate::{maps::elements::MapRoot, saves::session::CoreModes, utils::num::Float};
+use crate::{
+    maps::elements::MapRoot,
+    saves::session::CoreModes,
+    utils::{YamlString, num::Float},
+};
 
 pub struct BundledMap {
     pub meta: Option<MapMeta>,
@@ -101,18 +105,18 @@ pub struct MapMetaModeProperty {
     #[name = "AudioState"]
     pub audio_state: MapMetaAudioState,
     #[name = "Checkpoints"]
-    pub checkpoints: Vec<MapMetaCheckpointData>,
+    pub checkpoints: Option<Vec<MapMetaCheckpointData>>,
     #[name = "IgnoreLevelAudioLayerData"]
     pub ignore_level_audio_layer_data: Option<bool>,
     #[name = "Inventory"]
     pub inventory: String,
     #[name = "Path"]
-    pub path: String,
+    pub path: Option<String>,
     #[name = "PoemID"]
-    pub poem_id: String,
+    pub poem_id: Option<String>,
 
     #[name = "StartLevel"]
-    pub start_level: String,
+    pub start_level: Option<String>,
     #[name = "HeartIsEnd"]
     pub heart_is_end: Option<bool>,
     #[name = "SeekerSlowdown"]
@@ -158,17 +162,17 @@ pub struct MountainData {
     #[name = "BackgroundAmbience"]
     pub background_ambience: Option<String>,
     #[name = "BackgroundMusicParams"]
-    pub background_music_params: Option<HashMap<String, f32>>,
+    pub background_music_params: Option<HashMap<String, Float>>,
     #[name = "FogColors"]
-    pub fog_colors: Option<Vec<String>>,
+    pub fog_colors: Option<Vec<YamlString>>,
     #[name = "StarFogColor"]
-    pub star_fog_color: Option<String>,
+    pub star_fog_color: Option<YamlString>,
     #[name = "StarStreamColors"]
-    pub star_stream_colors: Option<Vec<u32>>,
+    pub star_stream_colors: Option<Vec<YamlString>>,
     #[name = "StarBeltColors1"]
-    pub star_belt_colors1: Option<Vec<u32>>,
+    pub star_belt_colors1: Option<Vec<YamlString>>,
     #[name = "StarBeltColors2"]
-    pub start_belt_colors2: Option<Vec<u32>>,
+    pub start_belt_colors2: Option<Vec<YamlString>>,
     #[name = "Idle"]
     pub idle: Option<MountainPosition>,
     #[name = "Select"]
@@ -178,13 +182,13 @@ pub struct MountainData {
     #[name = "Cursor"]
     pub cursor: Option<[Float; 3]>,
     #[name = "State"]
-    pub state: u32,
+    pub state: Option<u32>,
     #[name = "Rotate"]
-    pub rotate: bool,
+    pub rotate: Option<bool>,
     #[name = "ShowCore"]
     pub show_core: Option<bool>,
     #[name = "ShowSnow"]
-    pub show_snow: bool,
+    pub show_snow: Option<bool>,
 }
 
 #[derive(FromYaml)]
@@ -192,17 +196,17 @@ pub struct CompleteScreen {
     #[name = "Atlas"]
     pub atlas: String,
     #[name = "Start"]
-    pub start: [Float; 2],
+    pub start: Option<[Float; 2]>,
     #[name = "Center"]
-    pub center: [Float; 2],
+    pub center: Option<[Float; 2]>,
     #[name = "Offset"]
-    pub offset: [Float; 2],
+    pub offset: Option<[Float; 2]>,
     #[name = "Layers"]
     pub layers: Vec<CompleteScreenLayer>,
     #[name = "MusicBySide"]
-    pub music_by_side: Vec<String>,
+    pub music_by_side: Option<Vec<String>>,
     #[name = "Title"]
-    pub title: CompleteScreenTitle,
+    pub title: Option<CompleteScreenTitle>,
 }
 
 #[derive(FromYaml)]
@@ -214,7 +218,7 @@ pub struct CompleteScreenLayer {
     #[name = "Position"]
     pub position: Option<[Float; 2]>,
     #[name = "Scroll"]
-    pub scroll: Option<[f32; 1]>,
+    pub scroll: Option<[Float; 1]>,
     #[name = "FrameRate"]
     pub frame_rate: Option<Float>,
     #[name = "Alpha"]
@@ -236,7 +240,7 @@ pub struct CompleteScreenTitle {
     #[name = "CSide"]
     pub c_side: Option<String>,
     #[name = "FullClear"]
-    pub full_clear: String,
+    pub full_clear: Option<String>,
 }
 
 #[derive(FromYaml)]
@@ -244,13 +248,13 @@ pub struct TextVignette {
     #[name = "Dialog"]
     pub dialog: String,
     #[name = "Audio"]
-    pub audio: String,
+    pub audio: Option<String>,
     #[name = "InitialDelay"]
-    pub initial_delay: f32,
+    pub initial_delay: Option<f32>,
     #[name = "FinalDelay"]
-    pub final_delay: f32,
+    pub final_delay: Option<f32>,
     #[name = "SnowDirection"]
-    pub snow_direction: [f32; 2],
+    pub snow_direction: Option<[f32; 2]>,
 }
 
 #[derive(FromYaml)]
@@ -278,9 +282,9 @@ pub struct CassetteModifier {
 #[derive(FromYaml)]
 pub struct MountainPosition {
     #[name = "Position"]
-    pub position: [f64; 3],
+    pub position: [Float; 3],
     #[name = "Target"]
-    pub target: [f64; 3],
+    pub target: [Float; 3],
 }
 
 pub struct AltSidesMeta {}
