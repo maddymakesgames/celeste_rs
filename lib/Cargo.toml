@@ -10,7 +10,7 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-saphyr = { version = "0.0.4", git = "https://github.com/saphyr-rs/saphyr.git", rev = "374d8920ff47c92504fd9b28be6994f7693386a6" }
+saphyr = "0.0.6"
 anyhow = "1"
 aliasable = "0.1"
 celeste_rs_macros = { version = "0.2", path = "../macros" }
