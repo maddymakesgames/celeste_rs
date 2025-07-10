@@ -76,9 +76,9 @@ pub struct Parallax {
     #[name = "y"]
     pub y: Option<Float>,
     #[name = "scrollx"]
-    pub scroll_x: Float,
+    pub scroll_x: Option<Float>,
     #[name = "scrolly"]
-    pub scroll_y: Float,
+    pub scroll_y: Option<Float>,
     #[name = "loopx"]
     pub loopx: Option<bool>,
     #[name = "loopy"]
