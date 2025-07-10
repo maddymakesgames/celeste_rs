@@ -83,7 +83,7 @@ pub struct MapMeta {
     pub override_a_side_meta: Option<bool>,
 
     #[name = "Modes"]
-    pub map_meta_mode_properties: Option<Vec<MapMetaModeProperty>>,
+    pub map_meta_mode_properties: Option<Vec<Option<MapMetaModeProperty>>>,
 
     #[name = "Mountain"]
     pub mountain: Option<MountainData>,
@@ -103,13 +103,13 @@ pub struct MapMeta {
 #[derive(FromYaml)]
 pub struct MapMetaModeProperty {
     #[name = "AudioState"]
-    pub audio_state: MapMetaAudioState,
+    pub audio_state: Option<MapMetaAudioState>,
     #[name = "Checkpoints"]
     pub checkpoints: Option<Vec<MapMetaCheckpointData>>,
     #[name = "IgnoreLevelAudioLayerData"]
     pub ignore_level_audio_layer_data: Option<bool>,
     #[name = "Inventory"]
-    pub inventory: String,
+    pub inventory: Option<String>,
     #[name = "Path"]
     pub path: Option<String>,
     #[name = "PoemID"]
@@ -194,7 +194,7 @@ pub struct MountainData {
 #[derive(FromYaml)]
 pub struct CompleteScreen {
     #[name = "Atlas"]
-    pub atlas: String,
+    pub atlas: Option<String>,
     #[name = "Start"]
     pub start: Option<[Float; 2]>,
     #[name = "Center"]
@@ -218,7 +218,7 @@ pub struct CompleteScreenLayer {
     #[name = "Position"]
     pub position: Option<[Float; 2]>,
     #[name = "Scroll"]
-    pub scroll: Option<[Float; 1]>,
+    pub scroll: Option<Vec<Float>>,
     #[name = "FrameRate"]
     pub frame_rate: Option<Float>,
     #[name = "Alpha"]
